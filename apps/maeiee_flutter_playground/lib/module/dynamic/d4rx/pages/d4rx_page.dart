@@ -14,6 +14,7 @@ class _D4rxPageState extends State<D4rxPage> {
 
   final Map<String, String> _snippets = {
     'Fibonacci (Recursive)': '''
+// 这是一个递归函数，用于计算斐波那契数列的第n项
 int fib(int n) {
   if (n <= 1) return n;
   return fib(n - 1) + fib(n - 2);
@@ -23,11 +24,13 @@ main() {
 }
 ''',
     'Hello World': '''
+// 这是一个简单的程序，返回"Hello, World!"字符串
 main() {
   return "Hello, World!";
 }
 ''',
     'Factorial': '''
+// 这是一个递归函数，用于计算n的阶乘
 int fact(int n) {
   if (n <= 1) return 1;
   return n * fact(n - 1);
@@ -37,6 +40,7 @@ main() {
 }
 ''',
     'Sum 1 to 100': '''
+// 这是一个循环程序，用于计算从1到100的整数和
 int sum(int n) {
   int s = 0;
   int i = 1;
