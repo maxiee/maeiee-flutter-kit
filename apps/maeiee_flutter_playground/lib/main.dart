@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_bridge_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.dart';
 
 void main() {
@@ -13,7 +14,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Maeiee Flutter Playground',
-      routes: {'/d4rx': (context) => const D4rxPage()},
+      routes: {
+        '/d4rx': (context) => const D4rxPage(),
+        '/d4rx_bridge': (context) => const D4rxBridgePage(),
+      },
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -53,6 +57,10 @@ class _MyHomePageState extends State<MyHomePage> {
             OutlinedButton(
               onPressed: () => Navigator.of(context).pushNamed('/d4rx'),
               child: Text("d4rx：Dart 动态化"),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pushNamed('/d4rx_bridge'),
+              child: Text("d4rx Bridge：Dart 动态化桥接示例"),
             ),
           ],
         ),
