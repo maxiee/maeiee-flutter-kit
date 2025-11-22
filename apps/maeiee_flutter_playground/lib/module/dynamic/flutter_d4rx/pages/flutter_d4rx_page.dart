@@ -1,7 +1,12 @@
-import 'package:d4rt/d4rt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_d4rt/flutter_d4rt.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_animated_container.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_count_down_timer.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_form.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_future_builder.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_snippet_hello_world.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_snippet_list_view.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/snippets/flutter_d4rx_stream_builder.dart';
 
 class FlutterD4rxPage extends StatefulWidget {
   const FlutterD4rxPage({super.key});
@@ -15,6 +20,12 @@ class _FlutterD4rxPageState extends State<FlutterD4rxPage> {
 
   final Map<String, String> _snippets = {
     'hello_world': flutterD4rxSnippetHelloWorld,
+    'listview': flutterD4rxListView,
+    'form': flutterD4rxForm,
+    'animated_container': flutterD4rxAnimatedContainer,
+    'stream_builder': flutterD4rxStreamBuilder,
+    'future_builder': flutterD4rxFutureBuilder,
+    'count_down_timer': flutterD4rxCountDownTimer,
   };
 
   String code = '';
@@ -26,6 +37,12 @@ class _FlutterD4rxPageState extends State<FlutterD4rxPage> {
     super.initState();
     _selectedSnippetKey = _snippets.keys.first;
     _codeController.text = _snippets[_selectedSnippetKey]!;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _codeController.dispose();
   }
 
   void _runCode() {
@@ -75,44 +92,51 @@ class _FlutterD4rxPageState extends State<FlutterD4rxPage> {
             ),
           ),
 
-          // Middle: Code Editor
+          // Middle: Code Editor & Preview
           Expanded(
-            flex: 2,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: TextField(
-                controller: _codeController,
-                maxLines: null,
-                expands: true,
-                style: const TextStyle(
-                  fontFamily: 'Courier', // Monospace
-                  fontSize: 14,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(8, 0, 4, 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: TextField(
+                      controller: _codeController,
+                      maxLines: null,
+                      expands: true,
+                      style: const TextStyle(
+                        fontFamily: 'Courier', // Monospace
+                        fontSize: 14,
+                      ),
+                      decoration: const InputDecoration(
+                        contentPadding: EdgeInsets.all(12),
+                        border: InputBorder.none,
+                        hintText: 'Enter Dart code here...',
+                      ),
+                    ),
+                  ),
                 ),
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.all(12),
-                  border: InputBorder.none,
-                  hintText: 'Enter Dart code here...',
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(4, 0, 8, 8),
+                    width: double.infinity,
+                    color: Colors.black,
+                    padding: const EdgeInsets.all(12),
+                    child: code.isNotEmpty
+                        ? InterpretedWidget(
+                            key: ValueKey(code),
+                            code: code,
+                            entryPoint: 'MyWidget',
+                          )
+                        : Placeholder(),
+                  ),
                 ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Bottom: Terminal Output
-          Expanded(
-            flex: 1,
-            child: Container(
-              width: double.infinity,
-              color: Colors.black,
-              padding: const EdgeInsets.all(12),
-              child: code.isNotEmpty
-                  ? InterpretedWidget(code: code, entryPoint: 'MyWidget')
-                  : Placeholder(),
+              ],
             ),
           ),
         ],
