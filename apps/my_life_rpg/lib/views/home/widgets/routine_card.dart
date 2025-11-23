@@ -18,16 +18,33 @@ class RoutineCard extends StatelessWidget {
       onTap: () async {
         final result = await Get.to(() => SessionView(), arguments: quest);
         if (result != null && result is int) {
-          Get.snackbar(
-            "守护进程更新",
-            "系统维护完毕。投入 ${(result / 60).toStringAsFixed(1)} 分钟",
-            backgroundColor: const Color(0xFF1E1E1E),
-            colorText: Colors.cyanAccent,
-            snackPosition: SnackPosition.TOP,
-            margin: const EdgeInsets.all(16),
-            borderColor: Colors.white12,
-            borderWidth: 1,
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "守护进程更新",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.cyanAccent,
+                      ),
+                    ),
+                    Text("系统维护完毕。投入 ${(result / 60).toStringAsFixed(1)} 分钟"),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF1E1E1E),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  side: const BorderSide(color: Colors.white12, width: 1),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+          }
         }
       },
       child: Container(
