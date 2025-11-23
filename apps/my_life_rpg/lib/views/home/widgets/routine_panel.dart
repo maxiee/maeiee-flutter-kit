@@ -46,7 +46,7 @@ class RoutinePanel extends StatelessWidget {
             child: Obx(() {
               // 1. 筛选出 routine
               final routines = c.quests
-                  .where((q) => q.type == QuestType.routine)
+                  .where((q) => q.type == QuestType.daemon)
                   .toList();
 
               // 2. 排序逻辑：逾期的(dueDays > 0)排在前面，且逾期越久越靠前

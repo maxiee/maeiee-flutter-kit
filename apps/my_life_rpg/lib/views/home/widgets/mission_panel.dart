@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import '../../../controllers/game_controller.dart';
 import '../../../models/quest.dart';
-import 'project_card.dart';
+// import 'mission_card.dart'; // 稍后实现
 
-/// RPG 的“技能树”或“任务日志”。
-class ProjectPanel extends StatelessWidget {
+class MissionPanel extends StatelessWidget {
   final GameController c = Get.find();
 
   @override
@@ -22,31 +22,33 @@ class ProjectPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
-                Icon(Icons.code, color: Colors.orangeAccent, size: 16),
-                SizedBox(width: 8),
                 Text(
-                  "当前任务 (主线)",
+                  "ACTIVE MISSIONS (执行清单)",
                   style: TextStyle(
-                    color: Colors.orangeAccent,
+                    color: Colors.white70,
                     fontFamily: 'Courier',
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Icon(Icons.check_box_outlined, color: Colors.white30, size: 16),
               ],
             ),
           ),
           // List
           Expanded(
             child: Obx(() {
-              final projects = c.quests
-                  .where((q) => q.type == QuestType.project)
+              // 筛选出 Mission 类型，且未完成的任务
+              final missions = c.quests
+                  .where((q) => q.type == QuestType.mission && !q.isCompleted)
                   .toList();
+
               return ListView.separated(
                 padding: const EdgeInsets.all(8),
-                itemCount: projects.length,
+                itemCount: missions.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) => ProjectCard(quest: projects[i]),
+                itemBuilder: (ctx, i) => MissionCard(quest: missions[i]),
               );
             }),
           ),

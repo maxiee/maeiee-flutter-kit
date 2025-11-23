@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:my_life_rpg/models/project.dart';
 import '../models/quest.dart';
 
 class GameController extends GetxController {
@@ -7,47 +8,66 @@ class GameController extends GetxController {
   final mpCurrent = 4.5.obs; // 剩余 4.5 小时
   final mpTotal = 6.0;
 
-  // 任务列表 Mock
+  final projects = <Project>[].obs; // 新增
   final quests = <Quest>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    // 制造假数据
+
+    // 1. 初始化项目 (战役)
+    projects.addAll([
+      Project(
+        id: 'p1',
+        title: 'Flutter架构演进',
+        description: '技术专家之路',
+        progress: 0.4,
+      ),
+      Project(
+        id: 'p2',
+        title: '独立开发: NEXUS',
+        description: '副业破局点',
+        progress: 0.1,
+      ),
+      Project(id: 'p3', title: '著作: TMB', description: '影响力建设', progress: 0.2),
+    ]);
+
+    // 2. 初始化任务 (Missions & Daemons)
     quests.addAll([
+      // 属于 p1 的任务
       Quest(
         id: '1',
-        title: '技能: Flutter 架构',
-        type: QuestType.project,
-        totalDurationSeconds: 36000,
-      ), // 10小时
+        title: '阅读 Flutter Engine 源码 (RenderObject)',
+        type: QuestType.mission,
+        projectId: 'p1',
+        projectName: 'Flutter架构',
+      ),
+      // 属于 p2 的任务
       Quest(
         id: '2',
-        title: '业余项目: 个人管理系统',
-        type: QuestType.project,
-        totalDurationSeconds: 7200,
-      ), // 2小时
-      Quest(
-        id: '3',
-        title: '写作: The Maeiee Book',
-        type: QuestType.project,
-        totalDurationSeconds: 18000,
-      ), // 5小时
+        title: '实现 Session View 逻辑',
+        type: QuestType.mission,
+        projectId: 'p2',
+        projectName: 'NEXUS',
+      ),
+      // 无主任务
+      Quest(id: '3', title: '给 Judy 买花', type: QuestType.mission),
 
+      // Daemon 保持不变
       Quest(
         id: '4',
-        title: '维护: 管道维护',
-        type: QuestType.routine,
+        title: '清理厨房水槽',
+        type: QuestType.daemon,
         intervalDays: 21,
         lastDoneAt: DateTime.now().subtract(Duration(days: 25)),
-      ), // 逾期
-      Quest(
-        id: '5',
-        title: '备份: 摄像头视频',
-        type: QuestType.routine,
-        intervalDays: 30,
-        lastDoneAt: DateTime.now().subtract(Duration(days: 10)),
-      ), // 正常
+      ),
     ]);
+  }
+
+  // 核心操作：完成任务
+  void toggleQuestCompletion(String id) {
+    final q = quests.firstWhere((e) => e.id == id);
+    q.isCompleted = !q.isCompleted;
+    quests.refresh();
   }
 }
