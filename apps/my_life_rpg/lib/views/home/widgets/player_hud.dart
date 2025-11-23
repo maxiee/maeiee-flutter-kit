@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/game_controller.dart';
 
-/// 赛博朋克风格的仪表盘。
 class PlayerHud extends StatelessWidget {
   final GameController c = Get.find();
 
@@ -17,103 +16,214 @@ class PlayerHud extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // HP 模块 (左侧)
-          _buildHpSelector(),
+          // 1. XP Scoreboard (Output)
+          _buildScoreBoard(),
 
-          const SizedBox(width: 24),
+          const VerticalDivider(color: Colors.white10, thickness: 1, width: 32),
 
-          // MP 模块 (右侧，进度条)
-          Expanded(child: _buildMpBar()),
+          // 2. Time Spectrum (Perception)
+          Expanded(child: _buildTimeSpectrum()),
+
+          const VerticalDivider(color: Colors.white10, thickness: 1, width: 32),
+
+          // 3. Countdown (Deadline)
+          _buildCountdown(),
         ],
       ),
     );
   }
 
-  Widget _buildHpSelector() {
-    return Obx(
-      () => Row(
-        children: [
-          const Text(
-            "状态",
-            style: TextStyle(
-              color: Colors.grey,
+  // 左侧：今日产出
+  Widget _buildScoreBoard() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "DAILY XP (OUTPUT)",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+            fontFamily: 'Courier',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Obx(
+          () => Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                "${c.dailyXp.value}",
+                style: const TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 24,
+                  fontFamily: 'Courier',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                "pts",
+                style: TextStyle(
+                  color: Colors.cyanAccent.withOpacity(0.5),
+                  fontSize: 12,
+                  fontFamily: 'Courier',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Obx(
+          () => Text(
+            "DONE: ${c.tasksCompletedToday.value} MISSIONS",
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
               fontFamily: 'Courier',
-              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 12),
-          _hpButton("高", Colors.green, c.hp.value == "高"),
-          const SizedBox(width: 8),
-          _hpButton("中", Colors.blue, c.hp.value == "中"),
-          const SizedBox(width: 8),
-          _hpButton("低", Colors.red, c.hp.value == "低"),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _hpButton(String label, Color color, bool isActive) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isActive ? color.withOpacity(0.2) : Colors.transparent,
-        border: Border.all(
-          color: isActive ? color : Colors.grey.withOpacity(0.3),
-        ),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? color : Colors.grey,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMpBar() {
+  // 中部：时间熵光谱
+  Widget _buildTimeSpectrum() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "精神值 (今日剩余)",
+          children: const [
+            Text(
+              "TIME SPECTRUM (DAY CYCLE)",
               style: TextStyle(
                 color: Colors.grey,
                 fontSize: 10,
                 fontFamily: 'Courier',
               ),
             ),
-            Obx(
-              () => Text(
-                "${c.mpCurrent.value}h / ${c.mpTotal}h",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontFamily: 'Courier',
-                ),
-              ),
-            ),
+            // 可以在这里加个百分比显示
           ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 16,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Obx(
+            () => Row(
+              children: [
+                // 1. 有效时间 (Green)
+                Expanded(
+                  flex: (c.effectiveRatio.value * 1000).toInt(),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.greenAccent,
+                      borderRadius: BorderRadius.horizontal(
+                        left: Radius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+                // 2. 熵/耗散 (Red/Dark)
+                // 这是最扎心的部分：如果你没记录，这里就是一大片红色
+                Expanded(
+                  flex: (c.entropyRatio.value * 1000).toInt(),
+                  child: Container(color: const Color(0xFF591C1C)), // 暗红色
+                ),
+                // 3. 未来 (Grey)
+                Expanded(
+                  flex: (c.futureRatio.value * 1000).toInt(),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF333333),
+                      borderRadius: BorderRadius.horizontal(
+                        right: Radius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // 图例
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _legendDot(Colors.greenAccent, "EFFECTIVE"),
+            _legendDot(const Color(0xFF8B2C2C), "ENTROPY (UNKNOWN)"), // 熵
+            _legendDot(const Color(0xFF555555), "REMAINING"),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 9,
+            fontFamily: 'Courier',
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 右侧：倒计时
+  Widget _buildCountdown() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const Text(
+          "T-MINUS (SLEEP)",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+            fontFamily: 'Courier',
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 4),
         Obx(
-          () => ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: c.mpCurrent.value / c.mpTotal,
-              backgroundColor: Colors.black,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Colors.cyanAccent,
-              ),
-              minHeight: 12,
+          () => Text(
+            c.timeToSleep.value,
+            style: const TextStyle(
+              color: Colors.orangeAccent,
+              fontSize: 20,
+              fontFamily: 'Courier',
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
             ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        const Text(
+          "TARGET: 01:00",
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 10,
+            fontFamily: 'Courier',
           ),
         ),
       ],
