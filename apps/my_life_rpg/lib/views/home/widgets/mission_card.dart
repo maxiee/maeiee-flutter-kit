@@ -46,8 +46,27 @@ class MissionCard extends StatelessWidget {
             // 2. Content Area (Go to Session)
             Expanded(
               child: InkWell(
-                onTap: () {
-                  Get.to(() => SessionView(), arguments: quest);
+                onTap: () async {
+                  // 1. 等待 SessionView 关闭，并捕获返回结果 (sessionDuration)
+                  final result = await Get.to(
+                    () => SessionView(),
+                    arguments: quest,
+                  );
+
+                  // 2. 如果 result 不为空，说明是通过 "TERMINATE" 按钮正常结束的
+                  if (result != null && result is int) {
+                    Get.snackbar(
+                      "任务结算",
+                      "投入了 ${(result / 60).toStringAsFixed(1)} 分钟", // 简单格式化一下，或者调用 helper
+                      backgroundColor: const Color(0xFF1E1E1E),
+                      colorText: Colors.greenAccent,
+                      snackPosition: SnackPosition.TOP,
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 2),
+                      borderColor: Colors.white12,
+                      borderWidth: 1,
+                    );
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(

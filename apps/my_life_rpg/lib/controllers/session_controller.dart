@@ -146,17 +146,8 @@ class SessionController extends GetxController
     _gameController.quests.refresh();
     _gameController.update(); // 触发 update
 
-    Get.back(); // 返回首页
-
-    Get.snackbar(
-      "任务结算",
-      "投入了 ${formatDuration(durationSeconds.value)}",
-      backgroundColor: Colors.white12,
-      colorText: Colors.greenAccent,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
+    // result: true 表示“正常结算退出”，而不是直接按返回键
+    Get.back(result: durationSeconds.value);
   }
 
   String formatDuration(int totalSeconds) {
