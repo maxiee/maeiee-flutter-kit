@@ -6,13 +6,26 @@ enum QuestType {
   daemon, // 守护进程 (循环)
 }
 
+enum LogType {
+  normal, // 普通文本
+  milestone, // 里程碑 (金色)
+  bug, // 坑/Bug (红色)
+  idea, // 想法 (青色)
+  rest, // 休息 (绿色)
+}
+
 class QuestLog {
   final String id;
   final DateTime createdAt;
   final String content; // 你的简短笔记
+  final LogType type; // 新增属性
 
-  QuestLog({String? id, required this.createdAt, required this.content})
-    : id = id ?? const Uuid().v4();
+  QuestLog({
+    String? id,
+    required this.createdAt,
+    required this.content,
+    this.type = LogType.normal, // 默认为普通
+  }) : id = id ?? const Uuid().v4();
 }
 
 class Quest {

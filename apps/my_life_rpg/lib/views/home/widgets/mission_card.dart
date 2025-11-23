@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/game_controller.dart';
 import '../../../models/quest.dart';
-// import '../../session/session_view.dart'; // 稍后集成
+import '../../session/session_view.dart';
 
 class MissionCard extends StatelessWidget {
   final Quest quest;
@@ -47,9 +47,7 @@ class MissionCard extends StatelessWidget {
             Expanded(
               child: InkWell(
                 onTap: () {
-                  // 跳转到 SessionView (驾驶舱)
-                  // Get.to(() => SessionView(), arguments: quest);
-                  print("Go to Session: ${quest.title}");
+                  Get.to(() => SessionView(), arguments: quest);
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
