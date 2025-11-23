@@ -26,7 +26,7 @@ class ProjectPanel extends StatelessWidget {
                 Icon(Icons.code, color: Colors.orangeAccent, size: 16),
                 SizedBox(width: 8),
                 Text(
-                  "ACTIVE QUESTS (PROJECTS)",
+                  "当前任务 (主线)",
                   style: TextStyle(
                     color: Colors.orangeAccent,
                     fontFamily: 'Courier',

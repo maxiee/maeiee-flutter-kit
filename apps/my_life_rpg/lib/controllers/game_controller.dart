@@ -3,7 +3,7 @@ import '../models/quest.dart';
 
 class GameController extends GetxController {
   // 玩家状态 Mock
-  final hp = 'NORMAL'.obs; // HIGH, NORMAL, LOW
+  final hp = '中'.obs; // HIGH, NORMAL, LOW
   final mpCurrent = 4.5.obs; // 剩余 4.5 小时
   final mpTotal = 6.0;
 
@@ -17,33 +17,33 @@ class GameController extends GetxController {
     quests.addAll([
       Quest(
         id: '1',
-        title: 'Skill: Flutter Arch',
+        title: '技能: Flutter 架构',
         type: QuestType.project,
         totalDurationSeconds: 36000,
       ), // 10小时
       Quest(
         id: '2',
-        title: 'SideProject: NEXUS',
+        title: '业余项目: 个人管理系统',
         type: QuestType.project,
         totalDurationSeconds: 7200,
       ), // 2小时
       Quest(
         id: '3',
-        title: 'Write: The Maeiee Book',
+        title: '写作: The Maeiee Book',
         type: QuestType.project,
         totalDurationSeconds: 18000,
       ), // 5小时
 
       Quest(
         id: '4',
-        title: 'Maintain: Kitchen Sink',
+        title: '维护: 管道维护',
         type: QuestType.routine,
         intervalDays: 21,
         lastDoneAt: DateTime.now().subtract(Duration(days: 25)),
       ), // 逾期
       Quest(
         id: '5',
-        title: 'Backup: CCTV Footage',
+        title: '备份: 摄像头视频',
         type: QuestType.routine,
         intervalDays: 30,
         lastDoneAt: DateTime.now().subtract(Duration(days: 10)),

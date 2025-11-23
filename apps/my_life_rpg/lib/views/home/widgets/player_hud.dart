@@ -34,18 +34,19 @@ class PlayerHud extends StatelessWidget {
       () => Row(
         children: [
           const Text(
-            "STATUS: ",
+            "状态",
             style: TextStyle(
               color: Colors.grey,
               fontFamily: 'Courier',
               fontWeight: FontWeight.bold,
             ),
           ),
-          _hpButton("HIGH", Colors.green, c.hp.value == "HIGH"),
+          const SizedBox(width: 12),
+          _hpButton("高", Colors.green, c.hp.value == "高"),
           const SizedBox(width: 8),
-          _hpButton("NORMAL", Colors.blue, c.hp.value == "NORMAL"),
+          _hpButton("中", Colors.blue, c.hp.value == "中"),
           const SizedBox(width: 8),
-          _hpButton("LOW", Colors.red, c.hp.value == "LOW"),
+          _hpButton("低", Colors.red, c.hp.value == "低"),
         ],
       ),
     );
@@ -82,7 +83,7 @@ class PlayerHud extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              "MP (TIME ENERGY)",
+              "精神值 (今日剩余)",
               style: TextStyle(
                 color: Colors.grey,
                 fontSize: 10,

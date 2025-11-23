@@ -30,7 +30,7 @@ class RoutinePanel extends StatelessWidget {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  "SYSTEM DAEMONS", // 这里的文案用 DAEMONS 比 ROUTINES 更极客
+                  "系统守护 (日常)", // 这里的文案用 DAEMONS 比 ROUTINES 更极客
                   style: TextStyle(
                     color: Colors.cyanAccent,
                     fontFamily: 'Courier',
