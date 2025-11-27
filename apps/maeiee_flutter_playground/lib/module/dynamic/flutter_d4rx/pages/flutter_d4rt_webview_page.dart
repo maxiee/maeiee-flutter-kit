@@ -117,10 +117,10 @@ class _FlutterD4rtWebviewPageState extends State<FlutterD4rtWebviewPage> {
       );
 
       // 执行代码，返回一个 Widget，setState 更新 UI
-      final result = await _interpreter.execute(code, 'DynamicWebViewPage');
+      final result = _interpreter.execute(code, 'DynamicWebViewPage');
 
       setState(() {
-        _interpretedWidget = result as Widget;
+        _interpretedWidget = result;
       });
     } catch (e) {
       print('Initialization Error: $e');
