@@ -13,7 +13,10 @@ final webviewControllerBridge = BridgedClass(
           List<Object?> positionalArgs,
           Map<String, Object?> namedArgs,
         ) {
-          return WebViewController();
+          final controller = WebViewController();
+          // 启用 JavaScript，否则很多网页会显示白屏
+          controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+          return controller;
         },
   },
   methods: {
@@ -23,13 +26,13 @@ final webviewControllerBridge = BridgedClass(
           Object target,
           List<Object?> positionalArgs,
           Map<String, Object?> namedArgs,
-        ) {
+        ) async {
           if (target is! WebViewController) {
             throw TypeError();
           }
           final uri = positionalArgs[0] as Uri;
           print('Bridged loadRequest called with uri: $uri');
-          target.loadRequest(uri);
+          await target.loadRequest(uri);
           return null;
         },
   },
