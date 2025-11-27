@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_bridge_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_custom_simple_page.dart';
+import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_webview_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rx_page.dart';
 
 void main() {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         '/flutter_d4rx': (context) => const FlutterD4rxPage(),
         '/flutter_d4rx_custom_simple': (context) =>
             const FlutterD4rtCustomSimplePage(),
+        '/flutter_d4rt_webview': (context) => const FlutterD4rtWebviewPage(),
       },
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -76,6 +78,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 context,
               ).pushNamed('/flutter_d4rx_custom_simple'),
               child: Text("flutter_d4rx：Flutter 桥接预埋简单组件示例"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/flutter_d4rt_webview'),
+              child: Text("flutter_d4rx：Flutter 桥接 WebView 示例"),
             ),
           ],
         ),
