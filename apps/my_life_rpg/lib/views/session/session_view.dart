@@ -30,8 +30,8 @@ class SessionView extends StatelessWidget {
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  itemCount: c.currentLogs.length,
-                  itemBuilder: (ctx, i) => _buildLogRow(c, c.currentLogs[i]),
+                  itemCount: c.displayLogs.length, // <--- 只有这里改了变量名
+                  itemBuilder: (ctx, i) => _buildLogRow(c, c.displayLogs[i]),
                 ),
               ),
             ),

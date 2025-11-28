@@ -78,34 +78,38 @@ class GameController extends GetxController {
       Project(id: 'p3', title: '著作: TMB', description: '影响力建设', progress: 0.2),
     ]);
 
-    // 2. 初始化任务 (Missions & Daemons)
+    // Mock Data Generator (适配新结构)
     quests.addAll([
-      // 属于 p1 的任务
       Quest(
         id: '1',
-        title: '阅读 Flutter Engine 源码 (RenderObject)',
+        title: '阅读 Flutter Engine 源码',
         type: QuestType.mission,
         projectId: 'p1',
         projectName: 'Flutter架构',
+        sessions: [
+          // 模拟昨天做了一次
+          QuestSession(
+            startTime: DateTime.now().subtract(
+              const Duration(days: 1, hours: 2),
+            ),
+            endTime: DateTime.now().subtract(const Duration(days: 1)),
+            durationSeconds: 7200,
+            logs: [
+              QuestLog(
+                createdAt: DateTime.now().subtract(const Duration(days: 1)),
+                content: "阅读了 RenderObject 源码",
+              ),
+            ],
+          ),
+        ],
       ),
-      // 属于 p2 的任务
-      Quest(
-        id: '2',
-        title: '实现 Session View 逻辑',
-        type: QuestType.mission,
-        projectId: 'p2',
-        projectName: 'NEXUS',
-      ),
-      // 无主任务
-      Quest(id: '3', title: '给 Judy 买花', type: QuestType.mission),
-
-      // Daemon 保持不变
       Quest(
         id: '4',
         title: '清理厨房水槽',
         type: QuestType.daemon,
         intervalDays: 21,
-        lastDoneAt: DateTime.now().subtract(Duration(days: 25)),
+        // 上次完成时间：sessions 里可以不用存具体的 session，只要 lastDoneAt 对就行
+        lastDoneAt: DateTime.now().subtract(const Duration(days: 25)),
       ),
     ]);
   }
@@ -125,22 +129,27 @@ class GameController extends GetxController {
 
     // 遍历所有任务
     for (var q in quests) {
-      for (var log in q.logs) {
-        // 只有同一天的日志才算
-        if (log.createdAt.year == targetDate.year &&
-            log.createdAt.month == targetDate.month &&
-            log.createdAt.day == targetDate.day) {
-          // 假设：一条日志代表它 "createdAt" 之前的一段 Session。
-          // 但目前我们的 Log 只是点状的。
-          // 为了 MVP 效果，我们暂时假设：每条日志占据它所在的那个 15分钟 格子。
-          // *未来*：我们需要真正的 Session Start/End 数据。
+      for (var s in q.sessions) {
+        // 1. 判断 Session 是否属于 targetDate
+        // 为简化逻辑，只要 startTime 在当天，或者 endTime 在当天，就算
+        // 这里只处理 "Session Start 在当天" 的情况
+        if (s.startTime.year == targetDate.year &&
+            s.startTime.month == targetDate.month &&
+            s.startTime.day == targetDate.day) {
+          // 2. 填充格子
+          // 计算开始格子
+          int startBlock = (s.startTime.hour * 4) + (s.startTime.minute ~/ 15);
 
-          final hour = log.createdAt.hour;
-          final minute = log.createdAt.minute;
-          final blockIndex = (hour * 4) + (minute ~/ 15);
+          // 计算跨度格子数
+          int blocksCount = (s.durationSeconds / 60 / 15).ceil();
+          if (blocksCount < 1) blocksCount = 1; // 至少占一格
 
-          if (blockIndex >= 0 && blockIndex < 96) {
-            timeBlocks[blockIndex] = q.id;
+          for (int i = 0; i < blocksCount; i++) {
+            int blockIndex = startBlock + i;
+            if (blockIndex < 96) {
+              // 填充 questId
+              timeBlocks[blockIndex] = q.id;
+            }
           }
         }
       }
@@ -173,10 +182,9 @@ class GameController extends GetxController {
         projectId: q.projectId,
         projectName: q.projectName,
         isCompleted: false, // 永远为 false
-        totalDurationSeconds: q.totalDurationSeconds,
-        logs: q.logs,
         intervalDays: q.intervalDays,
         lastDoneAt: DateTime.now(), // <--- 核心：重置 CD
+        sessions: q.sessions,
       );
     } else {
       // 普通任务逻辑：
@@ -206,8 +214,14 @@ class GameController extends GetxController {
     // *实际项目中，QuestLog 应该包含 duration，这里累加今天的 Log duration。
     int effectiveMinutes = 0;
     for (var q in quests) {
-      // 简单模拟：假设总时长的 10% 是今天做的 (仅作 Mock 展示)
-      effectiveMinutes += (q.totalDurationSeconds / 60 * 0.1).round();
+      for (var s in q.sessions) {
+        // 判断 session 是否在今天 (简单判断 startTime)
+        if (s.startTime.year == now.year &&
+            s.startTime.month == now.month &&
+            s.startTime.day == now.day) {
+          effectiveMinutes += (s.durationSeconds / 60).round();
+        }
+      }
     }
 
     // 4. 计算熵 (Entropy / Wasted)
@@ -257,6 +271,7 @@ class GameController extends GetxController {
       lastDoneAt: type == QuestType.daemon
           ? DateTime.now().subtract(Duration(days: interval))
           : null, // 刚创建就算到期，强迫你立刻关注？或者设为null
+      sessions: [], // 初始化为空 session 列表
     );
 
     quests.add(newQuest);
@@ -264,5 +279,24 @@ class GameController extends GetxController {
     // 这里我们不存盘，因为目前是内存模式，
     // 但你可以把 saveGame() 放在这里如果你想测试持久化
     // saveGame();
+  }
+
+  // 提供给 SessionController 调用的刷新方法
+  // 当 Session 结束时调用这个
+  void onSessionFinished() {
+    // 1. 刷新 Quest 列表状态 (触发 Rx 更新)
+    quests.refresh();
+
+    // 2. 重新计算今天的 XP 和时间熵
+    _calculateTimeMetrics();
+
+    // 3. 重新渲染时间矩阵 (因为刚产生了一个新 Session)
+    _refreshTimeBlocks();
+
+    // 4. 持久化数据 (如果有 DataService)
+    // saveGame();
+
+    // 5. 触发整个 Controller 的 update (如果有 GetBuilder 监听)
+    update();
   }
 }

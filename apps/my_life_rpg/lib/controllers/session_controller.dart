@@ -14,6 +14,8 @@ class SessionController extends GetxController
   final GameController _gameController = Get.find();
 
   late Quest quest;
+  // 新增：当前会话对象
+  late QuestSession currentSession;
 
   // 计时器状态
   Timer? _timer;
@@ -23,8 +25,8 @@ class SessionController extends GetxController
   final textController = TextEditingController();
   final scrollController = ScrollController();
 
-  // 临时日志列表 (包含历史日志 + 本次新增日志)
-  final currentLogs = <QuestLog>[].obs;
+  // // 展示用的混合日志列表 (历史 + 新增)
+  final displayLogs = <QuestLog>[].obs;
 
   // 动画控制器 (用于呼吸效果)
   late AnimationController pulseController;
@@ -42,8 +44,11 @@ class SessionController extends GetxController
       quest = Quest(id: 'mock', title: '调试任务', type: QuestType.mission);
     }
 
+    // 1. 创建当前会话对象
+    currentSession = QuestSession(startTime: DateTime.now());
+
     // 2. 加载历史日志
-    currentLogs.addAll(quest.logs);
+    displayLogs.addAll(quest.allLogs);
 
     // 3. 初始化呼吸灯动画 (2秒一个周期)
     pulseController = AnimationController(
@@ -83,7 +88,14 @@ class SessionController extends GetxController
       type: type,
     );
 
-    currentLogs.add(newLog);
+    // 1. 加到当前 session
+    currentSession.logs.add(newLog);
+
+    // 2. 加到展示列表 (UI 更新)
+    displayLogs.add(newLog); // 应该插到最前面还是最后面？看你的 ListView 是正序还是倒序
+    // 假设 allLogs 是倒序的（最新的在前面），那么新 Log 应该 insert(0, newLog)
+    // 但如果 SessionView 是从上往下流动的（最新的在下面），那么 add 就行。
+    // 我们之前的 SessionView 是正序的 (add)，所以这里用 add。
 
     // 如果是手动输入的(content为null)，清空输入框
     if (content == null) {
@@ -128,23 +140,15 @@ class SessionController extends GetxController
   void endSession() {
     stopTimer();
 
-    // --- 数据回写逻辑 ---
-    // 1. 更新 Quest 对象的内存数据
-    quest.totalDurationSeconds += durationSeconds.value;
-    quest.logs.clear();
-    quest.logs.addAll(currentLogs);
+    // 1. 封存 Session
+    currentSession.endTime = DateTime.now();
+    currentSession.durationSeconds = durationSeconds.value;
 
-    // 2. 如果是 Daemon，更新 lastDoneAt
-    if (quest.type == QuestType.daemon) {
-      // quest.lastDoneAt = DateTime.now(); // Quest 如果是 final 字段需要 copyWith 或者特殊处理
-      // 假设 Quest 是不可变的，我们需要在 GameController 里替换它
-      // 这里暂时只做简单的内存 Log 更新演示
-    }
+    // 2. 存入 Quest
+    quest.sessions.add(currentSession);
 
-    // 3. 通知 GameController 刷新界面 (XP 计算等)
-    // 这一步很重要，否则首页的 XP 和 Time Spectrum 不会变
-    _gameController.quests.refresh();
-    _gameController.update(); // 触发 update
+    // 3. 刷新数据
+    _gameController.onSessionFinished();
 
     // result: true 表示“正常结算退出”，而不是直接按返回键
     Get.back(result: durationSeconds.value);
