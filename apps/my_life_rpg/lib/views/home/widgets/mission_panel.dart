@@ -21,28 +21,49 @@ class MissionPanel extends StatelessWidget {
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "ACTIVE MISSIONS (执行清单)",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontFamily: 'Courier',
-                    fontWeight: FontWeight.bold,
+                const Padding(
+                  padding: EdgeInsets.only(left: 4.0),
+                  child: Text(
+                    "ACTIVE OPERATIONS",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontFamily: 'Courier',
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.add_box_outlined,
-                    color: Colors.white70,
-                  ),
-                  onPressed: () =>
-                      Get.dialog(const QuestEditor(type: QuestType.mission)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(), // 紧凑布局
-                  tooltip: "Deploy Mission",
+                // Command Cluster (指令组)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. Daemon Button (Cyan)
+                    IconButton(
+                      icon: const Icon(Icons.loop, size: 20),
+                      color: Colors.cyanAccent,
+                      tooltip: "Initialize Daemon (循环任务)",
+                      constraints: const BoxConstraints(), // 紧凑
+                      padding: const EdgeInsets.all(8),
+                      onPressed: () =>
+                          Get.dialog(const QuestEditor(type: QuestType.daemon)),
+                    ),
+
+                    const SizedBox(width: 4), // 按钮间距
+                    // 2. Mission Button (Orange)
+                    IconButton(
+                      icon: const Icon(Icons.add_task, size: 20),
+                      color: Colors.orangeAccent,
+                      tooltip: "Deploy Mission (普通任务)",
+                      constraints: const BoxConstraints(), // 紧凑
+                      padding: const EdgeInsets.all(8),
+                      onPressed: () => Get.dialog(
+                        const QuestEditor(type: QuestType.mission),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
