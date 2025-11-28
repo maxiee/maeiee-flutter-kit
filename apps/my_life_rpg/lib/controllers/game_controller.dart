@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:my_life_rpg/models/project.dart';
+import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
 
 class GameController extends GetxController {
@@ -157,5 +158,33 @@ class GameController extends GetxController {
         .length; // 实际应判断完成时间是否是今天
     tasksCompletedToday.value = completedCount;
     dailyXp.value = effectiveMinutes + (completedCount * 50);
+  }
+
+  // 新增：造物能力
+  void addNewQuest({
+    required String title,
+    required QuestType type,
+    Project? project,
+    int interval = 0,
+  }) {
+    final newQuest = Quest(
+      id: const Uuid().v4(),
+      title: title,
+      type: type,
+      projectId: project?.id,
+      projectName: project?.title,
+      intervalDays: interval,
+      // 如果是 Daemon，新建时默认当作“刚做完”或者“从未做过”？
+      // 建议：lastDoneAt 为 null，表示 NEW，立即 ready
+      lastDoneAt: type == QuestType.daemon
+          ? DateTime.now().subtract(Duration(days: interval))
+          : null, // 刚创建就算到期，强迫你立刻关注？或者设为null
+    );
+
+    quests.add(newQuest);
+
+    // 这里我们不存盘，因为目前是内存模式，
+    // 但你可以把 saveGame() 放在这里如果你想测试持久化
+    // saveGame();
   }
 }
