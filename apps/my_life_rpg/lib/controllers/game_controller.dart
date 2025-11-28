@@ -105,8 +105,39 @@ class GameController extends GetxController {
   // 核心操作：完成任务
   void toggleQuestCompletion(String id) {
     final q = quests.firstWhere((e) => e.id == id);
-    q.isCompleted = !q.isCompleted;
+
+    if (q.type == QuestType.daemon) {
+      // 循环任务逻辑：
+      // 不标记 isCompleted，而是重置时间戳
+      // 为了让 UI 有反馈，我们可以设计一个 temporary state，但 MVP 简单处理：
+      // 直接更新 lastDoneAt 为现在 -> 导致 dueDays 变负 -> 从 Active 列表消失
+      // 必须创建一个新对象来触发 Rx 更新 (Quest 字段若是 final)
+      final index = quests.indexOf(q);
+
+      // 这里我们需要修改 Quest 模型支持 copyWith 或者重新构造
+      // 假设我们直接修改 (如果 Quest 字段不是 final)
+      // q.lastDoneAt = DateTime.now();
+
+      // 如果字段是 final (推荐)，我们需要替换对象：
+      quests[index] = Quest(
+        id: q.id,
+        title: q.title,
+        type: q.type,
+        projectId: q.projectId,
+        projectName: q.projectName,
+        isCompleted: false, // 永远为 false
+        totalDurationSeconds: q.totalDurationSeconds,
+        logs: q.logs,
+        intervalDays: q.intervalDays,
+        lastDoneAt: DateTime.now(), // <--- 核心：重置 CD
+      );
+    } else {
+      // 普通任务逻辑：
+      q.isCompleted = !q.isCompleted;
+    }
+
     quests.refresh();
+    // saveGame();
   }
 
   // 核心算法：计算当天的时间分布
