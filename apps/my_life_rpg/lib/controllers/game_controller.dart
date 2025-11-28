@@ -15,6 +15,14 @@ class GameController extends GetxController {
   final dailyXp = 0.obs;
   final tasksCompletedToday = 0.obs;
 
+  // 选中的日期 (默认今天)
+  final selectedDate = DateTime.now().obs;
+
+  // 核心数据结构：一天的 96 个时间块的状态
+  // 索引 0 = 00:00-00:15, 索引 95 = 23:45-24:00
+  // Value: 任务ID (如果被占用) 或者 null
+  final timeBlocks = List<String?>.filled(96, null).obs;
+
   // 2. 时间感知 (Time Perception)
   final dayStartTime = DateTime(
     DateTime.now().year,
@@ -100,6 +108,45 @@ class GameController extends GetxController {
         lastDoneAt: DateTime.now().subtract(Duration(days: 25)),
       ),
     ]);
+  }
+
+  // 切换日期
+  void changeDate(DateTime date) {
+    selectedDate.value = date;
+    _refreshTimeBlocks();
+  }
+
+  // 刷新时间块数据 (计算密集型，暂放在前端做)
+  void _refreshTimeBlocks() {
+    // 重置
+    for (int i = 0; i < 96; i++) timeBlocks[i] = null;
+
+    final targetDate = selectedDate.value;
+
+    // 遍历所有任务
+    for (var q in quests) {
+      for (var log in q.logs) {
+        // 只有同一天的日志才算
+        if (log.createdAt.year == targetDate.year &&
+            log.createdAt.month == targetDate.month &&
+            log.createdAt.day == targetDate.day) {
+          // 假设：一条日志代表它 "createdAt" 之前的一段 Session。
+          // 但目前我们的 Log 只是点状的。
+          // 为了 MVP 效果，我们暂时假设：每条日志占据它所在的那个 15分钟 格子。
+          // *未来*：我们需要真正的 Session Start/End 数据。
+
+          final hour = log.createdAt.hour;
+          final minute = log.createdAt.minute;
+          final blockIndex = (hour * 4) + (minute ~/ 15);
+
+          if (blockIndex >= 0 && blockIndex < 96) {
+            timeBlocks[blockIndex] = q.id;
+          }
+        }
+      }
+    }
+    // 触发 UI 更新
+    timeBlocks.refresh();
   }
 
   // 核心操作：完成任务

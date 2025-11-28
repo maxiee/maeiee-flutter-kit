@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
+import 'package:my_life_rpg/views/home/widgets/temporal_matrix.dart';
 import '../../controllers/game_controller.dart';
 import 'widgets/player_hud.dart';
 import 'widgets/mission_panel.dart';
@@ -34,30 +35,11 @@ class HomeView extends StatelessWidget {
                   children: [
                     Expanded(flex: 6, child: MissionPanel()), // 任务板
                     const SizedBox(width: 8),
+                    // 右侧：时空矩阵
                     Expanded(
                       flex: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A).withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white10,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "SECTOR UNINITIALIZED\n(RESERVED FOR FUTURE MODULE)",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white24,
-                              fontFamily: 'Courier',
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ), // 例行板 (预留位置)
+                      child: TemporalMatrix(), // <--- 这里
+                    ),
                   ],
                 ),
               ),
