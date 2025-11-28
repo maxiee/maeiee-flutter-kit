@@ -36,7 +36,7 @@ class MissionPanel extends StatelessWidget {
                 IconButton(
                   icon: const Icon(
                     Icons.add_box_outlined,
-                    color: Colors.orangeAccent,
+                    color: Colors.white70,
                   ),
                   onPressed: () =>
                       Get.dialog(const QuestEditor(type: QuestType.mission)),
@@ -50,16 +50,54 @@ class MissionPanel extends StatelessWidget {
           // List
           Expanded(
             child: Obx(() {
-              // 筛选出 Mission 类型，且未完成的任务
-              final missions = c.quests
-                  .where((q) => q.type == QuestType.mission && !q.isCompleted)
-                  .toList();
+              // 混合筛选逻辑
+              final activeTasks = c.quests.where((q) {
+                if (q.type == QuestType.mission) {
+                  return !q.isCompleted; // 未完成的普通任务
+                } else {
+                  // 循环任务：显示 逾期的(dueDays>=0)
+                  // 或者 你也可以选择始终显示，但用排序区分。
+                  // 建议：只显示需要处理的 (dueDays >= -1，比如明天到期的也显示出来预警)
+                  final due = q.dueDays ?? 0;
+                  return due >= -1;
+                }
+              }).toList();
+
+              // 混合排序逻辑
+              activeTasks.sort((a, b) {
+                // 1. 优先级：逾期的循环任务最高
+                bool aIsUrgentDaemon = a.type == QuestType.daemon;
+                bool bIsUrgentDaemon = b.type == QuestType.daemon;
+
+                if (aIsUrgentDaemon && !bIsUrgentDaemon) return -1;
+                if (!aIsUrgentDaemon && bIsUrgentDaemon) return 1;
+
+                // 2. 如果都是 Daemon，逾期越久的越靠前
+                if (aIsUrgentDaemon && bIsUrgentDaemon) {
+                  return (b.dueDays ?? 0).compareTo(a.dueDays ?? 0);
+                }
+
+                // 3. 如果都是 Mission，保持默认顺序 (或按最后活跃时间)
+                return 0;
+              });
+
+              if (activeTasks.isEmpty) {
+                return const Center(
+                  child: Text(
+                    "NO ACTIVE OPERATIONS",
+                    style: TextStyle(
+                      color: Colors.white12,
+                      fontFamily: 'Courier',
+                    ),
+                  ),
+                );
+              }
 
               return ListView.separated(
                 padding: const EdgeInsets.all(8),
-                itemCount: missions.length,
+                itemCount: activeTasks.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) => MissionCard(quest: missions[i]),
+                itemBuilder: (ctx, i) => MissionCard(quest: activeTasks[i]),
               );
             }),
           ),

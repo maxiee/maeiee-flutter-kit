@@ -12,6 +12,10 @@ class MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 区分类型
+    final isDaemon = quest.type == QuestType.daemon;
+    final dueDays = quest.dueDays ?? 0;
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF252525),
@@ -22,21 +26,29 @@ class MissionCard extends StatelessWidget {
         // 让子元素高度一致
         child: Row(
           children: [
-            // 1. Checkbox Area (Finisher)
+            // 1. Checkbox / Reset Button
             InkWell(
               onTap: () => c.toggleQuestCompletion(quest.id),
               child: Container(
                 width: 40,
-                color: Colors.white.withOpacity(0.02),
+                color: isDaemon
+                    ? Colors.cyan.withOpacity(0.1) // 循环任务用青色背景区分
+                    : Colors.white.withOpacity(0.02),
                 alignment: Alignment.center,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+                child: isDaemon
+                    ? const Icon(
+                        Icons.refresh,
+                        size: 16,
+                        color: Colors.cyanAccent,
+                      ) // 循环图标
+                    : Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
               ),
             ),
 
@@ -115,6 +127,27 @@ class MissionCard extends StatelessWidget {
                             style: const TextStyle(
                               color: Colors.orangeAccent,
                               fontSize: 9,
+                            ),
+                          ),
+                        ),
+                      // Daemon Urgency Tag
+                      if (isDaemon && dueDays > 0)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            "OVERDUE +$dueDays",
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
