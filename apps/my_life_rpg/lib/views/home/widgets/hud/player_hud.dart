@@ -82,7 +82,7 @@ class PlayerHud extends StatelessWidget {
                   value: t.levelProgress.value,
                   height: 6,
                   color: AppColors.accentMain,
-                  backgroundColor: Colors.black45,
+                  backgroundColor: Colors.white.withOpacity(0.1),
                   showGlow: true,
                 ),
               ),

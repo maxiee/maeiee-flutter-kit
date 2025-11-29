@@ -28,6 +28,7 @@ class RpgProgress extends StatelessWidget {
       borderRadius: AppSpacing.borderRadiusSm,
       child: Container(
         height: height,
+        width: double.infinity, // [关键修改]：强制占满父容器宽度
         decoration: BoxDecoration(
           color: backgroundColor ?? Colors.black,
           boxShadow: showGlow
