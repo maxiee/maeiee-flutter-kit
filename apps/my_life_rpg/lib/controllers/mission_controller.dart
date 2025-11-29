@@ -1,5 +1,6 @@
 // lib/controllers/mission_controller.dart
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/models/quest.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 
@@ -19,68 +20,68 @@ class MissionController extends GetxController {
 
   // 计算属性：根据筛选器返回过滤后的任务列表
   List<Quest> get filteredQuests {
-    // 1. 获取所有活跃任务 (基础池)
-    // 这里的定义是：Mission未完成，Daemon一直都在(通过dueDays排序)
-    // 但为了列表干净，我们只显示 dueDays >= -1 的 Daemon (即昨天、今天、未来到期的)
-    var list = _questService.quests.where((q) {
-      if (q.type == QuestType.mission) return !q.isCompleted;
-      // Daemon 显示规则：逾期 或 今天到期 或 明天到期
-      // dueDays: >0 逾期, 0 今天, -1 明天
-      return (q.dueDays ?? -999) >= -1;
-    }).toList();
+    final allQuests = _questService.quests;
 
-    // 2. 应用过滤器
+    // 1. 构建规格 (Build Specification)
+    Specification<Quest> spec = BaseActiveSpec(); // 默认基础规则
+
     switch (activeFilter.value) {
       case MissionFilter.priority:
-        list = list.where((q) {
-          final isUrgent = q.hoursUntilDeadline < 24;
-          final isOverdueDaemon = (q.dueDays ?? -99) > 0;
-          return isUrgent || isOverdueDaemon;
-        }).toList();
+        // 基础 + 紧急
+        spec = spec.and(UrgentSpec());
         break;
-
       case MissionFilter.daemon:
-        list = list.where((q) => q.type == QuestType.daemon).toList();
+        // 基础 + 仅Daemon
+        spec = spec.and(OnlyDaemonSpec());
         break;
-
       case MissionFilter.project:
+        // 基础 + 特定项目
         if (selectedProjectId.value != null) {
-          list = list
-              .where((q) => q.projectId == selectedProjectId.value)
-              .toList();
+          spec = spec.and(ProjectSpec(selectedProjectId.value));
         }
         break;
-
       case MissionFilter.all:
       default:
-        // do nothing
+        // 仅基础规则
         break;
     }
 
-    // 3. 排序 (复用之前的智能排序逻辑)
-    list.sort((a, b) {
-      // 0. 逾期 Deadline 优先
-      if (a.hoursUntilDeadline < 0 && b.hoursUntilDeadline >= 0) return -1;
-      if (b.hoursUntilDeadline < 0 && a.hoursUntilDeadline >= 0) return 1;
+    // 2. 执行过滤 (Execute Filter)
+    var list = allQuests.where((q) => spec.isSatisfiedBy(q)).toList();
 
-      // 1. 紧急 Daemon 优先 (逾期天数多的)
-      int aDue = a.dueDays ?? -99;
-      int bDue = b.dueDays ?? -99;
-      if (aDue > 0 && bDue <= 0) return -1;
-      if (bDue > 0 && aDue <= 0) return 1;
-      if (aDue > 0 && bDue > 0) return bDue.compareTo(aDue); // 逾期越久越前
-
-      // 2. 紧急 Mission 优先
-      if (a.hoursUntilDeadline < 24 && b.hoursUntilDeadline >= 24) return -1;
-      if (b.hoursUntilDeadline < 24 && a.hoursUntilDeadline >= 24) return 1;
-      if (a.hoursUntilDeadline < 24 && b.hoursUntilDeadline < 24) {
-        return a.hoursUntilDeadline.compareTo(b.hoursUntilDeadline);
-      }
-
-      return 0;
-    });
+    // 3. 排序 (Sort) - 排序逻辑依然保留在这里，或者也可以抽离为 Comparator
+    list.sort(_smartSort);
 
     return list;
+  }
+
+  // 将复杂的排序逻辑抽离为私有方法，保持 get 简洁
+  int _smartSort(Quest a, Quest b) {
+    // 0. Deadline 已过 (最高优)
+    final aDead = a.hoursUntilDeadline < 0;
+    final bDead = b.hoursUntilDeadline < 0;
+    if (aDead && !bDead) return -1;
+    if (!aDead && bDead) return 1;
+
+    // 1. 紧急分数计算
+    double getScore(Quest q) {
+      if (q.type == QuestType.daemon) {
+        final due = q.dueDays ?? 0;
+        return due > 0 ? due * 10.0 : 0.0;
+      } else {
+        final hours = q.hoursUntilDeadline;
+        if (hours < 24 && hours > 0) return 24.0 - hours;
+        return 0.0;
+      }
+    }
+
+    final scoreA = getScore(a);
+    final scoreB = getScore(b);
+
+    if (scoreA != scoreB) return scoreB.compareTo(scoreA); // 降序
+
+    // 2. 默认按标题
+    return a.title.compareTo(b.title);
   }
 
   // 动作：切换过滤器

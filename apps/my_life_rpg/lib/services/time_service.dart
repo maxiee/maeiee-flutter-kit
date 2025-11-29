@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/level_logic.dart';
 import 'quest_service.dart';
 
@@ -109,25 +110,12 @@ class TimeService extends GetxService {
     // 遍历所有任务，找出落在 targetDate 这一天的 Session
     int effectiveSeconds = 0;
 
-    for (var q in _questService.quests) {
-      for (var s in q.sessions) {
-        // [修改点]：处理进行中的任务
-        // 如果 endTime 为 null，说明正在进行，用 CurrentTime 计算临时 duration
-        int duration;
-        if (s.endTime == null) {
-          duration = now.difference(s.startTime).inSeconds;
-        } else {
-          duration = s.durationSeconds;
-        }
+    final allSessions = _questService.quests.expand((q) => q.sessions).toList();
 
-        // 简单的日期匹配逻辑...
-        if (s.startTime.year == targetDate.year &&
-            s.startTime.month == targetDate.month &&
-            s.startTime.day == targetDate.day) {
-          effectiveSeconds += duration;
-        }
-      }
-    }
+    effectiveSeconds = TimeDomain.calculateEffectiveSeconds(
+      allSessions,
+      targetDate,
+    );
     final effectiveMinutes = effectiveSeconds ~/ 60;
 
     // 4. 计算熵 (Entropy)
