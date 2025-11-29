@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import '../../../../controllers/matrix_controller.dart';
@@ -200,9 +201,9 @@ class TemporalMatrix extends StatelessWidget {
           final colorType = c.getQuestColorType(qId);
 
           if (colorType == 'orange') {
-            fillColor = Colors.orangeAccent.withOpacity(0.4);
-            borderColor = Colors.orangeAccent.withOpacity(0.5);
-            textColor = Colors.orangeAccent;
+            fillColor = AppColors.accentMain.withOpacity(0.4);
+            borderColor = AppColors.accentMain.withOpacity(0.5);
+            textColor = AppColors.accentMain;
           } else {
             fillColor = Colors.cyanAccent.withOpacity(0.4);
             borderColor = Colors.cyanAccent.withOpacity(0.5);

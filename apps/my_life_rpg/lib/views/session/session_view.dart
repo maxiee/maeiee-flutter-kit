@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/widgets/rpg_container.dart';
 import '../../controllers/session_controller.dart';
 import '../../models/quest.dart';
 
@@ -105,13 +107,13 @@ class SessionView extends StatelessWidget {
                     fontFamily: 'Courier',
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orangeAccent.withOpacity(
+                    color: AppColors.accentMain.withOpacity(
                       c.pulseAnimation.value,
                     ), // 呼吸效果
                     letterSpacing: 6,
                     shadows: [
                       BoxShadow(
-                        color: Colors.orangeAccent.withOpacity(
+                        color: AppColors.accentMain.withOpacity(
                           0.3 * c.pulseAnimation.value,
                         ),
                         blurRadius: 12,
@@ -199,11 +201,7 @@ class SessionView extends StatelessWidget {
   }
 
   Widget _buildCommandDeck(SessionController c) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A1A1A),
-        border: Border(top: BorderSide(color: Colors.white10)),
-      ),
+    return RpgContainer(
       child: Column(
         children: [
           // 1. Macros Bar (宏指令栏)

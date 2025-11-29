@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/theme/app_text_styles.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/quest.dart';
 import '../../session/session_view.dart';
@@ -128,7 +130,7 @@ class MissionCard extends StatelessWidget {
                               child: Text(
                                 quest.projectName!,
                                 style: const TextStyle(
-                                  color: Colors.orangeAccent,
+                                  color: AppColors.accentMain,
                                   fontSize: 9,
                                 ),
                               ),
@@ -210,13 +212,7 @@ class MissionCard extends StatelessWidget {
                       ),
 
                       // 任务标题
-                      Text(
-                        quest.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
+                      Text(quest.title, style: AppTextStyles.body),
                     ],
                   ),
                 ),

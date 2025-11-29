@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 import '../../../models/quest.dart';
@@ -28,7 +29,7 @@ class _QuestEditorState extends State<QuestEditor> {
   @override
   Widget build(BuildContext context) {
     final isDaemon = widget.type == QuestType.daemon;
-    final color = isDaemon ? Colors.cyanAccent : Colors.orangeAccent;
+    final color = isDaemon ? Colors.cyanAccent : AppColors.accentMain;
 
     return Dialog(
       backgroundColor: const Color(0xFF1E1E1E),

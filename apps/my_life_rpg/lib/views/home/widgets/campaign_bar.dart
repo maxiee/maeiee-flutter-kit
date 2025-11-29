@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 
@@ -27,7 +28,7 @@ class CampaignBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF252525),
-        border: Border.all(color: Colors.orangeAccent.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accentMain.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -37,7 +38,7 @@ class CampaignBar extends StatelessWidget {
           Text(
             p.title,
             style: const TextStyle(
-              color: Colors.orangeAccent,
+              color: AppColors.accentMain,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import '../../../models/quest.dart';
 
 class ProjectCard extends StatelessWidget {
@@ -28,12 +29,12 @@ class ProjectCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF333333),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.orangeAccent),
+              border: Border.all(color: AppColors.accentMain),
             ),
             child: Text(
               "Lv$level",
               style: const TextStyle(
-                color: Colors.orangeAccent,
+                color: AppColors.accentMain,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),

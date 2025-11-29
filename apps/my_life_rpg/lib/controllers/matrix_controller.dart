@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import '../models/quest.dart';
@@ -110,7 +111,7 @@ class MatrixController extends GetxController {
               Text(
                 "ALLOCATE TIME SEGMENT",
                 style: const TextStyle(
-                  color: Colors.orangeAccent,
+                  color: AppColors.accentMain,
                   fontFamily: 'Courier',
                   fontWeight: FontWeight.bold,
                 ),
@@ -249,7 +250,7 @@ class MatrixController extends GetxController {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
+                      backgroundColor: AppColors.accentMain,
                       foregroundColor: Colors.black,
                     ),
                     onPressed: () {
@@ -306,7 +307,7 @@ class MatrixController extends GetxController {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isActive ? Colors.orangeAccent : Colors.transparent,
+              color: isActive ? AppColors.accentMain : Colors.transparent,
               width: 2,
             ),
           ),
@@ -314,7 +315,7 @@ class MatrixController extends GetxController {
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.orangeAccent : Colors.grey,
+            color: isActive ? AppColors.accentMain : Colors.grey,
             fontFamily: 'Courier',
             fontWeight: FontWeight.bold,
           ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/widgets/rpg_container.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
@@ -13,11 +15,7 @@ class MissionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return RpgContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,7 +55,7 @@ class MissionPanel extends StatelessWidget {
                     // 2. Mission Button (Orange)
                     IconButton(
                       icon: const Icon(Icons.add_task, size: 20),
-                      color: Colors.orangeAccent,
+                      color: AppColors.accentMain,
                       tooltip: "Deploy Mission (普通任务)",
                       constraints: const BoxConstraints(), // 紧凑
                       padding: const EdgeInsets.all(8),

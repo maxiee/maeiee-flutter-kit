@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 
 class PlayerHud extends StatelessWidget {
@@ -209,7 +210,7 @@ class PlayerHud extends StatelessWidget {
           () => Text(
             t.timeToSleep.value,
             style: const TextStyle(
-              color: Colors.orangeAccent,
+              color: AppColors.accentMain,
               fontSize: 20,
               fontFamily: 'Courier',
               fontWeight: FontWeight.bold,
