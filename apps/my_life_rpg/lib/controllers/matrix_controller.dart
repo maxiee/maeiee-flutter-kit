@@ -4,6 +4,7 @@ import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
+import 'package:my_life_rpg/views/home/widgets/matrix/time_allocation_dialog.dart';
 import '../models/quest.dart';
 
 class MatrixController extends GetxController {
@@ -14,11 +15,6 @@ class MatrixController extends GetxController {
   // 交互状态
   final selectionStart = RxnInt(); // 第一次点击的格子索引
   final selectionEnd = RxnInt(); // 第二次点击的格子索引
-
-  // 弹窗里的状态
-  final RxString selectedQuestId = ''.obs;
-  final RxString newQuestTitle = ''.obs;
-  final RxBool isCreatingNew = false.obs;
 
   void onBlockTap(int index) {
     final state = _timeService.timeBlocks[index];
@@ -110,19 +106,15 @@ class MatrixController extends GetxController {
     return stateA.occupiedSessionIds.last == stateB.occupiedSessionIds.last;
   }
 
-  void _showAddLogDialog(int start, int end) {
-    // 1. 计算具体的 DateTime 对象 (基于 selectedDate)
+  void _showAddLogDialog(int start, int end) async {
+    // 1. 计算时间 (逻辑保持不变)
     final date = _timeService.selectedDate.value;
     final startH = start ~/ 4;
     final startM = (start % 4) * 15;
     final endH = (end + 1) ~/ 4;
-    final endM =
-        ((end + 1) % 4) * 15; // 注意这里如果是 24:00 需要特殊处理，DateTime支持 hour=24 自动进位吗？
-    // DateTime 的 hour 范围是 0-23。如果 endBlock 是 95，结束时间是次日 00:00。
+    final endM = ((end + 1) % 4) * 15;
 
-    // 构造 DateTime
     final startTime = DateTime(date.year, date.month, date.day, startH, startM);
-    // 处理跨天逻辑 (24:00)
     DateTime endTime;
     if (endH == 24) {
       endTime = DateTime(date.year, date.month, date.day + 1, 0, 0);
@@ -133,220 +125,38 @@ class MatrixController extends GetxController {
     final timeStr =
         "${_fmt(startH)}:${_fmt(startM)} - ${_fmt(endH)}:${_fmt(endM)}";
 
-    // 默认选中第一个任务 (如果有)
-    if (_questService.quests.isNotEmpty) {
-      selectedQuestId.value = _questService.quests.first.id;
-    }
-
-    Get.dialog(
-      Dialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: Colors.white24),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                "ALLOCATE TIME SEGMENT",
-                style: const TextStyle(
-                  color: AppColors.accentMain,
-                  fontFamily: 'Courier',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                timeStr,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontFamily: 'Courier',
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Tabs (Switch between Existing / New)
-              Obx(
-                () => Row(
-                  children: [
-                    _buildTab(
-                      "EXISTING QUEST",
-                      !isCreatingNew.value,
-                      () => isCreatingNew.value = false,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildTab(
-                      "CREATE NEW",
-                      isCreatingNew.value,
-                      () => isCreatingNew.value = true,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Content
-              Obx(() {
-                if (isCreatingNew.value) {
-                  // Mode: Create New
-                  return TextField(
-                    onChanged: (v) => newQuestTitle.value = v,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Courier',
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: "NEW QUEST TITLE",
-                      labelStyle: TextStyle(
-                        color: Colors.grey,
-                        fontFamily: 'Courier',
-                      ),
-                      filled: true,
-                      fillColor: Colors.black38,
-                      border: OutlineInputBorder(),
-                    ),
-                    autofocus: true,
-                  );
-                } else {
-                  // Mode: Select Existing
-                  // 过滤掉已完成的，或者只显示最近活跃的？ MVP 显示全部 active
-                  final activeQuests = _questService.quests
-                      .where((q) => !q.isCompleted)
-                      .toList();
-
-                  if (activeQuests.isEmpty) {
-                    return const Text(
-                      "NO ACTIVE QUESTS. CREATE NEW ONE.",
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontFamily: 'Courier',
-                      ),
-                    );
-                  }
-
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black38,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value:
-                            activeQuests.any(
-                              (q) => q.id == selectedQuestId.value,
-                            )
-                            ? selectedQuestId.value
-                            : null,
-                        dropdownColor: const Color(0xFF252525),
-                        isExpanded: true,
-                        items: activeQuests
-                            .map(
-                              (q) => DropdownMenuItem(
-                                value: q.id,
-                                child: Text(
-                                  q.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: 'Courier',
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) selectedQuestId.value = val;
-                        },
-                      ),
-                    ),
-                  );
-                }
-              }),
-
-              const SizedBox(height: 24),
-
-              // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Get.back();
-                      selectionStart.value = null;
-                      selectionEnd.value = null;
-                    },
-                    child: const Text(
-                      "CANCEL",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontFamily: 'Courier',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentMain,
-                      foregroundColor: Colors.black,
-                    ),
-                    onPressed: () {
-                      // 1. 先捕获输入值 (防止关掉弹窗后 Controller 被销毁取不到值)
-                      final isNew = isCreatingNew.value;
-                      final newTitle = newQuestTitle.value;
-                      final qId = selectedQuestId.value;
-
-                      // 2. [关键修改] 先关闭当前弹窗！
-                      // 这样能确保 UI 堆栈回到 HomeView，然后再叠加 LevelUpOverlay
-                      Get.back();
-
-                      // 重置选择状态
-                      selectionStart.value = null;
-                      selectionEnd.value = null;
-
-                      // 3. 后执行业务逻辑
-                      if (isNew) {
-                        if (newTitle.trim().isEmpty) return;
-
-                        // 这里的逻辑稍微调整一下，因为 addNewQuest 现在可能返回 void 或者对象
-                        // 我们需要确保逻辑连贯
-                        final newQ = _questService.addNewQuest(
-                          title: newTitle,
-                          type: QuestType.mission,
-                        );
-
-                        _questService.manualAllocate(
-                          newQ.id,
-                          startTime,
-                          endTime,
-                        );
-                      } else {
-                        if (qId.isEmpty) return;
-                        _questService.manualAllocate(qId, startTime, endTime);
-                      }
-                    },
-                    child: const Text(
-                      "CONFIRM",
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    // 2. [重构点] 调用组件化 Dialog
+    // 使用 await 等待用户操作结果
+    final result = await Get.dialog(
+      TimeAllocationDialog(
+        timeRangeText: timeStr,
+        startTime: startTime,
+        endTime: endTime,
+        questService: _questService,
       ),
+      barrierColor: Colors.black54,
     );
+
+    // 3. 处理结果
+    // Reset selection regardless of result
+    selectionStart.value = null;
+    selectionEnd.value = null;
+
+    if (result != null && result is Map) {
+      final isNew = result['isNew'] as bool;
+
+      if (isNew) {
+        final title = result['title'] as String;
+        final newQ = _questService.addNewQuest(
+          title: title,
+          type: QuestType.mission,
+        );
+        _questService.manualAllocate(newQ.id, startTime, endTime);
+      } else {
+        final qId = result['id'] as String;
+        _questService.manualAllocate(qId, startTime, endTime);
+      }
+    }
   }
 
   Widget _buildTab(String label, bool isActive, VoidCallback onTap) {
