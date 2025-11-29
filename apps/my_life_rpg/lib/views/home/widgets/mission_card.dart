@@ -26,141 +26,152 @@ class MissionCard extends StatelessWidget {
         borderRadius: AppSpacing.borderRadiusMd,
         border: Border.all(color: AppColors.borderDim),
       ),
-      child: IntrinsicHeight(
-        // 让子元素高度一致
-        child: Row(
-          children: [
-            // 1. Checkbox / Reset Button
-            InkWell(
-              onTap: () => q.toggleQuestCompletion(quest.id),
-              onLongPress: () {
-                // [新增]：长按编辑
-                Get.dialog(
-                  QuestEditor(quest: quest),
-                ); // 需要修改 QuestEditor 支持传入 quest
-              },
-              child: Container(
-                width: 40,
-                color: isDaemon
-                    ? AppColors.accentSystem.withOpacity(0.1) // 循环任务用青色背景区分
-                    : Colors.white.withOpacity(0.02),
-                alignment: Alignment.center,
-                child: isDaemon
-                    ? Icon(
-                        Icons.refresh,
-                        size: AppSpacing.iconMd - 2,
-                        color: AppColors.accentSystem,
-                      ) // 循环图标
-                    : Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: AppSpacing.borderRadiusSm,
-                        ),
-                      ),
-              ),
-            ),
-
-            // 分割线
-            const RpgVerticalDivider(width: 1),
-
-            // 2. Content Area (Go to Session)
-            Expanded(
-              child: InkWell(
-                onTap: () async {
-                  final result = await Get.to(
-                    () => SessionView(),
-                    arguments: quest,
-                  );
-
-                  if (result != null && result is int) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "任务结算",
-                                style: AppTextStyles.body.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.accentSafe,
-                                ),
-                              ),
-                              Text(
-                                "投入了 ${(result / 60).toStringAsFixed(1)} 分钟",
-                                style: AppTextStyles.body,
-                              ),
-                            ],
-                          ),
-                          backgroundColor: AppColors.bgPanel,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppSpacing.borderRadiusMd,
-                            side: const BorderSide(color: AppColors.borderDim),
-                          ),
-                          margin: AppSpacing.paddingLg,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          // 如果有关联项目，显示 Tag
-                          if (quest.projectName != null)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.xs,
-                              ),
-                              child: RpgTag(
-                                label: quest.projectName!,
-                                color: AppColors.accentMain,
-                              ),
+      // 使用 ClipRRect 确保水波纹不溢出圆角
+      child: ClipRRect(
+        borderRadius: AppSpacing.borderRadiusMd,
+        child: IntrinsicHeight(
+          // 让子元素高度一致
+          child: Row(
+            children: [
+              // 1. 左侧 Checkbox 区域 (仅响应点击)
+              Material(
+                child: InkWell(
+                  onTap: () => q.toggleQuestCompletion(quest.id),
+                  child: Container(
+                    width: 40,
+                    color: isDaemon
+                        ? AppColors.accentSystem.withOpacity(0.1) // 循环任务用青色背景区分
+                        : Colors.white.withOpacity(0.02),
+                    alignment: Alignment.center,
+                    child: isDaemon
+                        ? Icon(
+                            Icons.refresh,
+                            size: AppSpacing.iconMd - 2,
+                            color: AppColors.accentSystem,
+                          ) // 循环图标
+                        : Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: AppSpacing.borderRadiusSm,
                             ),
-                          // Daemon Urgency Tag
-                          if (isDaemon && dueDays > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.xs,
-                              ),
-                              child: RpgTag(
-                                label: "OVERDUE +$dueDays",
-                                color: AppColors.accentDanger,
-                              ),
-                            ),
-                          if (quest.deadline != null) ...[_buildDeadlineTag()],
-                        ],
-                      ),
-
-                      // 任务标题
-                      Text(quest.title, style: AppTextStyles.body),
-                    ],
+                          ),
                   ),
                 ),
               ),
-            ),
 
-            // 3. Time Info
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.md),
-              child: Text(
-                "${(quest.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
-                style: AppTextStyles.caption.copyWith(color: Colors.grey),
+              // 分割线
+              const RpgVerticalDivider(width: 1),
+
+              // 2. Content Area (Go to Session)
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      final result = await Get.to(
+                        () => SessionView(),
+                        arguments: quest,
+                      );
+
+                      if (result != null && result is int) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "任务结算",
+                                    style: AppTextStyles.body.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.accentSafe,
+                                    ),
+                                  ),
+                                  Text(
+                                    "投入了 ${(result / 60).toStringAsFixed(1)} 分钟",
+                                    style: AppTextStyles.body,
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: AppColors.bgPanel,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppSpacing.borderRadiusMd,
+                                side: const BorderSide(
+                                  color: AppColors.borderDim,
+                                ),
+                              ),
+                              margin: AppSpacing.paddingLg,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    // 长按 -> 编辑
+                    onLongPress: () {
+                      Get.dialog(QuestEditor(quest: quest));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.md,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              // 如果有关联项目，显示 Tag
+                              if (quest.projectName != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.xs,
+                                  ),
+                                  child: RpgTag(
+                                    label: quest.projectName!,
+                                    color: AppColors.accentMain,
+                                  ),
+                                ),
+                              // Daemon Urgency Tag
+                              if (isDaemon && dueDays > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.xs,
+                                  ),
+                                  child: RpgTag(
+                                    label: "OVERDUE +$dueDays",
+                                    color: AppColors.accentDanger,
+                                  ),
+                                ),
+                              if (quest.deadline != null) ...[
+                                _buildDeadlineTag(),
+                              ],
+                            ],
+                          ),
+
+                          // 任务标题
+                          Text(quest.title, style: AppTextStyles.body),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+
+              // 3. Time Info
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.md),
+                child: Text(
+                  "${(quest.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
+                  style: AppTextStyles.caption.copyWith(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
