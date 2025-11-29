@@ -231,6 +231,30 @@ class QuestService extends GetxService {
     }
   }
 
+  // [新增]：根据 session ID 查找任务和 Session 对象
+  // 返回 Record (Quest, QuestSession) 或者 null
+  ({Quest quest, QuestSession session})? getSessionById(String sessionId) {
+    for (var q in quests) {
+      for (var s in q.sessions) {
+        if (s.id == sessionId) {
+          return (quest: q, session: s);
+        }
+      }
+    }
+    return null;
+  }
+
+  // [新增]：删除指定 Session
+  void deleteSession(String questId, String sessionId) {
+    final q = quests.firstWhereOrNull((e) => e.id == questId);
+    if (q == null) return;
+
+    q.sessions.removeWhere((s) => s.id == sessionId);
+
+    // 触发更新
+    notifyUpdate();
+  }
+
   // 新增：Mock 数据加载
   void loadMockData() {
     projects.addAll([

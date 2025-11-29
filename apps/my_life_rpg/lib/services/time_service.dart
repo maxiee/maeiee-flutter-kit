@@ -5,9 +5,12 @@ import 'quest_service.dart';
 
 class BlockState {
   final List<String> occupiedQuestIds;
+  final List<String> occupiedSessionIds; // [新增]
   final List<String> deadlineQuestIds;
+
   BlockState({
     this.occupiedQuestIds = const [],
+    this.occupiedSessionIds = const [], // [新增]
     this.deadlineQuestIds = const [],
   });
   bool get isEmpty => occupiedQuestIds.isEmpty && deadlineQuestIds.isEmpty;
@@ -227,6 +230,7 @@ class TimeService extends GetxService {
               final old = timeBlocks[blockIndex];
               timeBlocks[blockIndex] = BlockState(
                 occupiedQuestIds: [...old.occupiedQuestIds, q.id],
+                occupiedSessionIds: [...old.occupiedSessionIds, s.id], // [新增]
                 deadlineQuestIds: old.deadlineQuestIds,
               );
             }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
+import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
 import '../models/quest.dart';
 
 class MatrixController extends GetxController {
@@ -26,8 +27,27 @@ class MatrixController extends GetxController {
     return quest.type == QuestType.daemon ? 'cyan' : 'orange';
   }
 
-  // 处理点击
   void onBlockTap(int index) {
+    final state = _timeService.timeBlocks[index];
+
+    // [修改点]：分支判断
+    if (state.occupiedSessionIds.isNotEmpty) {
+      // 1. 点击了已占用的格子 -> 查看详情
+      // 获取最上层的 session ID
+      final sessionId = state.occupiedSessionIds.last;
+      _showSessionDetail(sessionId);
+
+      // 清除之前的补录选择状态，避免混淆
+      selectionStart.value = null;
+      selectionEnd.value = null;
+    } else {
+      // 2. 点击了空白格子 -> 走原来的补录逻辑
+      _handleEmptyBlockTap(index);
+    }
+  }
+
+  // 处理点击
+  void _handleEmptyBlockTap(int index) {
     // 状态机：
     // 0. 初始状态 -> 设置 Start
     // 1. 已有 Start -> 设置 End -> 触发弹窗
@@ -56,6 +76,20 @@ class MatrixController extends GetxController {
       selectionStart.value = index;
       selectionEnd.value = null;
     }
+  }
+
+  // [新增]：显示详情弹窗
+  void _showSessionDetail(String sessionId) {
+    final result = _questService.getSessionById(sessionId);
+    if (result == null) return;
+
+    final quest = result.quest;
+    final session = result.session;
+
+    Get.dialog(
+      SessionInspector(quest: quest, session: session),
+      barrierColor: Colors.black54,
+    );
   }
 
   String _fmt(int n) => n.toString().padLeft(2, '0');
