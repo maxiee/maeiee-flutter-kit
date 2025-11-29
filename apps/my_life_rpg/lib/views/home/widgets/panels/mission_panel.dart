@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
-import '../../../controllers/game_controller.dart';
-import '../../../models/quest.dart';
+import '../../../../models/quest.dart';
 // import 'mission_card.dart'; // 稍后实现
 
 class MissionPanel extends StatelessWidget {
-  final GameController c = Get.find();
+  final QuestService q = Get.find();
+
+  MissionPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,7 @@ class MissionPanel extends StatelessWidget {
           Expanded(
             child: Obx(() {
               // 混合筛选逻辑
-              final activeTasks = c.quests.where((q) {
+              final activeTasks = q.quests.where((q) {
                 if (q.type == QuestType.mission) {
                   return !q.isCompleted; // 未完成的普通任务
                 } else {

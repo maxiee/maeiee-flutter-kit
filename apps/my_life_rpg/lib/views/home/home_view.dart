@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
-import 'package:my_life_rpg/views/home/widgets/temporal_matrix.dart';
+import 'package:my_life_rpg/views/home/widgets/matrix/temporal_matrix.dart';
 import '../../controllers/game_controller.dart';
-import 'widgets/player_hud.dart';
-import 'widgets/mission_panel.dart';
+import 'widgets/hud/player_hud.dart';
+import 'widgets/panels/mission_panel.dart';
 
 class HomeView extends StatelessWidget {
   final GameController c = Get.put(GameController());

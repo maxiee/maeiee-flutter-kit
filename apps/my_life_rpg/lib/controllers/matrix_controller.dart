@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'game_controller.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/time_service.dart';
 import '../models/quest.dart';
 
 class MatrixController extends GetxController {
-  final GameController _game = Get.find();
+  // 依赖注入：直接获取 Service
+  final QuestService _questService = Get.find();
+  final TimeService _timeService = Get.find();
 
   // 交互状态
   final selectionStart = RxnInt(); // 第一次点击的格子索引
@@ -17,7 +20,7 @@ class MatrixController extends GetxController {
 
   // 新方法：直接根据 Quest ID 获取颜色类型
   String? getQuestColorType(String questId) {
-    final quest = _game.quests.firstWhereOrNull((q) => q.id == questId);
+    final quest = _questService.quests.firstWhereOrNull((q) => q.id == questId);
     if (quest == null) return null;
     return quest.type == QuestType.daemon ? 'cyan' : 'orange';
   }
@@ -64,7 +67,7 @@ class MatrixController extends GetxController {
 
   void _showAddLogDialog(int start, int end) {
     // 1. 计算具体的 DateTime 对象 (基于 selectedDate)
-    final date = _game.selectedDate.value;
+    final date = _timeService.selectedDate.value;
     final startH = start ~/ 4;
     final startM = (start % 4) * 15;
     final endH = (end + 1) ~/ 4;
@@ -86,8 +89,8 @@ class MatrixController extends GetxController {
         "${_fmt(startH)}:${_fmt(startM)} - ${_fmt(endH)}:${_fmt(endM)}";
 
     // 默认选中第一个任务 (如果有)
-    if (_game.quests.isNotEmpty) {
-      selectedQuestId.value = _game.quests.first.id;
+    if (_questService.quests.isNotEmpty) {
+      selectedQuestId.value = _questService.quests.first.id;
     }
 
     Get.dialog(
@@ -168,7 +171,7 @@ class MatrixController extends GetxController {
                 } else {
                   // Mode: Select Existing
                   // 过滤掉已完成的，或者只显示最近活跃的？ MVP 显示全部 active
-                  final activeQuests = _game.quests
+                  final activeQuests = _questService.quests
                       .where((q) => !q.isCompleted)
                       .toList();
 
@@ -253,17 +256,21 @@ class MatrixController extends GetxController {
                       if (isCreatingNew.value) {
                         // 1. 新建任务
                         if (newQuestTitle.value.trim().isEmpty) return;
-                        _game.addNewQuest(
+                        _questService.addNewQuest(
                           title: newQuestTitle.value,
                           type: QuestType.mission,
                         ); // 没法拿到返回值ID，这是个小问题
                         // 临时解法：addNewQuest 改为返回 Quest 对象，或者获取 quests.last
-                        final newQ = _game.quests.last;
-                        _game.manualAllocate(newQ.id, startTime, endTime);
+                        final newQ = _questService.quests.last;
+                        _questService.manualAllocate(
+                          newQ.id,
+                          startTime,
+                          endTime,
+                        );
                       } else {
                         // 2. 使用现有任务
                         if (selectedQuestId.value.isEmpty) return;
-                        _game.manualAllocate(
+                        _questService.manualAllocate(
                           selectedQuestId.value,
                           startTime,
                           endTime,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../../controllers/game_controller.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 import '../../../models/quest.dart';
 
@@ -15,7 +15,7 @@ class QuestEditor extends StatefulWidget {
 }
 
 class _QuestEditorState extends State<QuestEditor> {
-  final GameController c = Get.find();
+  final QuestService q = Get.find();
   final titleController = TextEditingController();
 
   // 表单状态
@@ -136,7 +136,7 @@ class _QuestEditorState extends State<QuestEditor> {
                         value: null,
                         child: Text("STANDALONE (无归属)"),
                       ),
-                      ...c.projects.map(
+                      ...q.projects.map(
                         (p) => DropdownMenuItem(value: p, child: Text(p.title)),
                       ),
                     ],
@@ -418,7 +418,7 @@ class _QuestEditorState extends State<QuestEditor> {
     if (title.isEmpty) return;
 
     // 调用 Controller 添加逻辑
-    c.addNewQuest(
+    q.addNewQuest(
       title: title,
       type: widget.type,
       project: selectedProject,

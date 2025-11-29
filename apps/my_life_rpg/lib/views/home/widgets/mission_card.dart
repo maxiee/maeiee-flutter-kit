@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../../controllers/game_controller.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/quest.dart';
 import '../../session/session_view.dart';
 
 class MissionCard extends StatelessWidget {
   final Quest quest;
-  final GameController c = Get.find();
+  final QuestService q = Get.find();
 
   MissionCard({Key? key, required this.quest}) : super(key: key);
 
@@ -29,7 +29,7 @@ class MissionCard extends StatelessWidget {
           children: [
             // 1. Checkbox / Reset Button
             InkWell(
-              onTap: () => c.toggleQuestCompletion(quest.id),
+              onTap: () => q.toggleQuestCompletion(quest.id),
               child: Container(
                 width: 40,
                 color: isDaemon

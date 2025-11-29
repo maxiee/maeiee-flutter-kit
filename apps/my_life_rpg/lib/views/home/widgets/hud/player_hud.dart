@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/game_controller.dart';
+import 'package:my_life_rpg/services/time_service.dart';
 
 class PlayerHud extends StatelessWidget {
-  final GameController c = Get.find();
+  final TimeService t = Get.find(); // 直接找 TimeService
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class PlayerHud extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                "${c.dailyXp.value}",
+                "${t.dailyXp.value}",
                 style: const TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 24,
@@ -78,7 +78,7 @@ class PlayerHud extends StatelessWidget {
         const SizedBox(height: 2),
         Obx(
           () => Text(
-            "DONE: ${c.tasksCompletedToday.value} MISSIONS",
+            "DONE: ${t.tasksCompletedToday.value} MISSIONS",
             style: const TextStyle(
               color: Colors.white38,
               fontSize: 10,
@@ -122,7 +122,7 @@ class PlayerHud extends StatelessWidget {
               children: [
                 // 1. 有效时间 (Green)
                 Expanded(
-                  flex: (c.effectiveRatio.value * 1000).toInt(),
+                  flex: (t.effectiveRatio.value * 1000).toInt(),
                   child: Container(
                     decoration: const BoxDecoration(
                       color: Colors.greenAccent,
@@ -135,12 +135,12 @@ class PlayerHud extends StatelessWidget {
                 // 2. 熵/耗散 (Red/Dark)
                 // 这是最扎心的部分：如果你没记录，这里就是一大片红色
                 Expanded(
-                  flex: (c.entropyRatio.value * 1000).toInt(),
+                  flex: (t.entropyRatio.value * 1000).toInt(),
                   child: Container(color: const Color(0xFF591C1C)), // 暗红色
                 ),
                 // 3. 未来 (Grey)
                 Expanded(
-                  flex: (c.futureRatio.value * 1000).toInt(),
+                  flex: (t.futureRatio.value * 1000).toInt(),
                   child: Container(
                     decoration: const BoxDecoration(
                       color: Color(0xFF333333),
@@ -207,7 +207,7 @@ class PlayerHud extends StatelessWidget {
         const SizedBox(height: 4),
         Obx(
           () => Text(
-            c.timeToSleep.value,
+            t.timeToSleep.value,
             style: const TextStyle(
               color: Colors.orangeAccent,
               fontSize: 20,

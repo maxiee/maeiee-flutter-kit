@@ -104,7 +104,7 @@ class _FlutterD4rtCustomSimplePageState
       final result = await _interpreter.execute(code, 'build', args: [context]);
 
       setState(() {
-        _interpretedWidget = result as Widget;
+        _interpretedWidget = result;
       });
     } catch (e) {
       print('Initialization Error: $e');

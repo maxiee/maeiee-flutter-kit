@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/game_controller.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 
 class CampaignBar extends StatelessWidget {
-  final GameController c = Get.find();
+  final QuestService q = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +13,9 @@ class CampaignBar extends StatelessWidget {
       child: Obx(
         () => ListView.separated(
           scrollDirection: Axis.horizontal,
-          itemCount: c.projects.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
-          itemBuilder: (ctx, i) => _buildProjectChip(c.projects[i]),
+          itemCount: q.projects.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (ctx, i) => _buildProjectChip(q.projects[i]),
         ),
       ),
     );

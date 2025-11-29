@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/game_controller.dart';
-import '../../../controllers/matrix_controller.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/time_service.dart';
+import '../../../../controllers/matrix_controller.dart';
 import 'package:intl/intl.dart';
 
 class TemporalMatrix extends StatelessWidget {
-  final GameController game = Get.find();
+  // 1. 依赖注入：不再使用 GameController
+  final QuestService questService = Get.find();
+  final TimeService timeService = Get.find();
   final MatrixController c = Get.put(MatrixController());
 
   TemporalMatrix({super.key});
@@ -25,14 +28,16 @@ class TemporalMatrix extends StatelessWidget {
 
           // 1.5 Day Deadlines Marquee
           Obx(() {
-            final dayDeadlines = game.quests
+            final selected = timeService.selectedDate.value;
+
+            final dayDeadlines = questService.quests
                 .where(
                   (q) =>
                       q.deadline != null &&
                       q.isAllDayDeadline &&
-                      q.deadline!.year == game.selectedDate.value.year &&
-                      q.deadline!.month == game.selectedDate.value.month &&
-                      q.deadline!.day == game.selectedDate.value.day,
+                      q.deadline!.year == selected.year &&
+                      q.deadline!.month == selected.month &&
+                      q.deadline!.day == selected.day,
                 )
                 .toList();
 
@@ -97,15 +102,15 @@ class TemporalMatrix extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left, color: Colors.grey, size: 20),
-            onPressed: () => game.changeDate(
-              game.selectedDate.value.subtract(const Duration(days: 1)),
+            onPressed: () => timeService.changeDate(
+              timeService.selectedDate.value.subtract(const Duration(days: 1)),
             ),
             constraints: const BoxConstraints(),
             padding: EdgeInsets.zero,
           ),
           Obx(
             () => Text(
-              DateFormat('yyyy-MM-dd').format(game.selectedDate.value),
+              DateFormat('yyyy-MM-dd').format(timeService.selectedDate.value),
               style: const TextStyle(
                 color: Colors.white70,
                 fontFamily: 'Courier',
@@ -115,8 +120,8 @@ class TemporalMatrix extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-            onPressed: () => game.changeDate(
-              game.selectedDate.value.add(const Duration(days: 1)),
+            onPressed: () => timeService.changeDate(
+              timeService.selectedDate.value.add(const Duration(days: 1)),
             ),
             constraints: const BoxConstraints(),
             padding: EdgeInsets.zero,
@@ -165,7 +170,7 @@ class TemporalMatrix extends StatelessWidget {
 
     return Expanded(
       child: Obx(() {
-        final state = game.timeBlocks[index];
+        final state = timeService.timeBlocks[index];
         final isSelected = c.isSelected(index);
 
         // 1. 确定样式
@@ -177,7 +182,9 @@ class TemporalMatrix extends StatelessWidget {
         // 优先级 1: Deadline (最高)
         if (state.deadlineQuestIds.isNotEmpty) {
           final qId = state.deadlineQuestIds.last;
-          final quest = game.quests.firstWhereOrNull((q) => q.id == qId);
+          final quest = questService.quests.firstWhereOrNull(
+            (q) => q.id == qId,
+          );
 
           fillColor = Colors.redAccent.withOpacity(0.2); // 红底
           borderColor = Colors.redAccent;
@@ -187,7 +194,9 @@ class TemporalMatrix extends StatelessWidget {
         // 优先级 2: Session (占用)
         else if (state.occupiedQuestIds.isNotEmpty) {
           final qId = state.occupiedQuestIds.last;
-          final quest = game.quests.firstWhereOrNull((q) => q.id == qId);
+          final quest = questService.quests.firstWhereOrNull(
+            (q) => q.id == qId,
+          );
           final colorType = c.getQuestColorType(qId);
 
           if (colorType == 'orange') {

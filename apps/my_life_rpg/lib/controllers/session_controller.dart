@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:my_life_rpg/services/quest_service.dart';
 import '../models/quest.dart';
 // 确保引入了 game_controller，如果你还没用到它可以暂时注释掉，
 // 但为了回写数据（endSession），后续肯定需要它。
@@ -10,8 +11,7 @@ import 'game_controller.dart';
 
 class SessionController extends GetxController
     with GetTickerProviderStateMixin {
-  // 引用 GameController 用于更新数据
-  final GameController _gameController = Get.find();
+  final QuestService _questService = Get.find();
 
   late Quest quest;
   // 新增：当前会话对象
@@ -148,7 +148,7 @@ class SessionController extends GetxController
     quest.sessions.add(currentSession);
 
     // 3. 刷新数据
-    _gameController.onSessionFinished();
+    _questService.notifyUpdate();
 
     // result: true 表示“正常结算退出”，而不是直接按返回键
     Get.back(result: durationSeconds.value);
