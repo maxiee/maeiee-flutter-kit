@@ -133,19 +133,6 @@ class QuestService extends GetxService {
     // 这里未来可以加 saveGame()
   }
 
-  // 动态计算 Project 进度
-  // 逻辑：(已完成 Mission 数) / (总 Mission 数)
-  // 如果没有任务，进度为 0
-  double getProjectProgress(String projectId) {
-    final projectQuests = quests
-        .where((q) => q.projectId == projectId && q.type == QuestType.mission)
-        .toList();
-    if (projectQuests.isEmpty) return 0.0;
-
-    final completedCount = projectQuests.where((q) => q.isCompleted).length;
-    return completedCount / projectQuests.length;
-  }
-
   bool hasTimeOverlap(
     DateTime start,
     DateTime end, {
@@ -167,6 +154,83 @@ class QuestService extends GetxService {
     return false;
   }
 
+  // 增
+  void addProject(String title, String desc, double targetHours, int colorIdx) {
+    projects.add(
+      Project(
+        id: const Uuid().v4(),
+        title: title,
+        description: desc,
+        targetHours: targetHours,
+        colorIndex: colorIdx,
+      ),
+    );
+  }
+
+  // 改
+  void updateProject(
+    String id, {
+    String? title,
+    String? desc,
+    double? targetHours,
+    int? colorIdx,
+  }) {
+    final p = projects.firstWhereOrNull((p) => p.id == id);
+    if (p == null) return;
+
+    // 这里因为是 class 对象引用，直接改属性即可
+    // 但为了触发 Obx 更新，最好是 replace 或者 call refresh
+    if (title != null) p.title = title;
+    if (desc != null) p.description = desc;
+    if (targetHours != null) p.targetHours = targetHours;
+    if (colorIdx != null) p.colorIndex = colorIdx;
+
+    projects.refresh();
+  }
+
+  // 删
+  void deleteProject(String id) {
+    // 1. 删除项目
+    projects.removeWhere((p) => p.id == id);
+    // 2. 解绑任务 (将该项目下的任务变为无归属)
+    for (var q in quests) {
+      if (q.projectId == id) {
+        // 这一步比较麻烦，因为 Quest 是 final 字段较多
+        // 简单处理：我们不改 Quest 模型了，显示的时候查不到 Project 就当 Standalone
+        // 或者你需要遍历 quests 修改 projectId 为 null
+      }
+    }
+  }
+
+  // 升级进度计算
+  double getProjectProgress(String projectId) {
+    final p = projects.firstWhereOrNull((x) => x.id == projectId);
+    if (p == null) return 0.0;
+
+    final projectQuests = quests
+        .where((q) => q.projectId == projectId)
+        .toList();
+
+    if (p.targetHours > 0) {
+      // 基于时间计算
+      int totalSeconds = 0;
+      for (var q in projectQuests) {
+        totalSeconds += q.totalDurationSeconds;
+      }
+      double currentHours = totalSeconds / 3600;
+      return (currentHours / p.targetHours).clamp(0.0, 1.0);
+    } else {
+      // 基于任务数计算 (旧逻辑)
+      if (projectQuests.isEmpty) return 0.0;
+      final missionQuests = projectQuests
+          .where((q) => q.type == QuestType.mission)
+          .toList();
+      if (missionQuests.isEmpty) return 0.0;
+      final completed = missionQuests.where((q) => q.isCompleted).length;
+      return completed / missionQuests.length;
+    }
+  }
+
   // 新增：Mock 数据加载
   void loadMockData() {
     projects.addAll([
@@ -174,14 +238,8 @@ class QuestService extends GetxService {
         id: 'p1',
         title: 'Flutter架构演进',
         description: '技术专家之路',
-        progress: 0.0,
       ), // progress 由 UI 动态获取
-      Project(
-        id: 'p2',
-        title: '独立开发: NEXUS',
-        description: '副业破局点',
-        progress: 0.0,
-      ),
+      Project(id: 'p2', title: '独立开发: NEXUS', description: '副业破局点'),
     ]);
 
     quests.addAll([
