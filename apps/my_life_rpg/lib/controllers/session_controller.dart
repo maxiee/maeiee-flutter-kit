@@ -19,13 +19,16 @@ class SessionController extends GetxController
   // 计时器状态
   Timer? _timer;
   final durationSeconds = 0.obs;
+  final effectiveSeconds = 0.obs; // [新增] 有效专注时间
+  final isPaused = false.obs; // [新增] 暂停状态
+
+  // 暂停辅助变量
+  DateTime? _pauseStartTime;
 
   // 界面状态
   final textController = TextEditingController();
   final scrollController = ScrollController();
-
-  // 展示用的混合日志列表 (历史 + 新增)
-  final displayLogs = <QuestLog>[].obs;
+  final displayLogs = <QuestLog>[].obs; // 展示用的混合日志列表 (历史 + 新增)
 
   // 动画控制器 (用于呼吸效果)
   late AnimationController pulseController;
@@ -82,12 +85,58 @@ class SessionController extends GetxController
   // [修改点]：基于物理时间的计算
   void _updateDuration() {
     final now = DateTime.now();
-    // 强制转换为秒
-    durationSeconds.value = now.difference(currentSession.startTime).inSeconds;
+    // 物理时长 = 当前 - 开始
+    final total = now.difference(currentSession.startTime).inSeconds;
+
+    // 有效时长 = 物理时长 - 累积暂停
+    // 注意：如果是 Resume 瞬间，pausedSeconds 已经更新了
+    final effective = total - currentSession.pausedSeconds;
+
+    durationSeconds.value = total;
+    effectiveSeconds.value = effective > 0 ? effective : 0;
+
+    // 实时同步给 Model (为了 Crash 安全，虽然有点频繁，但内存操作没事)
+    currentSession.durationSeconds = total;
   }
 
   void stopTimer() {
     _timer?.cancel();
+  }
+
+  // 动作：切换暂停
+  void togglePause() {
+    if (isPaused.value) {
+      _resume();
+    } else {
+      _pause();
+    }
+  }
+
+  void _pause() {
+    isPaused.value = true;
+    _pauseStartTime = DateTime.now();
+
+    // 动画暂停，营造冻结感
+    pulseController.stop();
+
+    // 自动记录一条 Log
+    addLog(content: "--- TACTICAL PAUSE ---", type: LogType.rest);
+  }
+
+  void _resume() {
+    if (_pauseStartTime != null) {
+      final pauseDuration = DateTime.now()
+          .difference(_pauseStartTime!)
+          .inSeconds;
+      currentSession.pausedSeconds += pauseDuration;
+      _pauseStartTime = null;
+    }
+
+    isPaused.value = false;
+    pulseController.repeat(reverse: true);
+
+    // 刷新一下时间，避免跳变
+    _updateDuration();
   }
 
   // 核心操作：添加日志
@@ -154,19 +203,32 @@ class SessionController extends GetxController
     // 1. 停止计时
     stopTimer();
 
+    // 如果是在暂停状态结束的，需要把最后这一段暂停时间加上
+    if (isPaused.value && _pauseStartTime != null) {
+      final pauseDuration = DateTime.now()
+          .difference(_pauseStartTime!)
+          .inSeconds;
+      currentSession.pausedSeconds += pauseDuration;
+    }
+
     // 2. 预计算最终数据 (Snapshot)
     // 此时数据已经写入了 currentSession (因为是对象引用)
     // 但我们需要确保状态是最新的，以便 UI 显示
     final now = DateTime.now();
     currentSession.endTime = now;
-    final duration = now.difference(currentSession.startTime).inSeconds;
-    currentSession.durationSeconds = duration;
+
+    // 最终计算
+    final totalDuration = now.difference(currentSession.startTime).inSeconds;
+    currentSession.durationSeconds = totalDuration;
+
+    // [关键修正] XP 计算应该基于【有效时长】，而不是物理时长
+    final effective = totalDuration - currentSession.pausedSeconds;
 
     // 3. [重构点] 使用策略计算 XP (View Model 预备)
     // 此时尚未确认完成，只计算基础时长 XP
     // 这里的 false 表示 isCompleted=false，结算弹窗里的 Toggle 会决定最终结果
     // 但目前 SessionSummaryView 接收的是一个静态值，我们先按基础值传
-    final xpEarned = StandardXpStrategy.instance.calculate(duration, false);
+    final xpEarned = StandardXpStrategy.instance.calculate(effective, false);
 
     final logsCount = currentSession.logs.length;
     final isDaemon = quest.type == QuestType.daemon;
@@ -178,7 +240,7 @@ class SessionController extends GetxController
     final result = await Get.generalDialog(
       pageBuilder: (ctx, anim1, anim2) {
         return SessionSummaryView(
-          durationSeconds: duration,
+          durationSeconds: effective,
           logsCount: logsCount,
           xpEarned: xpEarned,
           isDaemon: isDaemon,
@@ -228,7 +290,7 @@ class SessionController extends GetxController
     // 延迟极短时间，避免弹窗关闭动画和页面退出动画冲突
     Future.delayed(const Duration(milliseconds: 50), () {
       // 返回 duration 给 MissionCard 做简单的 SnackBar 反馈 (如果是 Save)
-      Get.back(result: shouldSave ? duration : null);
+      Get.back(result: shouldSave ? effective : null);
     });
   }
 

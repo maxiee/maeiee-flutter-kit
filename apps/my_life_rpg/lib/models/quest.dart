@@ -49,7 +49,9 @@ class QuestSession {
   final String id;
   final DateTime startTime;
   DateTime? endTime; // null 表示正在进行中
-  int durationSeconds; // 冗余存一个时长，方便计算
+  int durationSeconds; // 这是总的物理时长 (结束 - 开始)
+  // [新增] 暂停总时长 (秒)
+  int pausedSeconds;
   final List<QuestLog> logs; // 这个时间片内产生的 Log
 
   QuestSession({
@@ -57,15 +59,21 @@ class QuestSession {
     required this.startTime,
     this.endTime,
     this.durationSeconds = 0,
+    this.pausedSeconds = 0,
     List<QuestLog>? logs,
   }) : id = id ?? const Uuid().v4(),
        logs = logs ?? [];
+
+  // 计算属性：有效专注时长 (总时长 - 暂停时长)
+  // 如果正在进行中，需要动态计算
+  int get effectiveSeconds => durationSeconds - pausedSeconds;
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'startTime': startTime.toIso8601String(),
     'endTime': endTime?.toIso8601String(),
     'durationSeconds': durationSeconds,
+    'pausedSeconds': pausedSeconds,
     'logs': logs.map((e) => e.toJson()).toList(),
   };
 
@@ -74,6 +82,7 @@ class QuestSession {
     startTime: DateTime.parse(json['startTime']),
     endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
     durationSeconds: json['durationSeconds'] ?? 0,
+    pausedSeconds: json['pausedSeconds'] ?? 0,
     logs:
         (json['logs'] as List?)?.map((e) => QuestLog.fromJson(e)).toList() ??
         [],

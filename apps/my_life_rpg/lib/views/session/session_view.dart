@@ -6,6 +6,8 @@ import '../../controllers/session_controller.dart';
 import '../../models/quest.dart';
 
 class SessionView extends StatelessWidget {
+  const SessionView({super.key});
+
   @override
   Widget build(BuildContext context) {
     final c = Get.put(SessionController());
@@ -18,8 +20,11 @@ class SessionView extends StatelessWidget {
             // 1. 顶部状态栏 (Header)
             _buildHeader(c),
 
-            // 2. 呼吸计时器 (Pulse Timer)
-            _buildPulseTimer(c),
+            // 2. 呼吸计时器 (Pulse Timer) -> 改为支持点击暂停
+            GestureDetector(
+              onTap: c.togglePause, // 点击整个区域暂停
+              child: _buildPulseTimer(c),
+            ),
 
             const RpgDivider(),
 
@@ -82,42 +87,88 @@ class SessionView extends StatelessWidget {
     return AnimatedBuilder(
       animation: c.pulseAnimation,
       builder: (ctx, child) {
-        return Container(
-          width: double.infinity,
-          padding: AppSpacing.paddingVerticalLg + AppSpacing.paddingVerticalMd,
-          color: const Color(0xFF151515),
-          child: Column(
-            children: [
-              Obx(
-                () => Text(
-                  c.formatDuration(c.durationSeconds.value),
+        return Obx(() {
+          final isPaused = c.isPaused.value;
+          final opacity = isPaused ? 1.0 : c.pulseAnimation.value;
+          final color = isPaused
+              ? AppColors.accentDanger
+              : AppColors.accentMain;
+          final label = isPaused ? "SYSTEM PAUSED" : "SESSION IN PROGRESS";
+
+          return Container(
+            width: double.infinity,
+            padding:
+                AppSpacing.paddingVerticalLg + AppSpacing.paddingVerticalMd,
+            color: isPaused
+                ? const Color(0xFF2A0000)
+                : const Color(0xFF151515), // 暂停变红背景
+            child: Column(
+              children: [
+                // 显示有效时长
+                Text(
+                  c.formatDuration(c.effectiveSeconds.value),
                   style: AppTextStyles.heroNumber.copyWith(
-                    color: AppColors.accentMain.withOpacity(
-                      c.pulseAnimation.value,
-                    ),
+                    color: color.withOpacity(opacity),
                     shadows: [
                       BoxShadow(
-                        color: AppColors.accentMain.withOpacity(
-                          0.3 * c.pulseAnimation.value,
-                        ),
+                        color: color.withOpacity(0.3 * opacity),
                         blurRadius: 12,
                         spreadRadius: 2,
                       ),
                     ],
                   ),
                 ),
-              ),
-              AppSpacing.gapV4,
-              Text(
-                "SESSION IN PROGRESS",
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textDim,
-                  letterSpacing: 2,
+                AppSpacing.gapV4,
+
+                // 状态标签
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isPaused)
+                      const Icon(
+                        Icons.pause,
+                        color: AppColors.accentDanger,
+                        size: 14,
+                      ),
+                    if (isPaused) AppSpacing.gapH8,
+                    Text(
+                      label,
+                      style: AppTextStyles.caption.copyWith(
+                        color: isPaused
+                            ? AppColors.accentDanger
+                            : AppColors.textDim,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        );
+
+                // 提示语
+                if (isPaused)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      "TAP TO RESUME",
+                      style: AppTextStyles.micro.copyWith(
+                        color: Colors.white30,
+                      ),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      "TAP TO PAUSE",
+                      style: AppTextStyles.micro.copyWith(
+                        color: Colors.black,
+                      ), // 隐藏式提示
+                    ),
+                  ),
+              ],
+            ),
+          );
+        });
       },
     );
   }
