@@ -287,7 +287,7 @@ class GameController extends GetxController {
   }
 
   // 新增：造物能力
-  void addNewQuest({
+  Quest addNewQuest({
     required String title,
     required QuestType type,
     Project? project,
@@ -319,6 +319,8 @@ class GameController extends GetxController {
     _refreshTimeBlocks();
 
     // saveGame(); // 如果启用了持久化
+
+    return newQuest; // <--- 返回它
   }
 
   // 提供给 SessionController 调用的刷新方法
@@ -338,5 +340,32 @@ class GameController extends GetxController {
 
     // 5. 触发整个 Controller 的 update (如果有 GetBuilder 监听)
     update();
+  }
+
+  void manualAllocate(String questId, DateTime start, DateTime end) {
+    final quest = quests.firstWhereOrNull((q) => q.id == questId);
+    if (quest == null) return;
+
+    // 计算时长
+    final duration = end.difference(start).inSeconds;
+
+    // 创建补录会话
+    final session = QuestSession(
+      startTime: start,
+      endTime: end,
+      durationSeconds: duration,
+      logs: [
+        QuestLog(
+          createdAt: DateTime.now(),
+          content: "手动补录时间段 [Matrix]",
+          type: LogType.normal,
+        ),
+      ],
+    );
+
+    quest.sessions.add(session);
+
+    // 触发刷新
+    onSessionFinished(); // 复用刷新逻辑
   }
 }
