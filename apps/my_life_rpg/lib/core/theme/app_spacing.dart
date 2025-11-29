@@ -68,6 +68,7 @@ class AppSpacing {
   static const SizedBox gapV16 = SizedBox(height: lg);
   static const SizedBox gapV20 = SizedBox(height: xl);
   static const SizedBox gapV24 = SizedBox(height: xxl);
+  static const SizedBox gapV32 = SizedBox(height: xxxl);
 
   // === 常用 BorderRadius ===
   static final BorderRadius borderRadiusSm = BorderRadius.circular(radiusSm);

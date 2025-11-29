@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/views/session/session_summary_view.dart';
 import '../models/quest.dart';
 
 class SessionController extends GetxController
@@ -45,8 +46,11 @@ class SessionController extends GetxController
     currentSession = QuestSession(startTime: DateTime.now());
     quest.sessions.add(currentSession);
 
-    // 触发一次刷新，让 HUD 立刻感知到变色
-    _questService.notifyUpdate();
+    // [修复点]：将 notifyUpdate 推迟到帧结束
+    // 避免在 build 过程中触发其他 Widget 的 rebuild
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _questService.notifyUpdate();
+    });
 
     // 2. 加载历史日志
     displayLogs.addAll(quest.allLogs);
@@ -145,24 +149,47 @@ class SessionController extends GetxController
   }
 
   // 结束任务 (结算)
-  void endSession() {
+  void endSession() async {
     stopTimer();
 
-    // 1. 封存 Session
+    // 1. 最终数据计算
     final now = DateTime.now();
     currentSession.endTime = now;
-    currentSession.durationSeconds = now
-        .difference(currentSession.startTime)
-        .inSeconds;
+    final totalSeconds = now.difference(currentSession.startTime).inSeconds;
+    currentSession.durationSeconds = totalSeconds;
 
-    // [修改点]：不需要再 add 了，因为已经 add 过了
-    // quest.sessions.add(currentSession);
+    // XP 计算：简单版 1分钟 = 1XP
+    final xpEarned = (totalSeconds / 60).floor();
+    final logsCount = currentSession.logs.length;
 
-    // 3. 刷新数据
+    // 2. 触发更新 (此时数据已就绪，HomeView 的矩阵会更新，但用户还没回去)
     _questService.notifyUpdate();
 
-    // result: true 表示“正常结算退出”，而不是直接按返回键
-    Get.back(result: durationSeconds.value);
+    // 3. 打开结算界面 (Dialog 模式)
+    // 使用 Get.generalDialog 来获得全屏淡入淡出的效果，而不是普通的 Dialog
+    await Get.generalDialog(
+      pageBuilder: (ctx, anim1, anim2) {
+        return SessionSummaryView(
+          durationSeconds: totalSeconds,
+          logsCount: logsCount,
+          xpEarned: xpEarned,
+          onConfirm: () {
+            // 关闭弹窗
+            Get.back();
+            // 延迟一点点再退出 Session，体验更顺滑
+            Future.delayed(const Duration(milliseconds: 100), () {
+              Get.back(result: totalSeconds); // 退出 SessionView
+            });
+          },
+        );
+      },
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        return FadeTransition(opacity: anim1, child: child);
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+      barrierColor: Colors.black, // 纯黑背景
+      barrierDismissible: false, // 必须点确认
+    );
   }
 
   String formatDuration(int totalSeconds) {
