@@ -70,7 +70,7 @@ class RpgTimeSpectrum extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: const Color(0xFF8B2C2C),
         borderRadius: AppSpacing.borderRadiusMd,
       ),
       child: Row(
