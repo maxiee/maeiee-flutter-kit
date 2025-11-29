@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/quest_repository.dart';
+import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 
@@ -10,6 +11,8 @@ import 'package:my_life_rpg/services/time_service.dart';
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
+    Get.put(LogService(), permanent: true);
+
     // 1. 底层仓储 (Data Layer)
     // 使用 permanent: true 确保它们不会被内存回收
     Get.put(ProjectRepository(), permanent: true);

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/level_logic.dart';
 import 'package:my_life_rpg/core/logic/xp_strategy.dart';
+import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/models/block_state.dart';
 import 'package:my_life_rpg/models/quest.dart';
 import 'quest_service.dart';
@@ -262,6 +263,8 @@ class TimeService extends GetxService {
 
     // 标记初始化完成
     if (!_isInitialized) _isInitialized = true;
+
+    LogService.d("Metrics recalculated. XP: $grandTotalXp", tag: "TimeService");
   }
 
   bool _isInitialized = false;
@@ -278,5 +281,10 @@ class TimeService extends GetxService {
 
     // 3. 更新状态
     timeBlocks.assignAll(newBlocks);
+
+    LogService.d(
+      "Time matrix refreshed for ${selectedDate.value}",
+      tag: "TimeService",
+    );
   }
 }

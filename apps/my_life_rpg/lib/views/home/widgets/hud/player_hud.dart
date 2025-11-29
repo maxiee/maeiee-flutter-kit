@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/time_service.dart';
+import 'package:my_life_rpg/views/debug/debug_console.dart';
 
 class PlayerHud extends StatelessWidget {
   final TimeService t = Get.find(); // 直接找 TimeService
@@ -62,15 +64,26 @@ class PlayerHud extends StatelessWidget {
             children: [
               // Title
               Obx(
-                () => Text(
-                  t.playerTitle.value,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.accentMain,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
+                () => InkWell(
+                  // [修改] 包裹 InkWell
+                  onDoubleTap: () {
+                    // 触发控制台
+                    LogService.d("Console requested by user", tag: "HUD");
+                    Get.dialog(
+                      DebugConsole(),
+                      barrierColor: Colors.transparent,
+                    );
+                  },
+                  child: Text(
+                    t.playerTitle.value,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.accentMain,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
 
