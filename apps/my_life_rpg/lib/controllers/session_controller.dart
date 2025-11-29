@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/session/session_summary_view.dart';
 import '../models/quest.dart';
@@ -161,8 +162,12 @@ class SessionController extends GetxController
     final duration = now.difference(currentSession.startTime).inSeconds;
     currentSession.durationSeconds = duration;
 
-    // 简单的 XP 计算公式 (1分钟 = 1XP)
-    final xpEarned = (duration / 60).floor();
+    // 3. [重构点] 使用策略计算 XP (View Model 预备)
+    // 此时尚未确认完成，只计算基础时长 XP
+    // 这里的 false 表示 isCompleted=false，结算弹窗里的 Toggle 会决定最终结果
+    // 但目前 SessionSummaryView 接收的是一个静态值，我们先按基础值传
+    final xpEarned = StandardXpStrategy.instance.calculate(duration, false);
+
     final logsCount = currentSession.logs.length;
     final isDaemon = quest.type == QuestType.daemon;
 

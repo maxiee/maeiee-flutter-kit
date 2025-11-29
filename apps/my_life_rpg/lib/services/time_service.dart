@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/level_logic.dart';
+import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/models/block_state.dart';
+import 'package:my_life_rpg/models/quest.dart';
 import 'quest_service.dart';
 
 class TimeService extends GetxService {
@@ -138,8 +140,9 @@ class TimeService extends GetxService {
     // tasksCompletedToday 应该统计 "completedTime" 在今天的。
     // 由于 Quest 模型目前只有 isCompleted 状态，没有 completedAt，暂时用 effectiveMinutes 估算 XP
 
-    // XP 公式：有效分钟数 * 1 + 完成奖励(暂缺)
-    dailyXp.value = effectiveMinutes;
+    // A. 今日 XP
+    // 使用策略计算有效时长的产出 (假设今日未获得额外 Bonus)
+    dailyXp.value = StandardXpStrategy.instance.calculateBase(effectiveSeconds);
 
     // 简单统计：多少个任务在今天有投入
     tasksCompletedToday.value = _questService.quests.where((q) {
@@ -173,8 +176,39 @@ class TimeService extends GetxService {
       }
     }
 
-    // 假设 1分钟 = 1 XP
-    final grandTotalXp = grandTotalSeconds ~/ 60;
+    // B. 历史总 XP (遍历所有 Quest)
+    int grandTotalXp = 0;
+
+    for (var q in _questService.quests) {
+      // 我们需要细粒度计算，因为有些 Quest 完成了(有Bonus)，有些没完成
+      // 但目前 Model 里 Session 没有存 XP，Quest 只有 isCompleted 状态
+
+      // 1. 计算该任务所有 Session 的基础 XP
+      int questSeconds = q.totalDurationSeconds;
+
+      // 处理正在进行中的 Session (实时反馈)
+      for (var s in q.sessions) {
+        if (s.endTime == null) {
+          final currentDuration = DateTime.now()
+              .difference(s.startTime)
+              .inSeconds;
+          questSeconds += (currentDuration - s.durationSeconds);
+        }
+      }
+
+      // 累加基础分
+      grandTotalXp += StandardXpStrategy.instance.calculateBase(questSeconds);
+
+      // 2. 累加额外奖励 (Bonus)
+      // 如果任务被标记为完成，且不是 Daemon (Daemon 的完成逻辑比较特殊，暂时不计一次性Bonus，或者每次 interval 算一次?)
+      // 这里简化处理：遵循标准策略，如果是 Mission 且 Completed，加分
+      if (q.type == QuestType.mission && q.isCompleted) {
+        // 为了获取 Bonus，我们可以用 calculate(0, true) 减去 calculateBase(0)
+        // 或者直接调用 calculate(0, true) 获取纯 Bonus
+        grandTotalXp += StandardXpStrategy.instance.calculate(0, true);
+      }
+    }
+
     totalXp.value = grandTotalXp;
 
     // 计算等级
