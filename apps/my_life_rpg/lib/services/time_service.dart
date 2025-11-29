@@ -2,20 +2,8 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/level_logic.dart';
+import 'package:my_life_rpg/models/block_state.dart';
 import 'quest_service.dart';
-
-class BlockState {
-  final List<String> occupiedQuestIds;
-  final List<String> occupiedSessionIds; // [新增]
-  final List<String> deadlineQuestIds;
-
-  BlockState({
-    this.occupiedQuestIds = const [],
-    this.occupiedSessionIds = const [], // [新增]
-    this.deadlineQuestIds = const [],
-  });
-  bool get isEmpty => occupiedQuestIds.isEmpty && deadlineQuestIds.isEmpty;
-}
 
 class TimeService extends GetxService {
   final QuestService _questService = Get.find(); // 依赖注入
@@ -28,7 +16,7 @@ class TimeService extends GetxService {
 
   // 状态
   final selectedDate = DateTime.now().obs;
-  final timeBlocks = List<BlockState>.generate(96, (_) => BlockState()).obs;
+  final timeBlocks = <BlockState>[].obs;
 
   // 指标
   final dailyXp = 0.obs;
@@ -61,6 +49,10 @@ class TimeService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+
+    // 初始化空数据，防止 UI 渲染越界
+    timeBlocks.value = List.generate(96, (_) => BlockState.empty());
+
     // 监听：任务列表变化 或 日期选择变化 都要刷新
     ever(_questService.quests, (_) => refreshAll());
 
@@ -194,57 +186,15 @@ class TimeService extends GetxService {
 
   // 刷新时间块数据 (计算密集型，暂放在前端做)
   void _refreshTimeBlocks() {
-    // 1. 清空
-    for (int i = 0; i < 96; i++) {
-      timeBlocks[i] = BlockState(occupiedQuestIds: [], deadlineQuestIds: []);
-    }
-
+    // 1. 准备数据
     final targetDate = selectedDate.value;
+    final allQuests = _questService.quests; // 获取最新的任务列表
 
-    // 2. 填充 Session (实心)
-    for (var q in _questService.quests) {
-      for (var s in q.sessions) {
-        if (s.startTime.year == targetDate.year &&
-            s.startTime.month == targetDate.month &&
-            s.startTime.day == targetDate.day) {
-          // [修改点]：直接计算 0-96 索引，无需偏移
-          int startBlock = (s.startTime.hour * 4) + (s.startTime.minute ~/ 15);
-          int blocksCount = (s.durationSeconds / 60 / 15).ceil();
-          if (blocksCount < 1) blocksCount = 1;
+    // 2. 调用纯领域算法生成网格
+    // 这行代码体现了业务逻辑与状态管理的分离
+    final newBlocks = TimeDomain.generateDailyBlocks(targetDate, allQuests);
 
-          for (int i = 0; i < blocksCount; i++) {
-            int blockIndex = startBlock + i;
-            if (blockIndex < 96) {
-              final old = timeBlocks[blockIndex];
-              timeBlocks[blockIndex] = BlockState(
-                occupiedQuestIds: [...old.occupiedQuestIds, q.id],
-                occupiedSessionIds: [...old.occupiedSessionIds, s.id], // [新增]
-                deadlineQuestIds: old.deadlineQuestIds,
-              );
-            }
-          }
-        }
-      }
-    }
-
-    // 3. 填充 Deadlines (红框)
-    for (var q in _questService.quests) {
-      if (q.deadline != null && !q.isAllDayDeadline) {
-        if (q.deadline!.year == targetDate.year &&
-            q.deadline!.month == targetDate.month &&
-            q.deadline!.day == targetDate.day) {
-          final blockIndex =
-              (q.deadline!.hour * 4) + (q.deadline!.minute ~/ 15);
-          if (blockIndex >= 0 && blockIndex < 96) {
-            final old = timeBlocks[blockIndex];
-            timeBlocks[blockIndex] = BlockState(
-              occupiedQuestIds: old.occupiedQuestIds,
-              deadlineQuestIds: [...old.deadlineQuestIds, q.id],
-            );
-          }
-        }
-      }
-    }
-    timeBlocks.refresh();
+    // 3. 更新状态
+    timeBlocks.assignAll(newBlocks);
   }
 }

@@ -1,13 +1,92 @@
+import 'package:my_life_rpg/models/block_state.dart';
+
 import '../../models/quest.dart';
 
+/// [TimeDomain]
+/// 包含所有与时间计算相关的纯算法。
+/// 此类不依赖 Flutter UI 库，也不依赖 GetX 状态，仅处理数据逻辑。
 class TimeDomain {
   // 常量
   static const int blocksPerDay = 96;
   static const int minutesPerBlock = 15;
 
-  // 纯函数：计算时间块索引
+  /// 纯函数：计算时间块索引 (0 - 95)
   static int getBlockIndex(DateTime time) {
     return (time.hour * 4) + (time.minute ~/ 15);
+  }
+
+  /// 纯函数：生成指定日期的全天时间块状态
+  ///
+  /// [targetDate]: 需要生成矩阵的日期
+  /// [quests]: 所有任务列表 (由此函数内部进行筛选)
+  /// Returns: 固定长度为 96 的 BlockState 列表
+  static List<BlockState> generateDailyBlocks(
+    DateTime targetDate,
+    List<Quest> quests,
+  ) {
+    // 1. 初始化空网格
+    final List<BlockState> blocks = List.generate(
+      blocksPerDay,
+      (_) => BlockState.empty(),
+    );
+
+    // 2. 填充 Sessions (实心块逻辑)
+    for (var q in quests) {
+      for (var s in q.sessions) {
+        // 筛选：只处理落在目标日期的 Session
+        // 注意：这里简化了跨天逻辑，假设 Session 不跨天或只显示当天部分
+        if (s.startTime.year == targetDate.year &&
+            s.startTime.month == targetDate.month &&
+            s.startTime.day == targetDate.day) {
+          // 计算起始索引
+          int startBlock = getBlockIndex(s.startTime);
+
+          // 计算占用块数 (向上取整)
+          int blocksCount = (s.durationSeconds / 60 / minutesPerBlock).ceil();
+          if (blocksCount < 1) blocksCount = 1;
+
+          // 填充网格
+          for (int i = 0; i < blocksCount; i++) {
+            int blockIndex = startBlock + i;
+
+            // 边界保护：防止索引越界 (比如 23:50 开始的任务)
+            if (blockIndex < blocksPerDay) {
+              final old = blocks[blockIndex];
+
+              // CopyWith 逻辑 (虽然没有写 copyWith 方法，直接创建新对象)
+              blocks[blockIndex] = BlockState(
+                occupiedQuestIds: [...old.occupiedQuestIds, q.id],
+                occupiedSessionIds: [...old.occupiedSessionIds, s.id],
+                deadlineQuestIds: old.deadlineQuestIds,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // 3. 填充 Deadlines (红框逻辑)
+    for (var q in quests) {
+      // 筛选：有具体时间的 Deadline 且在当天
+      if (q.deadline != null && !q.isAllDayDeadline) {
+        if (q.deadline!.year == targetDate.year &&
+            q.deadline!.month == targetDate.month &&
+            q.deadline!.day == targetDate.day) {
+          final blockIndex = getBlockIndex(q.deadline!);
+
+          if (blockIndex >= 0 && blockIndex < blocksPerDay) {
+            final old = blocks[blockIndex];
+            blocks[blockIndex] = BlockState(
+              occupiedQuestIds: old.occupiedQuestIds,
+              occupiedSessionIds: old.occupiedSessionIds,
+              deadlineQuestIds: [...old.deadlineQuestIds, q.id],
+            );
+          }
+        }
+      }
+    }
+
+    return blocks;
   }
 
   // 纯函数：碰撞检测
