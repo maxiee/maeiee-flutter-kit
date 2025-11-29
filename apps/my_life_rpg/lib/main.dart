@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart'; // 别忘了这个
+import 'package:my_life_rpg/core/data/data_seeder.dart';
+import 'package:my_life_rpg/core/data/initial_binding.dart';
 import 'package:my_life_rpg/core/theme/app_theme.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 
@@ -17,6 +19,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'My Life RPG',
+      initialBinding: InitialBinding(),
+      onReady: () {
+        DataSeeder.run();
+      },
       theme: AppTheme.darkTheme, // 使用统一的赛博朋克主题
       home: HomeView(),
     );

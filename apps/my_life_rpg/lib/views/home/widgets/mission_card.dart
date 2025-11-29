@@ -126,7 +126,7 @@ class MissionCard extends StatelessWidget {
                           Row(
                             children: [
                               // 如果有关联项目，显示 Tag
-                              if (quest.projectName != null)
+                              if (quest.projectName != null) ...[
                                 Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: AppSpacing.xs,
@@ -136,8 +136,10 @@ class MissionCard extends StatelessWidget {
                                     color: AppColors.accentMain,
                                   ),
                                 ),
+                                const SizedBox(width: 4),
+                              ],
                               // Daemon Urgency Tag
-                              if (isDaemon && dueDays > 0)
+                              if (isDaemon && dueDays > 0) ...[
                                 Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: AppSpacing.xs,
@@ -147,6 +149,8 @@ class MissionCard extends StatelessWidget {
                                     color: AppColors.accentDanger,
                                   ),
                                 ),
+                                const SizedBox(width: 4),
+                              ],
                               if (quest.deadline != null) ...[
                                 _buildDeadlineTag(),
                               ],
