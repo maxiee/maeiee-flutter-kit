@@ -100,6 +100,23 @@ class MatrixController extends GetxController {
     return index >= selectionStart.value! && index <= selectionEnd.value!;
   }
 
+  // [新增] 判断两个格子是否相连 (属于同一个非空 Session)
+  bool isConnected(int indexA, int indexB) {
+    if (indexA < 0 || indexA >= 96 || indexB < 0 || indexB >= 96) return false;
+
+    final stateA = _timeService.timeBlocks[indexA];
+    final stateB = _timeService.timeBlocks[indexB];
+
+    // 如果都为空，不连
+    if (stateA.occupiedSessionIds.isEmpty ||
+        stateB.occupiedSessionIds.isEmpty) {
+      return false;
+    }
+
+    // 如果最上层的 Session ID 相同，则相连
+    return stateA.occupiedSessionIds.last == stateB.occupiedSessionIds.last;
+  }
+
   void _showAddLogDialog(int start, int end) {
     // 1. 计算具体的 DateTime 对象 (基于 selectedDate)
     final date = _timeService.selectedDate.value;
