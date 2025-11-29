@@ -89,7 +89,12 @@ class TimeDomain {
     return blocks;
   }
 
-  // 纯函数：碰撞检测
+  /// [追加/确认] 纯函数：碰撞检测
+  /// 判断 [start, end] 区间是否与现有 Sessions 存在重叠
+  ///
+  /// [start], [end]: 待检测的时间段
+  /// [existingSessions]: 现有的所有 Session 列表 (通常来自所有 Quests)
+  /// [excludeSessionId]: 排除自身的 ID (用于编辑场景，暂可选)
   static bool hasOverlap(
     DateTime start,
     DateTime end,
@@ -98,9 +103,15 @@ class TimeDomain {
   }) {
     for (var s in existingSessions) {
       if (s.id == excludeSessionId) continue;
+
+      // 获取 Session 的结束时间 (如果是进行中，视为冲突风险，暂定为 Now)
       DateTime sEnd = s.endTime ?? DateTime.now();
-      // 区间重叠公式
-      if (start.isBefore(sEnd) && end.isAfter(s.startTime)) return true;
+
+      // 经典的区间重叠公式: (StartA < EndB) and (EndA > StartB)
+      // 使用 isBefore/isAfter 处理
+      if (start.isBefore(sEnd) && end.isAfter(s.startTime)) {
+        return true; // 发生碰撞
+      }
     }
     return false;
   }

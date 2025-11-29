@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/quest_repository.dart';
+import 'package:my_life_rpg/core/domain/time_domain.dart';
+import 'package:my_life_rpg/core/logic/project_logic.dart';
 import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
 import '../models/project.dart';
@@ -124,14 +126,18 @@ class QuestService extends GetxService {
     final q = _questRepo.getById(questId);
     if (q == null) return;
 
-    // 业务规则：防止跨天
+    // 业务规则：防止跨天 (Service 层处理边界校验是合理的)
     DateTime safeEnd = end;
     if (end.day != start.day) {
       safeEnd = DateTime(start.year, start.month, start.day, 23, 59, 59);
     }
 
+    // [重构点]: 调用 TimeDomain 进行碰撞检测
+    // 需要先聚合所有现存的 Sessions
+    final allSessions = quests.expand((q) => q.sessions).toList();
+
     // 业务规则：碰撞检测 (调用 Helper)
-    if (_hasTimeOverlap(start, safeEnd)) {
+    if (TimeDomain.hasOverlap(start, safeEnd, allSessions)) {
       Get.snackbar("Conflict", "Time slot overlap detected.");
       return;
     }
@@ -219,22 +225,13 @@ class QuestService extends GetxService {
     final p = _projectRepo.getById(projectId);
     if (p == null) return 0.0;
 
-    final relatedQuests = quests.where((q) => q.projectId == projectId);
+    // 获取该项目关联的任务
+    final relatedQuests = quests
+        .where((q) => q.projectId == projectId)
+        .toList();
 
-    if (p.targetHours > 0) {
-      int totalSeconds = relatedQuests.fold(
-        0,
-        (sum, q) => sum + q.totalDurationSeconds,
-      );
-      return (totalSeconds / 3600 / p.targetHours).clamp(0.0, 1.0);
-    } else {
-      final missions = relatedQuests
-          .where((q) => q.type == QuestType.mission)
-          .toList();
-      if (missions.isEmpty) return 0.0;
-      final completed = missions.where((q) => q.isCompleted).length;
-      return completed / missions.length;
-    }
+    // [重构点]: 委托给 ProjectLogic 计算
+    return ProjectLogic.calculateProgress(p, relatedQuests);
   }
 
   // UseCase: 获取 Session
@@ -253,21 +250,5 @@ class QuestService extends GetxService {
     if (q == null) return;
     q.sessions.removeWhere((s) => s.id == sessionId);
     _questRepo.listenable.refresh();
-  }
-
-  // Internal Helper: 碰撞检测
-  bool _hasTimeOverlap(
-    DateTime start,
-    DateTime end, {
-    String? excludeSessionId,
-  }) {
-    for (var q in quests) {
-      for (var s in q.sessions) {
-        if (s.id == excludeSessionId) continue;
-        DateTime sEnd = s.endTime ?? DateTime.now();
-        if (start.isBefore(sEnd) && end.isAfter(s.startTime)) return true;
-      }
-    }
-    return false;
   }
 }
