@@ -20,13 +20,6 @@ class MatrixController extends GetxController {
   final RxString newQuestTitle = ''.obs;
   final RxBool isCreatingNew = false.obs;
 
-  // 新方法：直接根据 Quest ID 获取颜色类型
-  String? getQuestColorType(String questId) {
-    final quest = _questService.quests.firstWhereOrNull((q) => q.id == questId);
-    if (quest == null) return null;
-    return quest.type == QuestType.daemon ? 'cyan' : 'orange';
-  }
-
   void onBlockTap(int index) {
     final state = _timeService.timeBlocks[index];
 

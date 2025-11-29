@@ -248,25 +248,24 @@ class TemporalMatrix extends StatelessWidget {
           // deadline 一般不连
         } else if (state.occupiedSessionIds.isNotEmpty) {
           final qId = state.occupiedQuestIds.last; // 这里为了取颜色还是得用 QuestId
-          // ... 颜色逻辑 ...
-          final colorType = c.getQuestColorType(qId);
-          final baseColor = colorType == 'orange'
-              ? AppColors.accentMain
-              : AppColors.accentSystem;
+          // [重构点]：直接通过 QuestService 获取 Quest 对象，然后问 AppColors 要颜色
+          // 这里稍微有点性能损耗（在 build 里遍历查找），但对于 96 个格子来说微不足道
+          // 优化方案：BlockState 里直接存 type 或 color，但那是下一步的事
+          final quest = questService.quests.firstWhereOrNull(
+            (q) => q.id == qId,
+          );
+          if (quest != null) {
+            // 使用统一的颜色获取方法
+            final baseColor = AppColors.getQuestColor(quest.type);
 
-          fillColor = baseColor.withOpacity(0.4);
-          // 如果相连，边框也要处理。为了简单，相连时我们不画内部边框，只画外轮廓？
-          // 简单起见：相连时，边框颜色淡一点，或者干脆没有边框
-          borderColor = baseColor.withOpacity(0.5);
+            fillColor = baseColor.withOpacity(0.4);
+            borderColor = baseColor.withOpacity(0.5);
 
-          // 只有当这是这段连续 session 的第一个块时，才显示文字
-          // 检查左边是否是同一个 session
-          final isLeftConnected = c.isConnected(index - 1, index);
-          if (!isLeftConnected) {
-            final quest = questService.quests.firstWhereOrNull(
-              (q) => q.id == qId,
-            );
-            labelText = quest?.title;
+            // 标签逻辑
+            final isLeftConnected = c.isConnected(index - 1, index);
+            if (!isLeftConnected) {
+              labelText = quest.title;
+            }
           }
         }
 
@@ -333,78 +332,5 @@ class TemporalMatrix extends StatelessWidget {
       }
       return const SizedBox(width: 2);
     });
-  }
-
-  Widget _buildRichCapsule(int hour, int quarter) {
-    final index = (hour * 4) + quarter;
-
-    return Expanded(
-      child: Obx(() {
-        final state = timeService.timeBlocks[index];
-        final isSelected = c.isSelected(index);
-
-        // 1. 确定样式
-        Color fillColor = Colors.white.withOpacity(0.05); // 默认底色
-        Color borderColor = Colors.transparent;
-        String? labelText;
-        Color textColor = AppColors.textPrimary;
-
-        // 优先级 1: Deadline (最高)
-        if (state.deadlineQuestIds.isNotEmpty) {
-          final qId = state.deadlineQuestIds.last;
-          final quest = questService.quests.firstWhereOrNull(
-            (q) => q.id == qId,
-          );
-
-          fillColor = AppColors.accentDanger.withOpacity(0.2);
-          borderColor = AppColors.accentDanger;
-          labelText = quest?.title;
-          textColor = AppColors.accentDanger;
-        }
-        // 优先级 2: Session (占用)
-        else if (state.occupiedQuestIds.isNotEmpty) {
-          final qId = state.occupiedQuestIds.last;
-          final quest = questService.quests.firstWhereOrNull(
-            (q) => q.id == qId,
-          );
-          final colorType = c.getQuestColorType(qId);
-
-          if (colorType == 'orange') {
-            fillColor = AppColors.accentMain.withOpacity(0.4);
-            borderColor = AppColors.accentMain.withOpacity(0.5);
-            textColor = AppColors.accentMain;
-          } else {
-            fillColor = AppColors.accentSystem.withOpacity(0.4);
-            borderColor = AppColors.accentSystem.withOpacity(0.5);
-            textColor = AppColors.accentSystem;
-          }
-          labelText = quest?.title;
-        }
-
-        if (isSelected) borderColor = AppColors.textPrimary;
-
-        return GestureDetector(
-          onTap: () => c.onBlockTap(index),
-          child: Container(
-            alignment: Alignment.centerLeft, // 文字左对齐
-            padding: const EdgeInsets.symmetric(horizontal: 2), // 极小内边距
-            decoration: BoxDecoration(
-              color: fillColor,
-              borderRadius: AppSpacing.borderRadiusSm,
-              border: Border.all(color: borderColor),
-            ),
-            // 文字渲染核心
-            child: labelText != null
-                ? Text(
-                    labelText,
-                    style: AppTextStyles.micro.copyWith(color: textColor),
-                    maxLines: 2,
-                    overflow: TextOverflow.clip,
-                  )
-                : null,
-          ),
-        );
-      }),
-    );
   }
 }
