@@ -12,6 +12,15 @@ class TimeService extends GetxService {
 
   // [新增] 玩家等级状态
   final playerLevel = 1.obs;
+  int _previousLevel = 1; // 内部状态，不需要响应式
+
+  // [新增] 升级事件流 (使用 GetX 的 Worker 机制也可以，这里用 Stream 更纯粹)
+  // 或者简单点，直接暴露一个 RxBool showLevelUp = false.obs;
+  // 考虑到弹窗是一次性的，用 Callback 或者 Worker 比较合适。
+  // 我们选择在 Service 里不直接做 UI 操作，而是暴露一个 Stream/Callback 给 UI 层监听。
+  final _levelUpEvent = Rxn<int>(); // 当升级时，这里会发射新等级
+  Stream<int?> get onLevelUp => _levelUpEvent.stream;
+
   final playerTitle = "NOVICE".obs;
   final levelProgress = 0.0.obs;
   final totalXp = 0.obs; // 历史总 XP
@@ -213,10 +222,49 @@ class TimeService extends GetxService {
 
     // 计算等级
     final levelInfo = LevelLogic.calculate(grandTotalXp);
+
+    // [新增] 升级检测逻辑
+    // 只有当新等级 > 旧等级，并且不是初始化阶段(旧等级=1且新等级=1算初始化，或者旧等级=0)时
+    // 为了防止启动时就把之前升过的级弹出来，我们需要一个标志位 or 初始同步
+    if (_previousLevel != 0 && levelInfo.level > _previousLevel) {
+      // 触发升级事件！
+      _levelUpEvent.value = levelInfo.level;
+      // 重置事件 (可选，防止重复触发，但 Stream 不需要)
+    }
+
+    // 更新状态
+    _previousLevel = playerLevel.value; // 先保存旧的(或者这一步放在if前面？)
+    // 修正：应该先保存当前作为旧的，再更新新的吗？
+    // 正确逻辑：
+    // 1. 算出 newLevel
+    // 2. 比较 newLevel > currentLevel (playerLevel.value)
+    // 3. 如果是，触发，更新 playerLevel
+
+    if (levelInfo.level > playerLevel.value) {
+      // 只有在非初始化(totalXp > 0) 且 确实变化时
+      // 启动时 _calculateTimeMetrics 会跑一次，此时 playerLevel是1，newLevel可能是10
+      // 我们不希望启动 App 就弹窗。
+      // 策略：如果是第一次计算（启动），只同步不弹窗。
+      // 我们可以加一个 _isInitialized 标记。
+
+      if (_isInitialized) {
+        _levelUpEvent.value = levelInfo.level;
+        // 为了避免 Stream 粘性问题，稍微延迟一下重置? 其实不用，Rxn 每次变都会触发
+        // 但 Rxn 如果值一样(比如连续升到5级?) 不会。
+        // 最好用 .trigger(v) 如果是 Rx对象。
+        _levelUpEvent.refresh();
+      }
+    }
+
     playerLevel.value = levelInfo.level;
     playerTitle.value = levelInfo.title;
     levelProgress.value = levelInfo.progress;
+
+    // 标记初始化完成
+    if (!_isInitialized) _isInitialized = true;
   }
+
+  bool _isInitialized = false;
 
   // 刷新时间块数据 (计算密集型，暂放在前端做)
   void _refreshTimeBlocks() {

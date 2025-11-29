@@ -298,33 +298,39 @@ class MatrixController extends GetxController {
                       foregroundColor: Colors.black,
                     ),
                     onPressed: () {
-                      if (isCreatingNew.value) {
-                        // 1. 新建任务
-                        if (newQuestTitle.value.trim().isEmpty) return;
-                        _questService.addNewQuest(
-                          title: newQuestTitle.value,
+                      // 1. 先捕获输入值 (防止关掉弹窗后 Controller 被销毁取不到值)
+                      final isNew = isCreatingNew.value;
+                      final newTitle = newQuestTitle.value;
+                      final qId = selectedQuestId.value;
+
+                      // 2. [关键修改] 先关闭当前弹窗！
+                      // 这样能确保 UI 堆栈回到 HomeView，然后再叠加 LevelUpOverlay
+                      Get.back();
+
+                      // 重置选择状态
+                      selectionStart.value = null;
+                      selectionEnd.value = null;
+
+                      // 3. 后执行业务逻辑
+                      if (isNew) {
+                        if (newTitle.trim().isEmpty) return;
+
+                        // 这里的逻辑稍微调整一下，因为 addNewQuest 现在可能返回 void 或者对象
+                        // 我们需要确保逻辑连贯
+                        final newQ = _questService.addNewQuest(
+                          title: newTitle,
                           type: QuestType.mission,
-                        ); // 没法拿到返回值ID，这是个小问题
-                        // 临时解法：addNewQuest 改为返回 Quest 对象，或者获取 quests.last
-                        final newQ = _questService.quests.last;
+                        );
+
                         _questService.manualAllocate(
                           newQ.id,
                           startTime,
                           endTime,
                         );
                       } else {
-                        // 2. 使用现有任务
-                        if (selectedQuestId.value.isEmpty) return;
-                        _questService.manualAllocate(
-                          selectedQuestId.value,
-                          startTime,
-                          endTime,
-                        );
+                        if (qId.isEmpty) return;
+                        _questService.manualAllocate(qId, startTime, endTime);
                       }
-
-                      Get.back();
-                      selectionStart.value = null;
-                      selectionEnd.value = null;
                     },
                     child: const Text(
                       "CONFIRM",

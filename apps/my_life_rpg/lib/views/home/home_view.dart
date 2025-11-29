@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/controllers/home_controller.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
@@ -11,6 +12,8 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MissionController mc = Get.put(MissionController());
+
+    final HomeController hc = Get.put(HomeController());
 
     return Scaffold(
       backgroundColor: AppColors.bgDarker,
