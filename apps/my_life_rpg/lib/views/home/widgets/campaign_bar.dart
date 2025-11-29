@@ -50,7 +50,10 @@ class CampaignBar extends StatelessWidget {
           ),
           AppSpacing.gapV4,
           // 简易进度条
-          RpgProgress(value: p.progress, color: AppColors.accentMain),
+          RpgProgress(
+            value: q.getProjectProgress(p.id), // 实时计算
+            color: AppColors.accentMain,
+          ),
         ],
       ),
     );

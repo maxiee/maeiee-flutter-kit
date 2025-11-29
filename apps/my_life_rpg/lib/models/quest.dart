@@ -135,13 +135,28 @@ class Quest {
     return deadline!.difference(DateTime.now()).inMinutes / 60.0;
   }
 
-  // 计算状态 (仅针对 Routine)
-  // 返回正数表示逾期天数，负数表示还有几天到期
+  // [修改点]：基于自然日期的到期计算
+  // 返回值：
+  // 0 = 今天到期 (Due Today)
+  // >0 = 已逾期 X 天 (Overdue)
+  // <0 = 还有 X 天 (Future)
   int? get dueDays {
     if (type != QuestType.daemon || lastDoneAt == null) return null;
-    final nextDue = lastDoneAt!.add(Duration(days: intervalDays));
-    final now = DateTime.now();
-    return now.difference(nextDue).inDays;
+
+    // 剥离时间，只保留日期部分 (00:00:00)
+    final lastDate = DateTime(
+      lastDoneAt!.year,
+      lastDoneAt!.month,
+      lastDoneAt!.day,
+    );
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    // 下次执行日 = 上次执行日 + 间隔
+    final nextDueDate = lastDate.add(Duration(days: intervalDays));
+
+    // 计算差值
+    return todayDate.difference(nextDueDate).inDays;
   }
 
   Map<String, dynamic> toJson() => {

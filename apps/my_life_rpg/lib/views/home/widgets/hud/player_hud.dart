@@ -102,7 +102,7 @@ class PlayerHud extends StatelessWidget {
     return Obx(
       () => RpgCountdown(
         label: "T-MINUS (SLEEP)",
-        time: t.timeToSleep.value,
+        time: t.timeRemainingStr.value,
         target: "TARGET: 01:00",
         color: AppColors.accentMain,
       ),

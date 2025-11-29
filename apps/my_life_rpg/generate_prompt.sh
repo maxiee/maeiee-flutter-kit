@@ -59,7 +59,7 @@ cat <<EOF >> "$OUTPUT_FILE"
 # 指令
 
 现在你已经拥有了项目的完整快照。
-我们的开发进度处于：Phase 1 (Prototyping) 完成，Phase 2 (Persistence) 待启动。
+我们的开发进度处于：Phase 1 (Prototyping) 进行中，Phase 2 (Persistence) 待启动。
 当前代码结构已经经过重构，包含 Core, Models, Services, Controllers, Views 分层。
 
 请等待我的下一个指令。

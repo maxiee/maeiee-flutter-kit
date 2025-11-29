@@ -5,9 +5,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../models/quest.dart';
-// 确保引入了 game_controller，如果你还没用到它可以暂时注释掉，
-// 但为了回写数据（endSession），后续肯定需要它。
-import 'game_controller.dart';
 
 class SessionController extends GetxController
     with GetTickerProviderStateMixin {
@@ -25,7 +22,7 @@ class SessionController extends GetxController
   final textController = TextEditingController();
   final scrollController = ScrollController();
 
-  // // 展示用的混合日志列表 (历史 + 新增)
+  // 展示用的混合日志列表 (历史 + 新增)
   final displayLogs = <QuestLog>[].obs;
 
   // 动画控制器 (用于呼吸效果)
@@ -69,8 +66,15 @@ class SessionController extends GetxController
 
   void startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      durationSeconds.value++;
+      _updateDuration();
     });
+  }
+
+  // [修改点]：基于物理时间的计算
+  void _updateDuration() {
+    final now = DateTime.now();
+    // 强制转换为秒
+    durationSeconds.value = now.difference(currentSession.startTime).inSeconds;
   }
 
   void stopTimer() {
@@ -141,8 +145,11 @@ class SessionController extends GetxController
     stopTimer();
 
     // 1. 封存 Session
-    currentSession.endTime = DateTime.now();
-    currentSession.durationSeconds = durationSeconds.value;
+    final now = DateTime.now();
+    currentSession.endTime = now;
+    currentSession.durationSeconds = now
+        .difference(currentSession.startTime)
+        .inSeconds;
 
     // 2. 存入 Quest
     quest.sessions.add(currentSession);
