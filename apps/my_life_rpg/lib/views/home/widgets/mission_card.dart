@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
 import '../../../models/quest.dart';
 import '../../session/session_view.dart';
 
@@ -32,6 +33,12 @@ class MissionCard extends StatelessWidget {
             // 1. Checkbox / Reset Button
             InkWell(
               onTap: () => q.toggleQuestCompletion(quest.id),
+              onLongPress: () {
+                // [新增]：长按编辑
+                Get.dialog(
+                  QuestEditor(quest: quest),
+                ); // 需要修改 QuestEditor 支持传入 quest
+              },
               child: Container(
                 width: 40,
                 color: isDaemon

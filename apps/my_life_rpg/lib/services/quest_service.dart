@@ -120,6 +120,48 @@ class QuestService extends GetxService {
     quests.refresh();
   }
 
+  // [新增]：更新任务
+  void updateQuest(
+    String id, {
+    String? title,
+    Project? project,
+    DateTime? deadline,
+    bool? isAllDayDeadline,
+    int? interval,
+  }) {
+    final index = quests.indexWhere((q) => q.id == id);
+    if (index == -1) return;
+
+    final old = quests[index];
+
+    // 由于 Quest 是 immutable 的，需要创建一个新的副本
+    quests[index] = Quest(
+      id: old.id,
+      title: title ?? old.title,
+      type: old.type,
+      // 如果传了 project 进来，说明选了新的（可能是 null）；如果没传，保持旧的
+      // 这里逻辑稍复杂：UI层 Dropdown 选了 null，怎么区分是“保持不变”还是“改成无归属”？
+      // 在 _submit 逻辑里，我们直接传了 selectedProject。所以这里用 override 逻辑。
+      projectId: project?.id,
+      projectName: project?.title,
+
+      isCompleted: old.isCompleted,
+      intervalDays: interval ?? old.intervalDays,
+      lastDoneAt: old.lastDoneAt,
+      deadline: deadline, // 允许 null, 所以直接赋值
+      isAllDayDeadline: isAllDayDeadline ?? old.isAllDayDeadline,
+      sessions: old.sessions,
+    );
+
+    notifyUpdate();
+  }
+
+  // [新增]：删除任务
+  void deleteQuest(String id) {
+    quests.removeWhere((q) => q.id == id);
+    notifyUpdate();
+  }
+
   // 查 (获取今日活跃) - 这种 helper 方法可以放这
   List<Quest> get activeMissions => quests
       .where((q) => q.type == QuestType.mission && !q.isCompleted)
