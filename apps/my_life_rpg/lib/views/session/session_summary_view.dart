@@ -9,14 +9,14 @@ class SessionSummaryView extends StatefulWidget {
   final int durationSeconds;
   final int logsCount;
   final int xpEarned;
-  final VoidCallback onConfirm;
+  final bool isDaemon; // 用于判断显示文案
 
   const SessionSummaryView({
     Key? key,
     required this.durationSeconds,
     required this.logsCount,
     required this.xpEarned,
-    required this.onConfirm,
+    required this.isDaemon,
   }) : super(key: key);
 
   @override
@@ -29,6 +29,8 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
   late Animation<double> _fadeAnim;
+
+  bool isMarkedComplete = false; // 用户是否勾选了“完成任务”
 
   @override
   void initState() {
@@ -50,7 +52,6 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
       curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
     );
 
-    // 启动动画
     _controller.forward();
   }
 
@@ -63,7 +64,7 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.95), // 几乎全黑，沉浸感
+      backgroundColor: Colors.black.withOpacity(0.95),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -128,7 +129,7 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
             const RpgDivider(indent: 60, endIndent: 60),
             AppSpacing.gapV32,
 
-            // 3. Stats Grid (带滚动数字动画)
+            // 3. Stats Grid
             FadeTransition(
               opacity: _fadeAnim,
               child: Row(
@@ -158,17 +159,44 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
             ),
 
             AppSpacing.gapV32,
-            AppSpacing.gapV24,
 
-            // 4. Action
+            // 4. Completion Toggle (完成状态开关)
+            FadeTransition(opacity: _fadeAnim, child: _buildCompletionSwitch()),
+
+            AppSpacing.gapV32,
+
+            // 5. Action Buttons (Discard & Confirm)
             FadeTransition(
               opacity: _fadeAnim,
-              child: RpgButton(
-                label: "CONFIRM & SAVE",
-                type: RpgButtonType.primary,
-                onTap: widget.onConfirm,
-                // 加宽按钮
-                // padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 丢弃按钮
+                  RpgButton(
+                    label: "DISCARD",
+                    type: RpgButtonType.ghost,
+                    icon: Icons.delete_outline,
+                    onTap: () {
+                      // 返回 Map: {save: false}
+                      Get.back(result: {'save': false});
+                    },
+                  ),
+
+                  AppSpacing.gapH16,
+
+                  // 确认按钮
+                  RpgButton(
+                    label: "CONFIRM", // & SAVE 可以省略，简洁点
+                    type: RpgButtonType.primary,
+                    icon: Icons.save,
+                    onTap: () {
+                      // 返回 Map: {save: true, complete: bool}
+                      Get.back(
+                        result: {'save': true, 'complete': isMarkedComplete},
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -189,7 +217,6 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            // 简单的滚动数字 (TweenAnimationBuilder)
             TweenAnimationBuilder<int>(
               tween: IntTween(begin: 0, end: int.tryParse(value) ?? 0),
               duration: const Duration(milliseconds: 1500),
@@ -216,6 +243,55 @@ class _SessionSummaryViewState extends State<SessionSummaryView>
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildCompletionSwitch() {
+    final label = widget.isDaemon
+        ? "CYCLE COMPLETE (RESET)"
+        : "MISSION ACCOMPLISHED";
+    final color = widget.isDaemon
+        ? AppColors.accentSystem
+        : AppColors.accentSafe;
+
+    return GestureDetector(
+      onTap: () => setState(() => isMarkedComplete = !isMarkedComplete),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isMarkedComplete
+              ? color.withOpacity(0.15)
+              : Colors.white.withOpacity(0.05),
+          border: Border.all(
+            color: isMarkedComplete ? color : Colors.white12,
+            width: isMarkedComplete ? 1.5 : 1.0,
+          ),
+          borderRadius: BorderRadius.circular(4), // 方形圆角更符合赛博风格
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMarkedComplete
+                  ? Icons.check_circle
+                  : Icons.radio_button_unchecked,
+              color: isMarkedComplete ? color : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                color: isMarkedComplete ? color : Colors.grey,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+                fontFamily: 'Courier',
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

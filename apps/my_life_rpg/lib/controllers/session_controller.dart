@@ -148,48 +148,83 @@ class SessionController extends GetxController
     });
   }
 
-  // 结束任务 (结算)
+  // 结束任务 (结算逻辑)
   void endSession() async {
+    // 1. 停止计时
     stopTimer();
 
-    // 1. 最终数据计算
+    // 2. 预计算最终数据 (Snapshot)
+    // 此时数据已经写入了 currentSession (因为是对象引用)
+    // 但我们需要确保状态是最新的，以便 UI 显示
     final now = DateTime.now();
     currentSession.endTime = now;
-    final totalSeconds = now.difference(currentSession.startTime).inSeconds;
-    currentSession.durationSeconds = totalSeconds;
+    final duration = now.difference(currentSession.startTime).inSeconds;
+    currentSession.durationSeconds = duration;
 
-    // XP 计算：简单版 1分钟 = 1XP
-    final xpEarned = (totalSeconds / 60).floor();
+    // 简单的 XP 计算公式 (1分钟 = 1XP)
+    final xpEarned = (duration / 60).floor();
     final logsCount = currentSession.logs.length;
+    final isDaemon = quest.type == QuestType.daemon;
 
-    // 2. 触发更新 (此时数据已就绪，HomeView 的矩阵会更新，但用户还没回去)
+    // 3. 通知全局更新 (让 Matrix 和 HUD 知道这块时间被占用了)
     _questService.notifyUpdate();
 
-    // 3. 打开结算界面 (Dialog 模式)
-    // 使用 Get.generalDialog 来获得全屏淡入淡出的效果，而不是普通的 Dialog
-    await Get.generalDialog(
+    // 4. 弹出结算模态窗 (等待用户决策)
+    final result = await Get.generalDialog(
       pageBuilder: (ctx, anim1, anim2) {
         return SessionSummaryView(
-          durationSeconds: totalSeconds,
+          durationSeconds: duration,
           logsCount: logsCount,
           xpEarned: xpEarned,
-          onConfirm: () {
-            // 关闭弹窗
-            Get.back();
-            // 延迟一点点再退出 Session，体验更顺滑
-            Future.delayed(const Duration(milliseconds: 100), () {
-              Get.back(result: totalSeconds); // 退出 SessionView
-            });
-          },
+          isDaemon: isDaemon,
         );
       },
       transitionBuilder: (ctx, anim1, anim2, child) {
         return FadeTransition(opacity: anim1, child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),
-      barrierColor: Colors.black, // 纯黑背景
-      barrierDismissible: false, // 必须点确认
+      barrierColor: Colors.black, // 纯黑背景沉浸感
+      barrierDismissible: false, // 禁止点击背景关闭，强制选择
     );
+
+    // 5. 解析用户决策结果
+    // 默认为 null (理论上不会，但防防御性编程) -> 视为保存但不完成
+    bool shouldSave = true;
+    bool shouldComplete = false;
+
+    if (result != null && result is Map) {
+      shouldSave = result['save'] ?? true;
+      shouldComplete = result['complete'] ?? false;
+    }
+
+    // 6. 执行决策
+    if (shouldSave) {
+      // A. 保存模式
+      // Session 已经在列表中了，不需要额外 add
+
+      // 如果用户标记了完成/循环
+      if (shouldComplete) {
+        // 调用 Service 切换完成状态 (这会处理 Daemon 的 CD 重置)
+        _questService.toggleQuestCompletion(quest.id);
+      }
+
+      // 可选：在这里弹出 SnackBar 提示保存成功
+      // 但因为要退回首页，最好由首页来弹，或者依赖 SessionSummaryView 的反馈
+    } else {
+      // B. 丢弃模式 (DISCARD)
+      // 从 Quest 的 Session 列表中移除当前的 session 对象
+      quest.sessions.remove(currentSession);
+
+      // 强制刷新 Service，通知 TimeService 移除矩阵上的色块
+      _questService.notifyUpdate();
+    }
+
+    // 7. 退出 Session 页面
+    // 延迟极短时间，避免弹窗关闭动画和页面退出动画冲突
+    Future.delayed(const Duration(milliseconds: 50), () {
+      // 返回 duration 给 MissionCard 做简单的 SnackBar 反馈 (如果是 Save)
+      Get.back(result: shouldSave ? duration : null);
+    });
   }
 
   String formatDuration(int totalSeconds) {
