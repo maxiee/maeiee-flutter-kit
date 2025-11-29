@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/temporal_matrix.dart';
@@ -9,6 +10,7 @@ import 'widgets/panels/mission_panel.dart';
 
 class HomeView extends StatelessWidget {
   final GameController c = Get.put(GameController());
+  final MissionController mc = Get.put(MissionController());
 
   @override
   Widget build(BuildContext context) {

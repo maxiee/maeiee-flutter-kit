@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/models/project.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
@@ -61,79 +62,118 @@ class CampaignBar extends StatelessWidget {
 
   // 样式：赛博朋克数据块
   Widget _buildProjectBlock(Project p) {
-    final progress = q.getProjectProgress(p.id);
-    final percentStr = "${(progress * 100).toInt()}%";
+    final MissionController mc = Get.find(); // 获取控制器
 
-    return InkWell(
-      onTap: () => Get.dialog(ProjectEditor(project: p)),
-      child: Container(
-        width: 130, // 宽度适中
-        // 视觉核心：左侧颜色条 + 背景色
-        decoration: BoxDecoration(
-          color: AppColors.bgCard, // 深色背景
-          border: Border(
-            // 左侧加粗颜色条，像文件夹标签
-            left: BorderSide(color: p.color, width: 3),
-            // 其他边框微弱显示
-            top: BorderSide(color: Colors.white.withOpacity(0.05)),
-            right: BorderSide(color: Colors.white.withOpacity(0.05)),
-            bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
+    return Obx(() {
+      final isSelected =
+          mc.activeFilter.value == MissionFilter.project &&
+          mc.selectedProjectId.value == p.id;
+
+      final progress = q.getProjectProgress(p.id);
+      final percentStr = "${(progress * 100).toInt()}%";
+
+      return InkWell(
+        onTap: () => mc.selectProject(p.id), // [修改点]：点击不再是编辑，而是筛选
+        onLongPress: () =>
+            Get.dialog(ProjectEditor(project: p)), // [修改点]：长按才是编辑
+        child: AnimatedContainer(
+          // 使用 AnimatedContainer 做过渡
+          duration: const Duration(milliseconds: 200),
+          width: 130,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? p.color.withOpacity(0.15)
+                : AppColors.bgCard, // 选中背景变亮
+            border: Border(
+              left: BorderSide(
+                color: p.color,
+                width: isSelected ? 6 : 3, // 选中左侧条变宽
+              ),
+              // 选中时，边框发光
+              top: BorderSide(
+                color: isSelected
+                    ? p.color.withOpacity(0.5)
+                    : Colors.white.withOpacity(0.05),
+              ),
+              right: BorderSide(
+                color: isSelected
+                    ? p.color.withOpacity(0.5)
+                    : Colors.white.withOpacity(0.05),
+              ),
+              bottom: BorderSide(
+                color: isSelected
+                    ? p.color.withOpacity(0.5)
+                    : Colors.white.withOpacity(0.05),
+              ),
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: p.color.withOpacity(0.2),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
           ),
-        ),
-        child: Stack(
-          children: [
-            // 1. 进度条作为底部填充 (或者底边框)
-            // 这里设计为：底部的一条细线，随着进度变长
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: FractionallySizedBox(
-                widthFactor: progress.clamp(0.0, 1.0),
-                child: Container(
-                  height: 3, // 极细的进度条
-                  decoration: BoxDecoration(
-                    color: p.color, // 颜色移到这里
-                    boxShadow: [
-                      BoxShadow(color: p.color.withOpacity(0.5), blurRadius: 4),
-                    ],
+          child: Stack(
+            children: [
+              // 1. 进度条作为底部填充 (或者底边框)
+              // 这里设计为：底部的一条细线，随着进度变长
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: FractionallySizedBox(
+                  widthFactor: progress.clamp(0.0, 1.0),
+                  child: Container(
+                    height: 3, // 极细的进度条
+                    decoration: BoxDecoration(
+                      color: p.color, // 颜色移到这里
+                      boxShadow: [
+                        BoxShadow(
+                          color: p.color.withOpacity(0.5),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // 2. 内容区域
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 上层：标题
-                  Text(
-                    p.title.toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11, // 字体调小，更精致
+              // 2. 内容区域
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 上层：标题
+                    Text(
+                      p.title.toUpperCase(),
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11, // 字体调小，更精致
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  // 下层：百分比数字 (Micro Style)
-                  Text(
-                    "PROG: $percentStr",
-                    style: AppTextStyles.micro.copyWith(
-                      color: p.color.withOpacity(0.8),
-                      fontSize: 9,
-                      letterSpacing: 0.5,
+                    const SizedBox(height: 2),
+                    // 下层：百分比数字 (Micro Style)
+                    Text(
+                      "PROG: $percentStr",
+                      style: AppTextStyles.micro.copyWith(
+                        color: p.color.withOpacity(0.8),
+                        fontSize: 9,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
