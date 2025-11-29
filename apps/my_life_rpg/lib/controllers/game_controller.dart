@@ -134,35 +134,61 @@ class GameController extends GetxController {
 
   // 刷新时间块数据 (计算密集型，暂放在前端做)
   void _refreshTimeBlocks() {
-    // 重置
+    // 1. 重置所有格子 (必须先清空)
     for (int i = 0; i < 96; i++) {
       timeBlocks[i] = BlockState(occupiedQuestIds: [], deadlineQuestIds: []);
     }
 
     final targetDate = selectedDate.value;
 
-    // 遍历所有任务
+    // 2. 第一遍遍历：填充 Sessions (实心填充)
+    for (var q in quests) {
+      for (var s in q.sessions) {
+        if (s.startTime.year == targetDate.year &&
+            s.startTime.month == targetDate.month &&
+            s.startTime.day == targetDate.day) {
+          int startBlock = (s.startTime.hour * 4) + (s.startTime.minute ~/ 15);
+          int blocksCount = (s.durationSeconds / 60 / 15).ceil();
+          if (blocksCount < 1) blocksCount = 1;
+
+          for (int i = 0; i < blocksCount; i++) {
+            int blockIndex = startBlock + i;
+            if (blockIndex < 96) {
+              // 取出旧状态，追加 occupied
+              final old = timeBlocks[blockIndex];
+              timeBlocks[blockIndex] = BlockState(
+                occupiedQuestIds: [...old.occupiedQuestIds, q.id], // 追加
+                deadlineQuestIds: old.deadlineQuestIds, // 保持
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // 3. 第二遍遍历：填充 Deadlines (红框警告)
     for (var q in quests) {
       if (q.deadline != null && !q.isAllDayDeadline) {
-        // 只有精确时间才进格子
+        // 只有精确时间的才进格子
         if (q.deadline!.year == targetDate.year &&
             q.deadline!.month == targetDate.month &&
             q.deadline!.day == targetDate.day) {
           final blockIndex =
               (q.deadline!.hour * 4) + (q.deadline!.minute ~/ 15);
+
           if (blockIndex >= 0 && blockIndex < 96) {
-            // 注意：这里需要先把旧状态拿出来，再 add，因为 timeBlocks 是 RxList，元素本身不是 Rx
-            final oldState = timeBlocks[blockIndex];
+            // 取出旧状态，追加 deadline
+            final old = timeBlocks[blockIndex];
             timeBlocks[blockIndex] = BlockState(
-              occupiedQuestIds: oldState.occupiedQuestIds,
-              deadlineQuestIds: [...oldState.deadlineQuestIds, q.id],
+              occupiedQuestIds: old.occupiedQuestIds, // 保持
+              deadlineQuestIds: [...old.deadlineQuestIds, q.id], // 追加
             );
           }
         }
       }
     }
 
-    // 触发 UI 更新
+    // 4. 通知 UI 更新
     timeBlocks.refresh();
   }
 
