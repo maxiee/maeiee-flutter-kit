@@ -101,12 +101,20 @@ class TimeService extends GetxService {
 
     for (var q in _questService.quests) {
       for (var s in q.sessions) {
-        // 简单重叠判断：Session 的开始时间必须在 targetDate 当天
-        // (注：这里未处理跨越午夜的Session，为保持简单，建议用户在午夜前 Terminate)
+        // [修改点]：处理进行中的任务
+        // 如果 endTime 为 null，说明正在进行，用 CurrentTime 计算临时 duration
+        int duration;
+        if (s.endTime == null) {
+          duration = now.difference(s.startTime).inSeconds;
+        } else {
+          duration = s.durationSeconds;
+        }
+
+        // 简单的日期匹配逻辑...
         if (s.startTime.year == targetDate.year &&
             s.startTime.month == targetDate.month &&
             s.startTime.day == targetDate.day) {
-          effectiveSeconds += s.durationSeconds;
+          effectiveSeconds += duration;
         }
       }
     }

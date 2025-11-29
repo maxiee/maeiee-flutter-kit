@@ -43,6 +43,10 @@ class SessionController extends GetxController
 
     // 1. 创建当前会话对象
     currentSession = QuestSession(startTime: DateTime.now());
+    quest.sessions.add(currentSession);
+
+    // 触发一次刷新，让 HUD 立刻感知到变色
+    _questService.notifyUpdate();
 
     // 2. 加载历史日志
     displayLogs.addAll(quest.allLogs);
@@ -151,8 +155,8 @@ class SessionController extends GetxController
         .difference(currentSession.startTime)
         .inSeconds;
 
-    // 2. 存入 Quest
-    quest.sessions.add(currentSession);
+    // [修改点]：不需要再 add 了，因为已经 add 过了
+    // quest.sessions.add(currentSession);
 
     // 3. 刷新数据
     _questService.notifyUpdate();

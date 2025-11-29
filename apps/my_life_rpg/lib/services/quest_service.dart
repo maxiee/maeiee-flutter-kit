@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
@@ -65,6 +66,34 @@ class QuestService extends GetxService {
 
   // 改 (补录)
   void manualAllocate(String questId, DateTime start, DateTime end) {
+    final now = DateTime.now();
+
+    // [修改点]：禁止补录未来
+    if (start.isAfter(now)) {
+      Get.snackbar("Error", "不能补录未来的时间");
+      return;
+    }
+
+    // 1. 预检
+    if (start.isAfter(end)) return; // 基础逻辑
+
+    // 如果 End 超过了 Now，强制截断
+    DateTime actualEnd = end;
+    if (end.isAfter(now)) {
+      actualEnd = now;
+    }
+
+    // 2. [修改点] 碰撞检测
+    if (hasTimeOverlap(start, actualEnd)) {
+      Get.snackbar(
+        "Time Conflict",
+        "这段时间已经有记录了，请先调整旧记录。",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     final quest = quests.firstWhereOrNull((q) => q.id == questId);
     if (quest == null) return;
 
@@ -115,6 +144,27 @@ class QuestService extends GetxService {
 
     final completedCount = projectQuests.where((q) => q.isCompleted).length;
     return completedCount / projectQuests.length;
+  }
+
+  bool hasTimeOverlap(
+    DateTime start,
+    DateTime end, {
+    String? excludeSessionId,
+  }) {
+    for (var q in quests) {
+      for (var s in q.sessions) {
+        if (s.id == excludeSessionId) continue;
+
+        // 计算 Session 的实际结束时间
+        DateTime sEnd = s.endTime ?? DateTime.now(); // 如果正在进行，暂认为到当前时间
+
+        // 经典的区间重叠判断: (StartA < EndB) and (EndA > StartB)
+        if (start.isBefore(sEnd) && end.isAfter(s.startTime)) {
+          return true; // 发生碰撞
+        }
+      }
+    }
+    return false;
   }
 
   // 新增：Mock 数据加载
