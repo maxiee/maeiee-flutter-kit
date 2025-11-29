@@ -1,10 +1,18 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart'; // [新增]
 import 'package:my_life_rpg/core/data/repository.dart';
 import 'package:my_life_rpg/models/quest.dart';
 
 class QuestRepository extends GetxService implements Repository<Quest> {
-  // 数据源 (这里是内存，未来可以是 SQLite 的 DAO)
   final _quests = <Quest>[].obs;
+  final _box = GetStorage();
+  final _key = 'db_quests';
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadFromDisk();
+  }
 
   @override
   List<Quest> getAll() => _quests;
@@ -17,6 +25,7 @@ class QuestRepository extends GetxService implements Repository<Quest> {
   @override
   void add(Quest item) {
     _quests.add(item);
+    _saveToDisk();
   }
 
   @override
@@ -24,14 +33,35 @@ class QuestRepository extends GetxService implements Repository<Quest> {
     final index = _quests.indexWhere((q) => q.id == item.id);
     if (index != -1) {
       _quests[index] = item;
+      _quests.refresh();
+      _saveToDisk();
     }
   }
 
   @override
   void delete(String id) {
     _quests.removeWhere((q) => q.id == id);
+    _saveToDisk();
   }
 
-  // 暴露 observable 给 Service 用于监听，这是 GetX 的特性
   RxList<Quest> get listenable => _quests;
+
+  // --- Persistence Helpers ---
+
+  void _saveToDisk() {
+    final List<Map<String, dynamic>> jsonList = _quests
+        .map((q) => q.toJson())
+        .toList();
+    _box.write(_key, jsonList);
+  }
+
+  void _loadFromDisk() {
+    final List<dynamic>? stored = _box.read(_key);
+    if (stored != null) {
+      final list = stored
+          .map((e) => Quest.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _quests.assignAll(list);
+    }
+  }
 }

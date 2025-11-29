@@ -12,10 +12,14 @@ class DataSeeder {
 
     final QuestService qs = Get.find();
 
-    // 防止重复播种 (简单判断：如果已经有数据就不加了)
-    if (qs.projects.isNotEmpty || qs.quests.isNotEmpty) return;
+    // [修改点]：如果已经有数据（比如从硬盘加载了），就不要再播种了
+    // 这样保证用户的数据不会被 Mock 数据覆盖或重复添加
+    if (qs.projects.isNotEmpty || qs.quests.isNotEmpty) {
+      print("💾 Data loaded from storage. Seeder skipped.");
+      return;
+    }
 
-    print("🌱 Seeding Mock Data...");
+    print("🌱 Storage empty. Seeding Mock Data...");
 
     // 1. 添加项目
     qs.addProject("Flutter架构演进", "技术专家之路", 100, 0); // Orange
