@@ -11,7 +11,7 @@ class QuestEditor extends StatefulWidget {
   final Quest? quest; // 编辑时传入
   final QuestType? type;
 
-  const QuestEditor({Key? key, this.type, this.quest}) : super(key: key);
+  const QuestEditor({super.key, this.type, this.quest});
 
   @override
   State<QuestEditor> createState() => _QuestEditorState();
@@ -69,161 +69,357 @@ class _QuestEditorState extends State<QuestEditor> {
     final isDaemon = widget.type == QuestType.daemon;
     final color = isDaemon ? AppColors.accentSystem : AppColors.accentMain;
 
+    // 如果是新建模式，不需要 Tab，直接显示 Config
+    if (!isEdit) {
+      return Dialog(
+        backgroundColor: AppColors.bgPanel,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadiusLg,
+          side: BorderSide(color: color.withOpacity(0.3), width: 1),
+        ),
+        child: Padding(
+          padding: AppSpacing.paddingLg,
+          child: _buildConfigTab(context, color, isEdit),
+        ),
+      );
+    }
+
+    // 编辑模式：使用 TabView
     return Dialog(
       backgroundColor: AppColors.bgPanel,
       shape: RoundedRectangleBorder(
         borderRadius: AppSpacing.borderRadiusLg,
         side: BorderSide(color: color.withOpacity(0.3), width: 1),
       ),
-      // 防止键盘遮挡
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: AppSpacing.paddingLg + AppSpacing.paddingXs,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Icon(
-                    isDaemon ? Icons.loop : Icons.code,
-                    color: color,
-                    size: AppSpacing.iconLg,
-                  ),
-                  AppSpacing.gapH12,
-                  Text(
-                    isEdit
-                        ? (isDaemon ? "CONFIGURE DAEMON" : "CONFIGURE MISSION")
-                        : (isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION"),
-                    style: AppTextStyles.panelHeader.copyWith(
-                      color: color,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+      child: DefaultTabController(
+        length: 2,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Tab Bar
+            Container(
+              color: Colors.black26,
+              child: TabBar(
+                indicatorColor: color,
+                labelColor: color,
+                unselectedLabelColor: Colors.grey,
+                labelStyle: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                tabs: const [
+                  Tab(text: "CONFIGURATION"),
+                  Tab(text: "CHRONICLES"),
                 ],
               ),
-              AppSpacing.gapV20,
+            ),
 
-              // 1. Title Input
-              RpgInput(
-                controller: titleController,
-                label: "IDENTIFIER (TITLE)",
-                accentColor: color,
-                autofocus: !isEdit, // 编辑时不自动聚焦，防止弹键盘遮挡
-              ),
-              AppSpacing.gapV16,
-
-              // 在 Title Input 下方插入
-              _buildDeadlineSelector(color),
-              AppSpacing.gapV16,
-
-              // 2. Context Selectors
-              if (!isDaemon) ...[
-                // Mission 模式：选择 Project
-                Text(
-                  "LINK TO CAMPAIGN (OPTIONAL):",
-                  style: AppTextStyles.caption.copyWith(color: Colors.grey),
-                ),
-                AppSpacing.gapV8,
-                Container(
-                  padding: AppSpacing.paddingHorizontalMd,
-                  decoration: BoxDecoration(
-                    color: AppColors.bgInput,
-                    borderRadius: AppSpacing.borderRadiusMd,
-                    border: Border.all(color: AppColors.borderDim),
+            // Tab Content (限制高度，允许滚动)
+            SizedBox(
+              height: 400, // 给一个固定高度或约束
+              child: TabBarView(
+                children: [
+                  SingleChildScrollView(
+                    padding: AppSpacing.paddingLg,
+                    child: _buildConfigTab(context, color, isEdit),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<Project>(
-                      value: selectedProject,
-                      dropdownColor: AppColors.bgCard,
-                      isExpanded: true,
-                      hint: Text(
-                        "STANDALONE (无归属)",
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.textDim,
-                          fontSize: 12,
-                        ),
-                      ),
+                  _buildHistoryTab(context, color),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- TAB 1: Configuration (完整的表单 UI) ---
+  Widget _buildConfigTab(BuildContext context, Color color, bool isEdit) {
+    // 确定是否是 Daemon 类型 (用于显示不同的选项)
+    final isDaemon = activeType == QuestType.daemon;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Row(
+          children: [
+            Icon(
+              isDaemon ? Icons.loop : Icons.code,
+              color: color,
+              size: AppSpacing.iconLg,
+            ),
+            AppSpacing.gapH12,
+            Text(
+              isEdit
+                  ? (isDaemon ? "CONFIGURE DAEMON" : "CONFIGURE MISSION")
+                  : (isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION"),
+              style: AppTextStyles.panelHeader.copyWith(
+                color: color,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+        AppSpacing.gapV20,
+
+        // 1. Title Input
+        RpgInput(
+          controller: titleController,
+          label: "IDENTIFIER (TITLE)",
+          accentColor: color,
+          // 如果是编辑模式，不自动聚焦，避免键盘遮挡
+          autofocus: !isEdit,
+        ),
+        AppSpacing.gapV16,
+
+        // Deadline Selector (复用之前的辅助方法)
+        _buildDeadlineSelector(color),
+        AppSpacing.gapV16,
+
+        // 2. Context Selectors
+        if (!isDaemon) ...[
+          // [Mission Mode]: Project Selector
+          Text(
+            "LINK TO CAMPAIGN (OPTIONAL):",
+            style: AppTextStyles.caption.copyWith(color: Colors.grey),
+          ),
+          AppSpacing.gapV8,
+          Container(
+            padding: AppSpacing.paddingHorizontalMd,
+            decoration: BoxDecoration(
+              color: AppColors.bgInput,
+              borderRadius: AppSpacing.borderRadiusMd,
+              border: Border.all(color: AppColors.borderDim),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<Project>(
+                value: selectedProject,
+                dropdownColor: AppColors.bgCard,
+                isExpanded: true,
+                hint: Text(
+                  "STANDALONE (无归属)",
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textDim,
+                    fontSize: 12,
+                  ),
+                ),
+                style: AppTextStyles.body.copyWith(fontSize: 12),
+                items: [
+                  DropdownMenuItem<Project>(
+                    value: null,
+                    child: Text(
+                      "STANDALONE (无归属)",
                       style: AppTextStyles.body.copyWith(fontSize: 12),
-                      items: [
-                        DropdownMenuItem<Project>(
-                          value: null,
-                          child: Text(
-                            "STANDALONE (无归属)",
-                            style: AppTextStyles.body.copyWith(fontSize: 12),
-                          ),
-                        ),
-                        ...q.projects.map(
-                          (p) => DropdownMenuItem(
-                            value: p,
-                            child: Text(
-                              p.title,
-                              style: AppTextStyles.body.copyWith(fontSize: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (val) => setState(() => selectedProject = val),
                     ),
                   ),
-                ),
-              ] else ...[
-                // Daemon 模式：选择周期
-                Text(
-                  "EXECUTION INTERVAL (DAYS):",
-                  style: AppTextStyles.caption.copyWith(color: Colors.grey),
-                ),
-                AppSpacing.gapV8,
-                Row(
-                  children: [
-                    _buildIntervalChip(1, "DAILY"),
-                    AppSpacing.gapH8,
-                    _buildIntervalChip(7, "WEEKLY"),
-                    AppSpacing.gapH8,
-                    _buildIntervalChip(21, "3-WEEKS"),
-                    AppSpacing.gapH8,
-                    _buildIntervalChip(30, "MONTHLY"),
-                  ],
-                ),
-              ],
-
-              AppSpacing.gapV24,
-
-              // 3. Actions
-              Row(
-                children: [
-                  // DELETE BUTTON (Only in Edit Mode)
-                  if (isEdit)
-                    TextButton(
-                      onPressed: _delete,
-                      child: const Text(
-                        "DELETE",
-                        style: TextStyle(color: AppColors.accentDanger),
+                  ...q.projects.map(
+                    (p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(
+                        p.title,
+                        style: AppTextStyles.body.copyWith(fontSize: 12),
                       ),
                     ),
-
-                  const Spacer(),
-                  RpgButton(
-                    label: "ABORT",
-                    type: RpgButtonType.ghost,
-                    onTap: () => Get.back(),
-                  ),
-                  AppSpacing.gapH8,
-                  RpgButton(
-                    label: "EXECUTE",
-                    type: isDaemon
-                        ? RpgButtonType.secondary
-                        : RpgButtonType.primary,
-                    onTap: _submit,
                   ),
                 ],
+                onChanged: (val) => setState(() => selectedProject = val),
+              ),
+            ),
+          ),
+        ] else ...[
+          // [Daemon Mode]: Interval Selector
+          Text(
+            "EXECUTION INTERVAL (DAYS):",
+            style: AppTextStyles.caption.copyWith(color: Colors.grey),
+          ),
+          AppSpacing.gapV8,
+          Row(
+            children: [
+              _buildIntervalChip(1, "DAILY"),
+              AppSpacing.gapH8,
+              _buildIntervalChip(7, "WEEKLY"),
+              AppSpacing.gapH8,
+              _buildIntervalChip(21, "3-WEEKS"),
+              AppSpacing.gapH8,
+              _buildIntervalChip(30, "MONTHLY"),
+            ],
+          ),
+        ],
+
+        AppSpacing.gapV24,
+
+        // 3. Actions
+        Row(
+          children: [
+            // DELETE BUTTON (Only in Edit Mode)
+            if (isEdit)
+              TextButton(
+                onPressed: _delete,
+                child: const Text(
+                  "DELETE",
+                  style: TextStyle(color: AppColors.accentDanger),
+                ),
+              ),
+
+            const Spacer(),
+
+            RpgButton(
+              label: "ABORT",
+              type: RpgButtonType.ghost,
+              onTap: () => Get.back(),
+            ),
+            AppSpacing.gapH8,
+            RpgButton(
+              label: isEdit ? "UPDATE" : "EXECUTE",
+              type: isDaemon ? RpgButtonType.secondary : RpgButtonType.primary,
+              onTap: _submit,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --- TAB 2: History (新增) ---
+  Widget _buildHistoryTab(BuildContext context, Color color) {
+    // 实时获取最新的 quest 数据 (因为可能会删除 session)
+    // 注意：widget.quest 是 final 的，但其内部 sessions 列表是可变的引用。
+    // 为了安全，我们最好从 Service 里 find 一下，或者 wrap Obx
+
+    // 简单起见，直接用 widget.quest.sessions，因为删除是在 Service 层操作内存对象
+    final sessions = widget.quest!.sessions;
+    // 按时间倒序
+    sessions.sort((a, b) => b.startTime.compareTo(a.startTime));
+
+    if (sessions.isEmpty) {
+      return const Center(child: RpgEmptyState(message: "NO DATA RECORDED"));
+    }
+
+    return Column(
+      children: [
+        // Stats Summary
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                "TOTAL TIME",
+                "${(widget.quest!.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
+              ),
+              _buildStatItem("SESSIONS", "${sessions.length}"),
+              _buildStatItem(
+                "AVG TIME",
+                "${sessions.isNotEmpty ? (widget.quest!.totalDurationSeconds / sessions.length / 60).toStringAsFixed(0) : 0}m",
               ),
             ],
           ),
         ),
-      ),
+
+        const RpgDivider(),
+
+        // List
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: sessions.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) {
+              final s = sessions[i];
+              final dateStr = DateFormat('yyyy-MM-dd').format(s.startTime);
+              final timeStr =
+                  "${DateFormat('HH:mm').format(s.startTime)} - ${s.endTime != null ? DateFormat('HH:mm').format(s.endTime!) : 'NOW'}";
+              final durationStr =
+                  "${(s.durationSeconds / 60).toStringAsFixed(0)}m";
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  children: [
+                    // Date
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateStr,
+                          style: AppTextStyles.micro.copyWith(
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          timeStr,
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // Duration
+                    Text(
+                      durationStr,
+                      style: TextStyle(
+                        fontFamily: 'Courier',
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Delete Action
+                    InkWell(
+                      onTap: () => _deleteSession(s.id),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: 'Courier',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(label, style: AppTextStyles.micro.copyWith(color: Colors.grey)),
+      ],
+    );
+  }
+
+  void _deleteSession(String sessionId) {
+    // 调用 Service 删除
+    q.deleteSession(widget.quest!.id, sessionId);
+    // 强制刷新 UI (因为 sessions 是引用，Service 里的 refresh 可能不会触发 State 的 build)
+    setState(() {});
   }
 
   Widget _buildDeadlineSelector(Color color) {
