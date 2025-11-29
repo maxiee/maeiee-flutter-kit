@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/logic/level_logic.dart';
 import 'quest_service.dart';
 
 class BlockState {
@@ -14,6 +15,12 @@ class BlockState {
 
 class TimeService extends GetxService {
   final QuestService _questService = Get.find(); // 依赖注入
+
+  // [新增] 玩家等级状态
+  final playerLevel = 1.obs;
+  final playerTitle = "NOVICE".obs;
+  final levelProgress = 0.0.obs;
+  final totalXp = 0.obs; // 历史总 XP
 
   // 状态
   final selectedDate = DateTime.now().obs;
@@ -160,6 +167,38 @@ class TimeService extends GetxService {
             s.startTime.day == targetDate.day,
       );
     }).length;
+
+    // [新增]：计算历史总 XP (遍历所有 Quest 的所有 Session)
+    // 这是一个全量遍历，数据量大时会有性能问题，但 MVP 阶段内存里几千条 Log 没问题。
+    int grandTotalSeconds = 0;
+    for (var q in _questService.quests) {
+      // 累加所有 Session 时长
+      grandTotalSeconds += q.totalDurationSeconds;
+
+      // 注意：正在进行的 Session 也要算进去 (实时反馈)
+      // q.sessions 里的最后一个如果是进行中，totalDurationSeconds 可能还没更新(取决于实现)
+      // 为了稳妥，我们手动处理进行中的 Session
+      for (var s in q.sessions) {
+        if (s.endTime == null) {
+          // 补上这部分的差值，因为 q.totalDurationSeconds 可能只存了 0 或旧值
+          final currentDuration = DateTime.now()
+              .difference(s.startTime)
+              .inSeconds;
+          // 减去 s.durationSeconds 是为了防止重复计算(如果它存了的话)
+          grandTotalSeconds += (currentDuration - s.durationSeconds);
+        }
+      }
+    }
+
+    // 假设 1分钟 = 1 XP
+    final grandTotalXp = grandTotalSeconds ~/ 60;
+    totalXp.value = grandTotalXp;
+
+    // 计算等级
+    final levelInfo = LevelLogic.calculate(grandTotalXp);
+    playerLevel.value = levelInfo.level;
+    playerTitle.value = levelInfo.title;
+    levelProgress.value = levelInfo.progress;
   }
 
   // 刷新时间块数据 (计算密集型，暂放在前端做)
