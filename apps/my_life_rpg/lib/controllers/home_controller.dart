@@ -20,7 +20,11 @@ class HomeController extends GetxController {
     // 这里先用流监听演示 (万能)
     _ts.onLevelUp.listen((newLevel) {
       if (newLevel != null) {
-        _showLevelUpDialog(newLevel);
+        // [优化] 延迟 300ms，让用户先看到任务创建成功的反馈（矩阵格子变色）
+        // 然后再弹出惊喜，体验更有层次感
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _showLevelUpDialog(newLevel);
+        });
       }
     });
   }
