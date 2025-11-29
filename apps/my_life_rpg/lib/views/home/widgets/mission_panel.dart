@@ -86,6 +86,20 @@ class MissionPanel extends StatelessWidget {
 
               // 混合排序逻辑
               activeTasks.sort((a, b) {
+                // 0. 超级优先级：逾期的 Deadline (hoursUntilDeadline < 0)
+                if (a.hoursUntilDeadline < 0 && b.hoursUntilDeadline >= 0) {
+                  return -1;
+                }
+                if (b.hoursUntilDeadline < 0 && a.hoursUntilDeadline >= 0) {
+                  return 1;
+                }
+
+                // 1. 优先级：24小时内到期的 Deadline
+                bool aUrgent = a.hoursUntilDeadline < 24;
+                bool bUrgent = b.hoursUntilDeadline < 24;
+                if (aUrgent && !bUrgent) return -1;
+                if (!aUrgent && bUrgent) return 1;
+
                 // 1. 优先级：逾期的循环任务最高
                 bool aIsUrgentDaemon = a.type == QuestType.daemon;
                 bool bIsUrgentDaemon = b.type == QuestType.daemon;

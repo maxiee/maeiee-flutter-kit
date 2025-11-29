@@ -96,6 +96,9 @@ class Quest {
   final int intervalDays; // 间隔周期 (天)
   final DateTime? lastDoneAt; // 上次完成时间（对于 Routine 是完成时间，对于 Project 是最后一次活跃时间）
 
+  final DateTime? deadline;
+  final bool isAllDayDeadline; // true=当天截止(显示在顶部), false=精确时间(显示在格子里)
+
   // 核心变化：不再直接存 logs，而是存 sessions
   // 为了兼容旧数据或快速查看，你可以保留一个 get allLogs => sessions.expand((s) => s.logs).toList();
   final List<QuestSession> sessions;
@@ -109,6 +112,8 @@ class Quest {
     this.isCompleted = false,
     this.intervalDays = 0,
     this.lastDoneAt,
+    this.deadline,
+    this.isAllDayDeadline = true,
     List<QuestSession>? sessions,
   }) : sessions = sessions ?? [];
 
@@ -121,6 +126,13 @@ class Quest {
     final all = sessions.expand((s) => s.logs).toList();
     all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return all;
+  }
+
+  // 计算属性：紧急程度 (用于排序)
+  // 返回：剩余小时数。负数表示已逾期。
+  double get hoursUntilDeadline {
+    if (deadline == null) return double.infinity;
+    return deadline!.difference(DateTime.now()).inMinutes / 60.0;
   }
 
   // 计算状态 (仅针对 Routine)
@@ -141,6 +153,8 @@ class Quest {
     'isCompleted': isCompleted,
     'intervalDays': intervalDays,
     'lastDoneAt': lastDoneAt?.toIso8601String(),
+    'deadline': deadline?.toIso8601String(),
+    'isAllDayDeadline': isAllDayDeadline,
     'sessions': sessions.map((s) => s.toJson()).toList(),
   };
 
@@ -158,6 +172,10 @@ class Quest {
     lastDoneAt: json['lastDoneAt'] != null
         ? DateTime.parse(json['lastDoneAt'])
         : null,
+    deadline: json['deadline'] != null
+        ? DateTime.parse(json['deadline'])
+        : null,
+    isAllDayDeadline: json['isAllDayDeadline'] ?? true,
     sessions:
         (json['sessions'] as List?)
             ?.map((e) => QuestSession.fromJson(e))

@@ -21,6 +21,56 @@ class TemporalMatrix extends StatelessWidget {
           // 1. Header (Date Selector)
           _buildHeader(),
 
+          // 1.5 Day Deadlines Marquee
+          Obx(() {
+            final dayDeadlines = game.quests
+                .where(
+                  (q) =>
+                      q.deadline != null &&
+                      q.isAllDayDeadline &&
+                      q.deadline!.year == game.selectedDate.value.year &&
+                      q.deadline!.month == game.selectedDate.value.month &&
+                      q.deadline!.day == game.selectedDate.value.day,
+                )
+                .toList();
+
+            if (dayDeadlines.isEmpty) return const SizedBox.shrink();
+
+            return Container(
+              height: 24,
+              color: Colors.redAccent.withOpacity(0.1),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.warning_amber,
+                    size: 14,
+                    color: Colors.redAccent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: dayDeadlines.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (ctx, i) => Center(
+                        child: Text(
+                          "${dayDeadlines[i].title} [DEADLINE]",
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontFamily: 'Courier',
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
           const Divider(height: 1, color: Colors.white10),
 
           // 2. Matrix Body
@@ -117,50 +167,78 @@ class TemporalMatrix extends StatelessWidget {
 
     return Expanded(
       child: Obx(() {
-        final colorType = c.getBlockColor(index);
+        final state = game.timeBlocks[index];
         final isSelected = c.isSelected(index);
 
+        // --- 1. 计算填充色 (Session) ---
         Color fillColor = Colors.transparent;
+        if (state.occupiedQuestIds.isNotEmpty) {
+          // 获取第一个任务的颜色 (简化处理，不做多色混合)
+          final qId = state.occupiedQuestIds.last; // 显示最新的
+          final colorType = c.getQuestColorType(qId);
+
+          if (colorType == 'orange')
+            fillColor = Colors.orangeAccent.withOpacity(0.6);
+          else if (colorType == 'cyan')
+            fillColor = Colors.cyanAccent.withOpacity(0.6);
+        }
+
+        // --- 2. 计算 Deadline 视觉 ---
+        bool hasDeadline = state.deadlineQuestIds.isNotEmpty;
         Color borderColor = Colors.white12;
-
-        // 状态映射颜色
-        if (colorType == 'orange') {
-          fillColor = Colors.orangeAccent.withOpacity(0.6);
-          borderColor = Colors.orangeAccent;
-        } else if (colorType == 'cyan') {
-          fillColor = Colors.cyanAccent.withOpacity(0.6);
-          borderColor = Colors.cyanAccent;
-        }
-
-        // 选中状态覆盖
-        if (isSelected) {
+        if (hasDeadline) {
+          borderColor = Colors.redAccent; // 红色警戒
+        } else if (isSelected) {
           borderColor = Colors.white;
-          fillColor = fillColor == Colors.transparent
-              ? Colors.white.withOpacity(0.2)
-              : fillColor.withOpacity(0.9);
         }
 
+        // --- 3. 构造组件 ---
         return GestureDetector(
           onTap: () => c.onBlockTap(index),
+          // Tooltip 用于展示多任务交错的详情
+          onLongPress: () {
+            if (!state.isEmpty) {
+              // Show snackbar or dialog with list of tasks in this block
+              Get.snackbar(
+                "Block Details",
+                "Occupied: ${state.occupiedQuestIds.length}\nDeadlines: ${state.deadlineQuestIds.length}",
+                snackPosition: SnackPosition.TOP,
+              );
+            }
+          },
           child: Container(
-            height: 14, // 胶囊高度
+            height: 14,
             decoration: BoxDecoration(
               color: fillColor,
-              borderRadius: BorderRadius.circular(4), // 胶囊圆角
+              borderRadius: BorderRadius.circular(2), // 方一点
               border: Border.all(
                 color: borderColor,
-                width: isSelected ? 1.5 : 1, // 选中加粗
+                width: hasDeadline
+                    ? 2
+                    : (isSelected ? 1.5 : 1), // Deadline 边框加粗
               ),
-              boxShadow: isSelected
+              boxShadow: hasDeadline
                   ? [
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.redAccent.withOpacity(0.4),
                         blurRadius: 4,
-                        spreadRadius: 1,
                       ),
                     ]
                   : [],
             ),
+            // 如果既有任务又有 Deadline，或者有多个任务，加个小点提示
+            child: (state.occupiedQuestIds.length > 1)
+                ? Center(
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )
+                : null,
           ),
         );
       }),

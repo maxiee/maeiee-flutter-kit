@@ -10,17 +10,10 @@ class MatrixController extends GetxController {
   final selectionStart = RxnInt(); // 第一次点击的格子索引
   final selectionEnd = RxnInt(); // 第二次点击的格子索引
 
-  // 辅助：获取某个格子的颜色
-  // 返回 null 表示未占用
-  // 返回颜色 表示占用 (Orange=Mission, Cyan=Daemon)
-  dynamic getBlockColor(int index) {
-    final questId = _game.timeBlocks[index];
-    if (questId == null) return null;
-
-    // 查找任务类型
+  // 新方法：直接根据 Quest ID 获取颜色类型
+  String? getQuestColorType(String questId) {
     final quest = _game.quests.firstWhereOrNull((q) => q.id == questId);
     if (quest == null) return null;
-
     return quest.type == QuestType.daemon ? 'cyan' : 'orange';
   }
 

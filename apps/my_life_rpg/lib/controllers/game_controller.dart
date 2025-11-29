@@ -5,6 +5,18 @@ import 'package:my_life_rpg/models/project.dart';
 import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
 
+class BlockState {
+  final List<String> occupiedQuestIds; // 实际占用的任务 (Session)
+  final List<String> deadlineQuestIds; // 在此截止的任务 (Deadline)
+
+  BlockState({
+    this.occupiedQuestIds = const [],
+    this.deadlineQuestIds = const [],
+  });
+
+  bool get isEmpty => occupiedQuestIds.isEmpty && deadlineQuestIds.isEmpty;
+}
+
 class GameController extends GetxController {
   // 玩家状态 Mock
   final hp = '中'.obs; // HIGH, NORMAL, LOW
@@ -21,7 +33,7 @@ class GameController extends GetxController {
   // 核心数据结构：一天的 96 个时间块的状态
   // 索引 0 = 00:00-00:15, 索引 95 = 23:45-24:00
   // Value: 任务ID (如果被占用) 或者 null
-  final timeBlocks = List<String?>.filled(96, null).obs;
+  final timeBlocks = List<BlockState>.generate(96, (_) => BlockState()).obs;
 
   // 2. 时间感知 (Time Perception)
   final dayStartTime = DateTime(
@@ -123,37 +135,33 @@ class GameController extends GetxController {
   // 刷新时间块数据 (计算密集型，暂放在前端做)
   void _refreshTimeBlocks() {
     // 重置
-    for (int i = 0; i < 96; i++) timeBlocks[i] = null;
+    for (int i = 0; i < 96; i++) {
+      timeBlocks[i] = BlockState(occupiedQuestIds: [], deadlineQuestIds: []);
+    }
 
     final targetDate = selectedDate.value;
 
     // 遍历所有任务
     for (var q in quests) {
-      for (var s in q.sessions) {
-        // 1. 判断 Session 是否属于 targetDate
-        // 为简化逻辑，只要 startTime 在当天，或者 endTime 在当天，就算
-        // 这里只处理 "Session Start 在当天" 的情况
-        if (s.startTime.year == targetDate.year &&
-            s.startTime.month == targetDate.month &&
-            s.startTime.day == targetDate.day) {
-          // 2. 填充格子
-          // 计算开始格子
-          int startBlock = (s.startTime.hour * 4) + (s.startTime.minute ~/ 15);
-
-          // 计算跨度格子数
-          int blocksCount = (s.durationSeconds / 60 / 15).ceil();
-          if (blocksCount < 1) blocksCount = 1; // 至少占一格
-
-          for (int i = 0; i < blocksCount; i++) {
-            int blockIndex = startBlock + i;
-            if (blockIndex < 96) {
-              // 填充 questId
-              timeBlocks[blockIndex] = q.id;
-            }
+      if (q.deadline != null && !q.isAllDayDeadline) {
+        // 只有精确时间才进格子
+        if (q.deadline!.year == targetDate.year &&
+            q.deadline!.month == targetDate.month &&
+            q.deadline!.day == targetDate.day) {
+          final blockIndex =
+              (q.deadline!.hour * 4) + (q.deadline!.minute ~/ 15);
+          if (blockIndex >= 0 && blockIndex < 96) {
+            // 注意：这里需要先把旧状态拿出来，再 add，因为 timeBlocks 是 RxList，元素本身不是 Rx
+            final oldState = timeBlocks[blockIndex];
+            timeBlocks[blockIndex] = BlockState(
+              occupiedQuestIds: oldState.occupiedQuestIds,
+              deadlineQuestIds: [...oldState.deadlineQuestIds, q.id],
+            );
           }
         }
       }
     }
+
     // 触发 UI 更新
     timeBlocks.refresh();
   }
@@ -258,6 +266,9 @@ class GameController extends GetxController {
     required QuestType type,
     Project? project,
     int interval = 0,
+    // 新增这两个参数
+    DateTime? deadline,
+    bool isAllDayDeadline = true,
   }) {
     final newQuest = Quest(
       id: const Uuid().v4(),
@@ -266,19 +277,22 @@ class GameController extends GetxController {
       projectId: project?.id,
       projectName: project?.title,
       intervalDays: interval,
-      // 如果是 Daemon，新建时默认当作“刚做完”或者“从未做过”？
-      // 建议：lastDoneAt 为 null，表示 NEW，立即 ready
+      // 如果是 Daemon，新建时默认 lastDoneAt 设为过期状态
       lastDoneAt: type == QuestType.daemon
           ? DateTime.now().subtract(Duration(days: interval))
-          : null, // 刚创建就算到期，强迫你立刻关注？或者设为null
-      sessions: [], // 初始化为空 session 列表
+          : null,
+      sessions: [],
+      // 传递 Deadline
+      deadline: deadline,
+      isAllDayDeadline: isAllDayDeadline,
     );
 
     quests.add(newQuest);
 
-    // 这里我们不存盘，因为目前是内存模式，
-    // 但你可以把 saveGame() 放在这里如果你想测试持久化
-    // saveGame();
+    // 只有这样，新添加的 Deadline 才会映射到格子上
+    _refreshTimeBlocks();
+
+    // saveGame(); // 如果启用了持久化
   }
 
   // 提供给 SessionController 调用的刷新方法

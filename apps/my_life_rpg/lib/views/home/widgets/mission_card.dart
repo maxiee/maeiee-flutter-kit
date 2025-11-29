@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../controllers/game_controller.dart';
 import '../../../models/quest.dart';
 import '../../session/session_view.dart';
@@ -110,47 +111,104 @@ class MissionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 如果有关联项目，显示 Tag
-                      if (quest.projectName != null)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Text(
-                            quest.projectName!,
-                            style: const TextStyle(
-                              color: Colors.orangeAccent,
-                              fontSize: 9,
+                      Row(
+                        children: [
+                          // 如果有关联项目，显示 Tag
+                          if (quest.projectName != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Text(
+                                quest.projectName!,
+                                style: const TextStyle(
+                                  color: Colors.orangeAccent,
+                                  fontSize: 9,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      // Daemon Urgency Tag
-                      if (isDaemon && dueDays > 0)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Text(
-                            "OVERDUE +$dueDays",
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                          // Daemon Urgency Tag
+                          if (isDaemon && dueDays > 0)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Text(
+                                "OVERDUE +$dueDays",
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                          if (quest.deadline != null) ...[
+                            Container(
+                              margin: const EdgeInsets.only(
+                                right: 6,
+                                bottom: 4,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: quest.hoursUntilDeadline < 0
+                                      ? Colors.red
+                                      : quest.hoursUntilDeadline < 24
+                                      ? Colors.amber
+                                      : Colors.grey,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.flag,
+                                    size: 8,
+                                    color: quest.hoursUntilDeadline < 0
+                                        ? Colors.red
+                                        : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    quest.isAllDayDeadline
+                                        ? DateFormat(
+                                            'MM-dd',
+                                          ).format(quest.deadline!)
+                                        : DateFormat(
+                                            'MM-dd HH:mm',
+                                          ).format(quest.deadline!),
+                                    style: TextStyle(
+                                      color: quest.hoursUntilDeadline < 0
+                                          ? Colors.red
+                                          : Colors.grey,
+                                      fontSize: 9,
+                                      fontFamily: 'Courier',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+
                       // 任务标题
                       Text(
                         quest.title,

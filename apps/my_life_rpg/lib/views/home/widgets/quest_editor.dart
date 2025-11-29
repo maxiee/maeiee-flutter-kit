@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../controllers/game_controller.dart';
 import '../../../models/project.dart';
 import '../../../models/quest.dart';
@@ -20,6 +21,9 @@ class _QuestEditorState extends State<QuestEditor> {
   // 表单状态
   Project? selectedProject;
   int intervalDays = 7; // 默认周期
+
+  DateTime? selectedDeadline;
+  bool isAllDay = true;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +88,10 @@ class _QuestEditorState extends State<QuestEditor> {
               ),
               autofocus: true,
             ),
+            const SizedBox(height: 16),
+
+            // 在 Title Input 下方插入
+            _buildDeadlineSelector(color),
             const SizedBox(height: 16),
 
             // 2. Context Selectors
@@ -197,6 +205,189 @@ class _QuestEditorState extends State<QuestEditor> {
     );
   }
 
+  Widget _buildDeadlineSelector(Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "TEMPORAL ANCHOR (DEADLINE):",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+            fontFamily: 'Courier',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            // 开关
+            InkWell(
+              onTap: () async {
+                if (selectedDeadline == null) {
+                  // 首次点击，默认选明天
+                  final now = DateTime.now();
+                  setState(
+                    () => selectedDeadline = DateTime(
+                      now.year,
+                      now.month,
+                      now.day + 1,
+                    ),
+                  );
+                } else {
+                  // 取消
+                  setState(() => selectedDeadline = null);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: selectedDeadline != null
+                      ? color.withOpacity(0.2)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: selectedDeadline != null ? color : Colors.white24,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.timer_off_outlined,
+                      size: 16,
+                      color: selectedDeadline != null ? color : Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      selectedDeadline == null ? "NO DEADLINE" : "ACTIVE",
+                      style: TextStyle(
+                        color: selectedDeadline != null ? color : Colors.grey,
+                        fontSize: 12,
+                        fontFamily: 'Courier',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // 如果激活了，显示日期/时间选择
+            if (selectedDeadline != null) ...[
+              // 日期选择
+              _buildPickerChip(
+                DateFormat('MM-dd').format(selectedDeadline!),
+                color,
+                () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDeadline!,
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 365),
+                    ),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) =>
+                        Theme(data: ThemeData.dark(), child: child!),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      selectedDeadline = DateTime(
+                        picked.year,
+                        picked.month,
+                        picked.day,
+                        selectedDeadline!.hour,
+                        selectedDeadline!.minute,
+                      );
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(width: 8),
+
+              // 全天/时间切换
+              InkWell(
+                onTap: () => setState(() => isAllDay = !isAllDay),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white24),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    isAllDay ? "ALL DAY" : "PRECISE",
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Courier',
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // 时间选择 (仅当 !isAllDay)
+              if (!isAllDay)
+                _buildPickerChip(
+                  DateFormat('HH:mm').format(selectedDeadline!),
+                  color,
+                  () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(selectedDeadline!),
+                      builder: (context, child) =>
+                          Theme(data: ThemeData.dark(), child: child!),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedDeadline = DateTime(
+                          selectedDeadline!.year,
+                          selectedDeadline!.month,
+                          selectedDeadline!.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPickerChip(String text, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white24),
+          borderRadius: BorderRadius.circular(4),
+          color: Colors.black38,
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontFamily: 'Courier',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildIntervalChip(int days, String label) {
     final isSelected = intervalDays == days;
     return Expanded(
@@ -232,6 +423,8 @@ class _QuestEditorState extends State<QuestEditor> {
       type: widget.type,
       project: selectedProject,
       interval: widget.type == QuestType.daemon ? intervalDays : 0,
+      deadline: selectedDeadline,
+      isAllDayDeadline: isAllDay,
     );
 
     Get.back();
