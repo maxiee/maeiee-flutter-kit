@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 import '../../../models/quest.dart';
@@ -29,16 +30,16 @@ class _QuestEditorState extends State<QuestEditor> {
   @override
   Widget build(BuildContext context) {
     final isDaemon = widget.type == QuestType.daemon;
-    final color = isDaemon ? Colors.cyanAccent : AppColors.accentMain;
+    final color = isDaemon ? AppColors.accentSystem : AppColors.accentMain;
 
     return Dialog(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppColors.bgPanel,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppSpacing.borderRadiusLg,
         side: BorderSide(color: color.withOpacity(0.3), width: 1),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: AppSpacing.paddingLg + AppSpacing.paddingXs,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,96 +50,77 @@ class _QuestEditorState extends State<QuestEditor> {
                 Icon(
                   isDaemon ? Icons.loop : Icons.code,
                   color: color,
-                  size: 20,
+                  size: AppSpacing.iconLg,
                 ),
-                const SizedBox(width: 12),
+                AppSpacing.gapH12,
                 Text(
                   isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION",
-                  style: TextStyle(
+                  style: AppTextStyles.panelHeader.copyWith(
                     color: color,
-                    fontFamily: 'Courier',
-                    fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            AppSpacing.gapV20,
 
             // 1. Title Input
-            TextField(
+            RpgInput(
               controller: titleController,
-              style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Courier',
-              ),
-              decoration: InputDecoration(
-                labelText: "IDENTIFIER (TITLE)",
-                labelStyle: TextStyle(
-                  color: Colors.grey,
-                  fontFamily: 'Courier',
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white24),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: color),
-                ),
-                filled: true,
-                fillColor: Colors.black38,
-              ),
+              label: "IDENTIFIER (TITLE)",
+              accentColor: color,
               autofocus: true,
             ),
-            const SizedBox(height: 16),
+            AppSpacing.gapV16,
 
             // 在 Title Input 下方插入
             _buildDeadlineSelector(color),
-            const SizedBox(height: 16),
+            AppSpacing.gapV16,
 
             // 2. Context Selectors
             if (!isDaemon) ...[
               // Mission 模式：选择 Project
-              const Text(
+              Text(
                 "LINK TO CAMPAIGN (OPTIONAL):",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 10,
-                  fontFamily: 'Courier',
-                ),
+                style: AppTextStyles.caption.copyWith(color: Colors.grey),
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapV8,
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: AppSpacing.paddingHorizontalMd,
                 decoration: BoxDecoration(
-                  color: Colors.black38,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.white10),
+                  color: AppColors.bgInput,
+                  borderRadius: AppSpacing.borderRadiusMd,
+                  border: Border.all(color: AppColors.borderDim),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<Project>(
                     value: selectedProject,
-                    dropdownColor: const Color(0xFF252525),
+                    dropdownColor: AppColors.bgCard,
                     isExpanded: true,
-                    hint: const Text(
+                    hint: Text(
                       "STANDALONE (无归属)",
-                      style: TextStyle(
-                        color: Colors.white38,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textDim,
                         fontSize: 12,
-                        fontFamily: 'Courier',
                       ),
                     ),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Courier',
-                      fontSize: 12,
-                    ),
+                    style: AppTextStyles.body.copyWith(fontSize: 12),
                     items: [
-                      const DropdownMenuItem<Project>(
+                      DropdownMenuItem<Project>(
                         value: null,
-                        child: Text("STANDALONE (无归属)"),
+                        child: Text(
+                          "STANDALONE (无归属)",
+                          style: AppTextStyles.body.copyWith(fontSize: 12),
+                        ),
                       ),
                       ...q.projects.map(
-                        (p) => DropdownMenuItem(value: p, child: Text(p.title)),
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            p.title,
+                            style: AppTextStyles.body.copyWith(fontSize: 12),
+                          ),
+                        ),
                       ),
                     ],
                     onChanged: (val) => setState(() => selectedProject = val),
@@ -147,56 +129,42 @@ class _QuestEditorState extends State<QuestEditor> {
               ),
             ] else ...[
               // Daemon 模式：选择周期
-              const Text(
+              Text(
                 "EXECUTION INTERVAL (DAYS):",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 10,
-                  fontFamily: 'Courier',
-                ),
+                style: AppTextStyles.caption.copyWith(color: Colors.grey),
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapV8,
               Row(
                 children: [
                   _buildIntervalChip(1, "DAILY"),
-                  const SizedBox(width: 8),
+                  AppSpacing.gapH8,
                   _buildIntervalChip(7, "WEEKLY"),
-                  const SizedBox(width: 8),
+                  AppSpacing.gapH8,
                   _buildIntervalChip(21, "3-WEEKS"),
-                  const SizedBox(width: 8),
+                  AppSpacing.gapH8,
                   _buildIntervalChip(30, "MONTHLY"),
                 ],
               ),
             ],
 
-            const SizedBox(height: 24),
+            AppSpacing.gapV24,
 
             // 3. Actions
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: const Text(
-                    "ABORT",
-                    style: TextStyle(color: Colors.grey, fontFamily: 'Courier'),
-                  ),
+                RpgButton(
+                  label: "ABORT",
+                  type: RpgButtonType.ghost,
+                  onTap: () => Get.back(),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color.withOpacity(0.2),
-                    foregroundColor: color,
-                    side: BorderSide(color: color),
-                  ),
-                  onPressed: _submit,
-                  child: const Text(
-                    "EXECUTE",
-                    style: TextStyle(
-                      fontFamily: 'Courier',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                AppSpacing.gapH8,
+                RpgButton(
+                  label: "EXECUTE",
+                  type: isDaemon
+                      ? RpgButtonType.secondary
+                      : RpgButtonType.primary,
+                  onTap: _submit,
                 ),
               ],
             ),
@@ -210,15 +178,11 @@ class _QuestEditorState extends State<QuestEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "TEMPORAL ANCHOR (DEADLINE):",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 10,
-            fontFamily: 'Courier',
-          ),
+          style: AppTextStyles.caption.copyWith(color: Colors.grey),
         ),
-        const SizedBox(height: 8),
+        AppSpacing.gapV8,
         Row(
           children: [
             // 开关
@@ -239,34 +203,36 @@ class _QuestEditorState extends State<QuestEditor> {
                   setState(() => selectedDeadline = null);
                 }
               },
+              borderRadius: AppSpacing.borderRadiusMd,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: selectedDeadline != null
                       ? color.withOpacity(0.2)
                       : Colors.transparent,
                   border: Border.all(
-                    color: selectedDeadline != null ? color : Colors.white24,
+                    color: selectedDeadline != null
+                        ? color
+                        : AppColors.borderBright,
                   ),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: AppSpacing.borderRadiusMd,
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.timer_off_outlined,
-                      size: 16,
+                      size: AppSpacing.iconMd - 2,
                       color: selectedDeadline != null ? color : Colors.grey,
                     ),
-                    const SizedBox(width: 8),
+                    AppSpacing.gapH8,
                     Text(
                       selectedDeadline == null ? "NO DEADLINE" : "ACTIVE",
-                      style: TextStyle(
+                      style: AppTextStyles.body.copyWith(
                         color: selectedDeadline != null ? color : Colors.grey,
                         fontSize: 12,
-                        fontFamily: 'Courier',
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -275,7 +241,7 @@ class _QuestEditorState extends State<QuestEditor> {
               ),
             ),
 
-            const SizedBox(width: 12),
+            AppSpacing.gapH12,
 
             // 如果激活了，显示日期/时间选择
             if (selectedDeadline != null) ...[
@@ -308,32 +274,32 @@ class _QuestEditorState extends State<QuestEditor> {
                 },
               ),
 
-              const SizedBox(width: 8),
+              AppSpacing.gapH8,
 
               // 全天/时间切换
               InkWell(
                 onTap: () => setState(() => isAllDay = !isAllDay),
+                borderRadius: AppSpacing.borderRadiusMd,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white24),
-                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.borderBright),
+                    borderRadius: AppSpacing.borderRadiusMd,
                   ),
                   child: Text(
                     isAllDay ? "ALL DAY" : "PRECISE",
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary,
                       fontSize: 12,
-                      fontFamily: 'Courier',
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              AppSpacing.gapH8,
 
               // 时间选择 (仅当 !isAllDay)
               if (!isAllDay)
@@ -370,18 +336,21 @@ class _QuestEditorState extends State<QuestEditor> {
   Widget _buildPickerChip(String text, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: AppSpacing.borderRadiusMd,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white24),
-          borderRadius: BorderRadius.circular(4),
-          color: Colors.black38,
+          border: Border.all(color: AppColors.borderBright),
+          borderRadius: AppSpacing.borderRadiusMd,
+          color: AppColors.bgInput,
         ),
         child: Text(
           text,
-          style: TextStyle(
+          style: AppTextStyles.body.copyWith(
             color: color,
-            fontFamily: 'Courier',
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -394,18 +363,19 @@ class _QuestEditorState extends State<QuestEditor> {
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => intervalDays = days),
+        borderRadius: AppSpacing.borderRadiusMd,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: AppSpacing.paddingVerticalSm,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.cyanAccent : Colors.transparent,
-            border: Border.all(color: Colors.cyanAccent),
-            borderRadius: BorderRadius.circular(4),
+            color: isSelected ? AppColors.accentSystem : Colors.transparent,
+            border: Border.all(color: AppColors.accentSystem),
+            borderRadius: AppSpacing.borderRadiusMd,
           ),
           child: Text(
             "$days",
-            style: TextStyle(
-              color: isSelected ? Colors.black : Colors.cyanAccent,
+            style: AppTextStyles.body.copyWith(
+              color: isSelected ? Colors.black : AppColors.accentSystem,
               fontWeight: FontWeight.bold,
             ),
           ),

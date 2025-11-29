@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
 
@@ -9,13 +10,13 @@ class CampaignBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 60, // 紧凑高度
+    return SizedBox(
+      height: AppSpacing.campaignBarHeight,
       child: Obx(
         () => ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: q.projects.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          separatorBuilder: (_, __) => AppSpacing.gapH12,
           itemBuilder: (ctx, i) => _buildProjectChip(q.projects[i]),
         ),
       ),
@@ -25,11 +26,14 @@ class CampaignBar extends StatelessWidget {
   Widget _buildProjectChip(Project p) {
     return Container(
       width: 160,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF252525),
+        color: AppColors.bgCard,
         border: Border.all(color: AppColors.accentMain.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: AppSpacing.borderRadiusMd,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,24 +41,16 @@ class CampaignBar extends StatelessWidget {
         children: [
           Text(
             p.title,
-            style: const TextStyle(
+            style: AppTextStyles.body.copyWith(
               color: AppColors.accentMain,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          AppSpacing.gapV4,
           // 简易进度条
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: p.progress,
-              backgroundColor: Colors.black,
-              valueColor: const AlwaysStoppedAnimation(Colors.orange),
-              minHeight: 2,
-            ),
-          ),
+          RpgProgress(value: p.progress, color: AppColors.accentMain),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import '../../../../controllers/matrix_controller.dart';
@@ -19,8 +20,8 @@ class TemporalMatrix extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF151515), // 比背景稍亮
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
+        borderRadius: AppSpacing.borderRadiusLg,
+        border: Border.all(color: AppColors.borderDim),
       ),
       child: Column(
         children: [
@@ -45,29 +46,27 @@ class TemporalMatrix extends StatelessWidget {
             if (dayDeadlines.isEmpty) return const SizedBox.shrink();
 
             return Container(
-              height: 24,
-              color: Colors.redAccent.withOpacity(0.1),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              height: AppSpacing.hourRowHeight,
+              color: AppColors.accentDanger.withOpacity(0.1),
+              padding: AppSpacing.paddingHorizontalMd,
               child: Row(
                 children: [
                   const Icon(
                     Icons.warning_amber,
-                    size: 14,
-                    color: Colors.redAccent,
+                    size: AppSpacing.iconSm,
+                    color: AppColors.accentDanger,
                   ),
-                  const SizedBox(width: 8),
+                  AppSpacing.gapH8,
                   Expanded(
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: dayDeadlines.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      separatorBuilder: (_, __) => AppSpacing.gapH12,
                       itemBuilder: (ctx, i) => Center(
                         child: Text(
                           "${dayDeadlines[i].title} [DEADLINE]",
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontFamily: 'Courier',
-                            fontSize: 10,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.accentDanger,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -79,12 +78,15 @@ class TemporalMatrix extends StatelessWidget {
             );
           }),
 
-          const Divider(height: 1, color: Colors.white10),
+          const RpgDivider(),
 
           // 2. Matrix Body
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
+                horizontal: AppSpacing.md,
+              ),
               itemCount: 24, // 24小时
               itemBuilder: (ctx, hour) => _buildHourRow(hour),
             ),
@@ -96,13 +98,20 @@ class TemporalMatrix extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.sm,
+        horizontal: AppSpacing.md,
+      ),
       color: Colors.black26,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: Colors.grey, size: 20),
+            icon: Icon(
+              Icons.chevron_left,
+              color: AppColors.textSecondary,
+              size: AppSpacing.iconLg,
+            ),
             onPressed: () => timeService.changeDate(
               timeService.selectedDate.value.subtract(const Duration(days: 1)),
             ),
@@ -112,15 +121,15 @@ class TemporalMatrix extends StatelessWidget {
           Obx(
             () => Text(
               DateFormat('yyyy-MM-dd').format(timeService.selectedDate.value),
-              style: const TextStyle(
-                color: Colors.white70,
-                fontFamily: 'Courier',
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.panelHeader,
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+            icon: Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: AppSpacing.iconLg,
+            ),
             onPressed: () => timeService.changeDate(
               timeService.selectedDate.value.add(const Duration(days: 1)),
             ),
@@ -134,8 +143,8 @@ class TemporalMatrix extends StatelessWidget {
 
   Widget _buildHourRow(int hour) {
     return Container(
-      height: 24, // 增加一点高度容纳文字
-      margin: const EdgeInsets.only(bottom: 4),
+      height: AppSpacing.hourRowHeight,
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         children: [
           // 标尺
@@ -143,10 +152,10 @@ class TemporalMatrix extends StatelessWidget {
             width: 24,
             child: Text(
               hour.toString().padLeft(2, '0'),
-              style: const TextStyle(color: Colors.white30, fontSize: 11),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textDim),
             ),
           ),
-          const SizedBox(width: 8),
+          AppSpacing.gapH8,
           // 4个格子
           Expanded(
             child: Row(
@@ -178,7 +187,7 @@ class TemporalMatrix extends StatelessWidget {
         Color fillColor = Colors.white.withOpacity(0.05); // 默认底色
         Color borderColor = Colors.transparent;
         String? labelText;
-        Color textColor = Colors.white;
+        Color textColor = AppColors.textPrimary;
 
         // 优先级 1: Deadline (最高)
         if (state.deadlineQuestIds.isNotEmpty) {
@@ -187,10 +196,10 @@ class TemporalMatrix extends StatelessWidget {
             (q) => q.id == qId,
           );
 
-          fillColor = Colors.redAccent.withOpacity(0.2); // 红底
-          borderColor = Colors.redAccent;
-          labelText = quest?.title; // 标题
-          textColor = Colors.redAccent;
+          fillColor = AppColors.accentDanger.withOpacity(0.2);
+          borderColor = AppColors.accentDanger;
+          labelText = quest?.title;
+          textColor = AppColors.accentDanger;
         }
         // 优先级 2: Session (占用)
         else if (state.occupiedQuestIds.isNotEmpty) {
@@ -205,14 +214,14 @@ class TemporalMatrix extends StatelessWidget {
             borderColor = AppColors.accentMain.withOpacity(0.5);
             textColor = AppColors.accentMain;
           } else {
-            fillColor = Colors.cyanAccent.withOpacity(0.4);
-            borderColor = Colors.cyanAccent.withOpacity(0.5);
-            textColor = Colors.cyanAccent;
+            fillColor = AppColors.accentSystem.withOpacity(0.4);
+            borderColor = AppColors.accentSystem.withOpacity(0.5);
+            textColor = AppColors.accentSystem;
           }
           labelText = quest?.title;
         }
 
-        if (isSelected) borderColor = Colors.white;
+        if (isSelected) borderColor = AppColors.textPrimary;
 
         return GestureDetector(
           onTap: () => c.onBlockTap(index),
@@ -221,21 +230,16 @@ class TemporalMatrix extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 2), // 极小内边距
             decoration: BoxDecoration(
               color: fillColor,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: AppSpacing.borderRadiusSm,
               border: Border.all(color: borderColor),
             ),
             // 文字渲染核心
             child: labelText != null
                 ? Text(
                     labelText,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 7, // 7px 像素字体感
-                      fontFamily: 'Courier', // 等宽字体在小尺寸下更易读
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2, // 允许两行
-                    overflow: TextOverflow.clip, // 直接截断，不显示省略号省空间
+                    style: AppTextStyles.micro.copyWith(color: textColor),
+                    maxLines: 2,
+                    overflow: TextOverflow.clip,
                   )
                 : null,
           ),

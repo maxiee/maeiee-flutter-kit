@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
-import 'package:my_life_rpg/core/widgets/rpg_container.dart';
+import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/widgets.dart';
 import '../../controllers/session_controller.dart';
 import '../../models/quest.dart';
 
@@ -11,7 +11,7 @@ class SessionView extends StatelessWidget {
     final c = Get.put(SessionController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), // 比首页更深一点，更沉浸
+      backgroundColor: AppColors.bgDarkest, // 比首页更深一点，更沉浸
       body: SafeArea(
         child: Column(
           children: [
@@ -21,7 +21,7 @@ class SessionView extends StatelessWidget {
             // 2. 呼吸计时器 (Pulse Timer)
             _buildPulseTimer(c),
 
-            const Divider(height: 1, color: Colors.white10),
+            const RpgDivider(),
 
             // 3. 战术日志流 (The Stream)
             Expanded(
@@ -29,10 +29,10 @@ class SessionView extends StatelessWidget {
                 () => ListView.builder(
                   controller: c.scrollController,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
                   ),
-                  itemCount: c.displayLogs.length, // <--- 只有这里改了变量名
+                  itemCount: c.displayLogs.length,
                   itemBuilder: (ctx, i) => _buildLogRow(c, c.displayLogs[i]),
                 ),
               ),
@@ -48,42 +48,30 @@ class SessionView extends StatelessWidget {
 
   Widget _buildHeader(SessionController c) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Icon(Icons.terminal, color: Colors.white38, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                c.quest.title,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontFamily: 'Courier',
-                  fontWeight: FontWeight.bold,
-                ),
+              Icon(
+                Icons.terminal,
+                color: AppColors.textDim,
+                size: AppSpacing.iconMd,
               ),
+              AppSpacing.gapH8,
+              Text(c.quest.title, style: AppTextStyles.panelHeader),
             ],
           ),
           // 退出按钮
-          InkWell(
+          RpgButton(
+            label: "TERMINATE",
+            type: RpgButtonType.danger,
+            compact: true,
             onTap: c.endSession,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                "TERMINATE",
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 10,
-                  fontFamily: 'Courier',
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -96,21 +84,17 @@ class SessionView extends StatelessWidget {
       builder: (ctx, child) {
         return Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          color: Color(0xFF151515),
+          padding: AppSpacing.paddingVerticalLg + AppSpacing.paddingVerticalMd,
+          color: const Color(0xFF151515),
           child: Column(
             children: [
               Obx(
                 () => Text(
                   c.formatDuration(c.durationSeconds.value),
-                  style: TextStyle(
-                    fontFamily: 'Courier',
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.heroNumber.copyWith(
                     color: AppColors.accentMain.withOpacity(
                       c.pulseAnimation.value,
-                    ), // 呼吸效果
-                    letterSpacing: 6,
+                    ),
                     shadows: [
                       BoxShadow(
                         color: AppColors.accentMain.withOpacity(
@@ -123,13 +107,11 @@ class SessionView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              AppSpacing.gapV4,
               Text(
                 "SESSION IN PROGRESS",
-                style: TextStyle(
-                  color: Colors.white12,
-                  fontSize: 10,
-                  fontFamily: 'Courier',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textDim,
                   letterSpacing: 2,
                 ),
               ),
@@ -150,19 +132,19 @@ class SessionView extends StatelessWidget {
         typeIcon = Icons.flag;
         break;
       case LogType.bug:
-        typeColor = Colors.redAccent;
+        typeColor = AppColors.accentDanger;
         typeIcon = Icons.bug_report;
         break;
       case LogType.idea:
-        typeColor = Colors.cyanAccent;
+        typeColor = AppColors.accentSystem;
         typeIcon = Icons.lightbulb;
         break;
       case LogType.rest:
-        typeColor = Colors.greenAccent;
+        typeColor = AppColors.accentSafe;
         typeIcon = Icons.coffee;
         break;
       default:
-        typeColor = Colors.white54;
+        typeColor = AppColors.textSecondary;
         typeIcon = Icons.arrow_right;
     }
 
@@ -174,24 +156,23 @@ class SessionView extends StatelessWidget {
           // Time
           Text(
             c.formatTime(log.createdAt).split(' ')[1], // 只显示时间
-            style: TextStyle(
-              color: Colors.white24,
-              fontFamily: 'Courier',
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textDim,
               fontSize: 12,
             ),
           ),
-          const SizedBox(width: 12),
+          AppSpacing.gapH12,
           // Icon
-          Icon(typeIcon, color: typeColor, size: 14),
-          const SizedBox(width: 8),
+          Icon(typeIcon, color: typeColor, size: AppSpacing.iconSm),
+          AppSpacing.gapH8,
           // Content
           Expanded(
             child: Text(
               log.content,
-              style: TextStyle(
-                color: typeColor == Colors.white54 ? Colors.white70 : typeColor,
-                fontFamily: 'Courier',
-                fontSize: 14,
+              style: AppTextStyles.body.copyWith(
+                color: typeColor == AppColors.textSecondary
+                    ? AppColors.textSecondary
+                    : typeColor,
               ),
             ),
           ),
@@ -207,112 +188,58 @@ class SessionView extends StatelessWidget {
           // 1. Macros Bar (宏指令栏)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: AppSpacing.paddingSm,
             child: Row(
               children: [
-                _buildMacroChip(c, "🐛 BUG", LogType.bug, "[BUG]"),
-                _buildMacroChip(c, "🚩 节点", LogType.milestone, "[节点]"),
-                _buildMacroChip(c, "💡 灵感", LogType.idea, "[灵感]"),
-                _buildMacroChip(c, "☕ 休息", LogType.rest, ""), // 直接发送
-                _buildMacroChip(c, "📝 笔记", LogType.normal, ""),
+                RpgMacroChip(
+                  label: "🐛 BUG",
+                  color: AppColors.accentDanger,
+                  onTap: () => c.triggerMacro("🐛 BUG", LogType.bug, "[BUG]"),
+                ),
+                AppSpacing.gapH8,
+                RpgMacroChip(
+                  label: "🚩 节点",
+                  color: Colors.amber,
+                  onTap: () =>
+                      c.triggerMacro("🚩 节点", LogType.milestone, "[节点]"),
+                ),
+                AppSpacing.gapH8,
+                RpgMacroChip(
+                  label: "💡 灵感",
+                  color: AppColors.accentSystem,
+                  onTap: () => c.triggerMacro("💡 灵感", LogType.idea, "[灵感]"),
+                ),
+                AppSpacing.gapH8,
+                RpgMacroChip(
+                  label: "☕ 休息",
+                  color: AppColors.accentSafe,
+                  onTap: () => c.triggerMacro("☕ 休息", LogType.rest, ""),
+                ),
+                AppSpacing.gapH8,
+                RpgMacroChip(
+                  label: "📝 笔记",
+                  color: Colors.grey,
+                  onTap: () => c.triggerMacro("📝 笔记", LogType.normal, ""),
+                ),
               ],
             ),
           ),
 
           // 2. Input Field
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Row(
-              children: [
-                const Text(
-                  ">",
-                  style: TextStyle(
-                    color: Colors.greenAccent,
-                    fontSize: 18,
-                    fontFamily: 'Courier',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: c.textController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Courier',
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: "Enter log entry...",
-                      hintStyle: TextStyle(
-                        color: Colors.white24,
-                        fontFamily: 'Courier',
-                      ),
-                    ),
-                    cursorColor: Colors.greenAccent,
-                    onSubmitted: (_) => c.addLog(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.subdirectory_arrow_left,
-                    color: Colors.white38,
-                  ),
-                  onPressed: () => c.addLog(),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: RpgCommandInput(
+              controller: c.textController,
+              hint: "Enter log entry...",
+              onSubmit: () => c.addLog(),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMacroChip(
-    SessionController c,
-    String label,
-    LogType type,
-    String prefix,
-  ) {
-    Color color;
-    switch (type) {
-      case LogType.bug:
-        color = Colors.redAccent;
-        break;
-      case LogType.milestone:
-        color = Colors.amber;
-        break;
-      case LogType.idea:
-        color = Colors.cyan;
-        break;
-      case LogType.rest:
-        color = Colors.green;
-        break;
-      default:
-        color = Colors.grey;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: () => c.triggerMacro(label, type, prefix),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            border: Border.all(color: color.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontFamily: 'Courier',
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
       ),
     );
   }

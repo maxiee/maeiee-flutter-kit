@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart'; // 别忘了这个
+import 'package:my_life_rpg/core/theme/app_theme.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 
 void main() async {
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'My Life RPG',
-      theme: ThemeData.dark(), // 既然是黑色风格，直接全局 Dark
+      theme: AppTheme.darkTheme, // 使用统一的赛博朋克主题
       home: HomeView(),
     );
   }
