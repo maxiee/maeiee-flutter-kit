@@ -27,4 +27,6 @@ class TodoService extends GetxService {
   void removeTodoById(String id) {
     todos.removeWhere((todo) => todo.id == id);
   }
+
+  Todo? getTodoById(String id) => todos.firstWhereOrNull((t) => t.id == id);
 }

@@ -20,6 +20,7 @@ class HomePage extends StatelessWidget {
                   todo: c.todos[i],
                   onToggle: () => c.toggleTodo(c.todos[i].id),
                   onDelete: () => c.deleteTodo(c.todos[i].id),
+                  onTap: () => Get.toNamed('/details/${c.todos[i].id}'),
                 ),
               ),
       ),

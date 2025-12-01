@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/todo.dart';
+import '../services/todo_service.dart';
 
 class HomeBinding extends Bindings {
   @override
@@ -10,7 +11,8 @@ class HomeBinding extends Bindings {
 }
 
 class HomeController extends GetxController {
-  final todos = <Todo>[].obs;
+  final _service = Get.find<TodoService>();
+  RxList<Todo> get todos => _service.todos;
   final titleController = TextEditingController();
   final descController = TextEditingController();
 
