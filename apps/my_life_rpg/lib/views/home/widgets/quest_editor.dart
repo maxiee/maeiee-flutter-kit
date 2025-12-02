@@ -69,34 +69,25 @@ class _QuestEditorState extends State<QuestEditor> {
     final isDaemon = widget.type == QuestType.daemon;
     final color = isDaemon ? AppColors.accentSystem : AppColors.accentMain;
 
-    // 如果是新建模式，不需要 Tab，直接显示 Config
-    if (!isEdit) {
-      return Dialog(
-        backgroundColor: AppColors.bgPanel,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppSpacing.borderRadiusLg,
-          side: BorderSide(color: color.withOpacity(0.3), width: 1),
-        ),
-        child: Padding(
-          padding: AppSpacing.paddingLg,
-          child: _buildConfigTab(context, color, isEdit),
-        ),
-      );
+    // 动态计算标题
+    String title;
+    if (isEdit) {
+      title = isDaemon ? "CONFIGURE DAEMON" : "CONFIGURE MISSION";
+    } else {
+      title = isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION";
     }
 
-    // 编辑模式：使用 TabView
-    return Dialog(
-      backgroundColor: AppColors.bgPanel,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusLg,
-        side: BorderSide(color: color.withOpacity(0.3), width: 1),
-      ),
-      child: DefaultTabController(
+    // 构建核心内容
+    Widget content;
+    if (!isEdit) {
+      // 新建模式：直接显示配置表单
+      content = _buildConfigForm(context, color, isEdit);
+    } else {
+      // 编辑模式：包含 TabView
+      content = DefaultTabController(
         length: 2,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // Tab Bar
             Container(
               color: Colors.black26,
               child: TabBar(
@@ -112,15 +103,13 @@ class _QuestEditorState extends State<QuestEditor> {
                 ],
               ),
             ),
-
-            // Tab Content (限制高度，允许滚动)
             SizedBox(
-              height: 400, // 给一个固定高度或约束
+              height: 350, // 限制高度，允许内部滚动
               child: TabBarView(
                 children: [
                   SingleChildScrollView(
-                    padding: AppSpacing.paddingLg,
-                    child: _buildConfigTab(context, color, isEdit),
+                    padding: const EdgeInsets.only(top: 16), // Tab 和内容的间距
+                    child: _buildConfigForm(context, color, isEdit),
                   ),
                   _buildHistoryTab(context, color),
                 ],
@@ -128,62 +117,54 @@ class _QuestEditorState extends State<QuestEditor> {
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return RpgDialog(
+      title: title,
+      icon: isDaemon ? Icons.loop : Icons.code,
+      accentColor: color,
+      onCancel: () => Get.back(),
+      actions: [
+        if (isEdit)
+          TextButton(
+            onPressed: _delete,
+            child: const Text(
+              "DELETE",
+              style: TextStyle(color: AppColors.accentDanger),
+            ),
+          ),
+        if (isEdit) AppSpacing.gapH12,
+
+        RpgButton(
+          label: isEdit ? "UPDATE" : "EXECUTE",
+          type: isDaemon ? RpgButtonType.secondary : RpgButtonType.primary,
+          onTap: _submit,
+        ),
+      ],
+      child: content,
     );
   }
 
-  // --- TAB 1: Configuration (完整的表单 UI) ---
-  Widget _buildConfigTab(BuildContext context, Color color, bool isEdit) {
-    // 确定是否是 Daemon 类型 (用于显示不同的选项)
+  Widget _buildConfigForm(BuildContext context, Color color, bool isEdit) {
     final isDaemon = activeType == QuestType.daemon;
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        Row(
-          children: [
-            Icon(
-              isDaemon ? Icons.loop : Icons.code,
-              color: color,
-              size: AppSpacing.iconLg,
-            ),
-            AppSpacing.gapH12,
-            Text(
-              isEdit
-                  ? (isDaemon ? "CONFIGURE DAEMON" : "CONFIGURE MISSION")
-                  : (isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION"),
-              style: AppTextStyles.panelHeader.copyWith(
-                color: color,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
-        AppSpacing.gapV20,
-
-        // 1. Title Input
         RpgInput(
           controller: titleController,
           label: "IDENTIFIER (TITLE)",
           accentColor: color,
-          // 如果是编辑模式，不自动聚焦，避免键盘遮挡
           autofocus: !isEdit,
         ),
         AppSpacing.gapV16,
-
-        // Deadline Selector (复用之前的辅助方法)
         _buildDeadlineSelector(color),
         AppSpacing.gapV16,
 
-        // 2. Context Selectors
         if (!isDaemon) ...[
-          // [Mission Mode]: Project Selector
-          Text(
-            "LINK TO CAMPAIGN (OPTIONAL):",
-            style: AppTextStyles.caption.copyWith(color: Colors.grey),
-          ),
+          // Mission: Project Selector
+          const Text("LINK TO CAMPAIGN:", style: AppTextStyles.caption),
           AppSpacing.gapV8,
           Container(
             padding: AppSpacing.paddingHorizontalMd,
@@ -197,28 +178,21 @@ class _QuestEditorState extends State<QuestEditor> {
                 value: selectedProject,
                 dropdownColor: AppColors.bgCard,
                 isExpanded: true,
-                hint: Text(
-                  "STANDALONE (无归属)",
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textDim,
-                    fontSize: 12,
-                  ),
+                hint: const Text(
+                  "STANDALONE",
+                  style: TextStyle(color: AppColors.textDim, fontSize: 12),
                 ),
-                style: AppTextStyles.body.copyWith(fontSize: 12),
                 items: [
-                  DropdownMenuItem<Project>(
+                  const DropdownMenuItem<Project>(
                     value: null,
-                    child: Text(
-                      "STANDALONE (无归属)",
-                      style: AppTextStyles.body.copyWith(fontSize: 12),
-                    ),
+                    child: Text("STANDALONE", style: TextStyle(fontSize: 12)),
                   ),
                   ...q.projects.map(
                     (p) => DropdownMenuItem(
                       value: p,
                       child: Text(
                         p.title,
-                        style: AppTextStyles.body.copyWith(fontSize: 12),
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
@@ -228,11 +202,8 @@ class _QuestEditorState extends State<QuestEditor> {
             ),
           ),
         ] else ...[
-          // [Daemon Mode]: Interval Selector
-          Text(
-            "EXECUTION INTERVAL (DAYS):",
-            style: AppTextStyles.caption.copyWith(color: Colors.grey),
-          ),
+          // Daemon: Interval Selector
+          const Text("EXECUTION INTERVAL:", style: AppTextStyles.caption),
           AppSpacing.gapV8,
           Row(
             children: [
@@ -240,43 +211,10 @@ class _QuestEditorState extends State<QuestEditor> {
               AppSpacing.gapH8,
               _buildIntervalChip(7, "WEEKLY"),
               AppSpacing.gapH8,
-              _buildIntervalChip(21, "3-WEEKS"),
-              AppSpacing.gapH8,
               _buildIntervalChip(30, "MONTHLY"),
             ],
           ),
         ],
-
-        AppSpacing.gapV24,
-
-        // 3. Actions
-        Row(
-          children: [
-            // DELETE BUTTON (Only in Edit Mode)
-            if (isEdit)
-              TextButton(
-                onPressed: _delete,
-                child: const Text(
-                  "DELETE",
-                  style: TextStyle(color: AppColors.accentDanger),
-                ),
-              ),
-
-            const Spacer(),
-
-            RpgButton(
-              label: "ABORT",
-              type: RpgButtonType.ghost,
-              onTap: () => Get.back(),
-            ),
-            AppSpacing.gapH8,
-            RpgButton(
-              label: isEdit ? "UPDATE" : "EXECUTE",
-              type: isDaemon ? RpgButtonType.secondary : RpgButtonType.primary,
-              onTap: _submit,
-            ),
-          ],
-        ),
       ],
     );
   }
