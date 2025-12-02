@@ -31,8 +31,24 @@ class AppColors {
       case QuestType.daemon:
         return accentSystem; // Cyan
       case QuestType.mission:
-      default:
         return accentMain; // Orange
     }
+  }
+
+  // [新增] 项目预设颜色池
+  static const List<Color> projectColors = [
+    Colors.orangeAccent,
+    Colors.cyanAccent,
+    Colors.purpleAccent,
+    Colors.greenAccent,
+    Colors.redAccent,
+    Colors.blueAccent, // 可以多加几个
+    Colors.pinkAccent,
+    Colors.amberAccent,
+  ];
+
+  static Color getProjectColor(int index) {
+    if (index < 0 || index >= projectColors.length) return projectColors[0];
+    return projectColors[index];
   }
 }

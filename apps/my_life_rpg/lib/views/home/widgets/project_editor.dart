@@ -96,14 +96,7 @@ class _ProjectEditorState extends State<ProjectEditor> {
 
   Widget _buildColorOption(int index) {
     // 简单写一下颜色列表，和 Model 里保持一致
-    final colors = [
-      Colors.orangeAccent,
-      Colors.cyanAccent,
-      Colors.purpleAccent,
-      Colors.greenAccent,
-      Colors.redAccent,
-    ];
-    final color = colors[index];
+    final color = AppColors.getProjectColor(index);
     final isSelected = selectedColorIdx == index;
 
     return GestureDetector(

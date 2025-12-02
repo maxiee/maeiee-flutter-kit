@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/models/serializable.dart';
 
 class Project implements Serializable {
@@ -16,17 +17,7 @@ class Project implements Serializable {
     this.colorIndex = 0,
   });
 
-  Color get color {
-    const colors = [
-      Colors.orangeAccent,
-      Colors.cyanAccent,
-      Colors.purpleAccent,
-      Colors.greenAccent,
-      Colors.redAccent,
-    ];
-    if (colorIndex < 0 || colorIndex >= colors.length) return colors[0];
-    return colors[colorIndex];
-  }
+  Color get color => AppColors.getProjectColor(colorIndex);
 
   // [新增] 序列化
   @override

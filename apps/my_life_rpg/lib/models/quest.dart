@@ -7,12 +7,37 @@ enum QuestType {
   daemon, // 守护进程 (循环)
 }
 
+extension QuestTypeExt on QuestType {
+  String toJson() => toString().split('.').last;
+
+  static QuestType fromJson(String json) {
+    return QuestType.values.firstWhere(
+      (e) => e.toJson() == json,
+      orElse: () => QuestType.mission,
+    );
+  }
+
+  // UI 相关属性也可以放这里，或者单独放到 theme helper
+  String get label => this == QuestType.daemon ? "DAEMON" : "MISSION";
+}
+
 enum LogType {
   normal, // 普通文本
   milestone, // 里程碑 (金色)
   bug, // 坑/Bug (红色)
   idea, // 想法 (青色)
   rest, // 休息 (绿色)
+}
+
+extension LogTypeExt on LogType {
+  String toJson() => toString().split('.').last;
+
+  static LogType fromJson(String json) {
+    return LogType.values.firstWhere(
+      (e) => e.toJson() == json,
+      orElse: () => LogType.normal,
+    );
+  }
 }
 
 class QuestLog {
@@ -178,7 +203,7 @@ class Quest implements Serializable {
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
-    'type': type.toString().split('.').last,
+    'type': type.toJson(),
     'projectId': projectId,
     'projectName': projectName,
     'isCompleted': isCompleted,
@@ -192,10 +217,7 @@ class Quest implements Serializable {
   factory Quest.fromJson(Map<String, dynamic> json) => Quest(
     id: json['id'],
     title: json['title'],
-    type: QuestType.values.firstWhere(
-      (e) => e.toString() == 'QuestType.${json['type']}',
-      orElse: () => QuestType.mission,
-    ),
+    type: QuestTypeExt.fromJson(json['type']),
     projectId: json['projectId'],
     projectName: json['projectName'],
     isCompleted: json['isCompleted'] ?? false,

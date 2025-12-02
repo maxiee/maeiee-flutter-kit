@@ -1,3 +1,4 @@
+import 'package:my_life_rpg/core/constants.dart';
 import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/models/block_state.dart';
 
@@ -7,10 +8,6 @@ import '../../models/quest.dart';
 /// 包含所有与时间计算相关的纯算法。
 /// 此类不依赖 Flutter UI 库，也不依赖 GetX 状态，仅处理数据逻辑。
 class TimeDomain {
-  // 常量
-  static const int blocksPerDay = 96;
-  static const int minutesPerBlock = 15;
-
   /// 纯函数：计算时间块索引 (0 - 95)
   static int getBlockIndex(DateTime time) {
     return (time.hour * 4) + (time.minute ~/ 15);
@@ -27,7 +24,7 @@ class TimeDomain {
   ) {
     // 0. 初始化空网格
     final List<BlockState> blocks = List.generate(
-      blocksPerDay,
+      Constants.blocksPerDay,
       (_) => BlockState.empty(),
     );
 
@@ -50,12 +47,13 @@ class TimeDomain {
             s.startTime.month == targetDate.month &&
             s.startTime.day == targetDate.day) {
           int startBlock = getBlockIndex(s.startTime);
-          int blocksCount = (s.durationSeconds / 60 / minutesPerBlock).ceil();
+          int blocksCount = (s.durationSeconds / 60 / Constants.minutesPerBlock)
+              .ceil();
           if (blocksCount < 1) blocksCount = 1;
 
           for (int i = 0; i < blocksCount; i++) {
             int blockIndex = startBlock + i;
-            if (blockIndex < blocksPerDay) {
+            if (blockIndex < Constants.blocksPerDay) {
               final old = blocks[blockIndex];
               blocks[blockIndex] = BlockState(
                 occupiedQuestIds: [...old.occupiedQuestIds, q.id],
@@ -80,7 +78,7 @@ class TimeDomain {
       // 直接获取时间即可，无需再次 if 判断
       final blockIndex = getBlockIndex(q.deadline!);
 
-      if (blockIndex >= 0 && blockIndex < blocksPerDay) {
+      if (blockIndex >= 0 && blockIndex < Constants.blocksPerDay) {
         final old = blocks[blockIndex];
         blocks[blockIndex] = BlockState(
           occupiedQuestIds: old.occupiedQuestIds,
