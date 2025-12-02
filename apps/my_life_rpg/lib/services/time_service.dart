@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
-import 'package:my_life_rpg/core/logic/level_logic.dart';
-import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/models/block_state.dart';
-import 'package:my_life_rpg/models/quest.dart';
 import 'quest_service.dart';
 
 class TimeService extends GetxService {
@@ -54,6 +51,18 @@ class TimeService extends GetxService {
       (_) => _calculateTimeMetrics(),
     );
     _calculateTimeMetrics();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // 此时所有 Service 都已初始化完毕，Repo 数据肯定都在了
+    // 强制刷新一次，确保视图同步
+    LogService.d(
+      "TimeService Ready - Force Refreshing Matrix",
+      tag: "TimeService",
+    );
+    refreshMatrix();
   }
 
   void changeDate(DateTime date) {
