@@ -18,7 +18,7 @@ class HomeController extends GetxController {
 
   void addTodo() {
     if (titleController.text.isEmpty) return;
-    todos.add(
+    _service.addTodo(
       Todo(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: titleController.text,
@@ -31,14 +31,10 @@ class HomeController extends GetxController {
   }
 
   void toggleTodo(String id) {
-    final index = todos.indexWhere((t) => t.id == id);
-    if (index != -1) {
-      todos[index].isDone = !todos[index].isDone;
-      todos.refresh();
-    }
+    _service.toggleTodoById(id);
   }
 
-  void deleteTodo(String id) => todos.removeWhere((t) => t.id == id);
+  void deleteTodo(String id) => _service.removeTodoById(id);
 
   void showAddDialog() {
     Get.dialog(

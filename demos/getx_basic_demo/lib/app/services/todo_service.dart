@@ -28,5 +28,13 @@ class TodoService extends GetxService {
     todos.removeWhere((todo) => todo.id == id);
   }
 
+  void toggleTodoById(String id) {
+    final index = todos.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      todos[index].isDone = !todos[index].isDone;
+      todos.refresh();
+    }
+  }
+
   Todo? getTodoById(String id) => todos.firstWhereOrNull((t) => t.id == id);
 }
