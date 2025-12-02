@@ -1,4 +1,5 @@
 // lib/models/quest.dart
+import 'package:my_life_rpg/models/serializable.dart';
 import 'package:uuid/uuid.dart';
 
 enum QuestType {
@@ -89,7 +90,7 @@ class QuestSession {
   );
 }
 
-class Quest {
+class Quest implements Serializable {
   final String id;
   final String title;
   final QuestType type;
@@ -168,6 +169,7 @@ class Quest {
     return todayDate.difference(nextDueDate).inDays;
   }
 
+  @override
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,

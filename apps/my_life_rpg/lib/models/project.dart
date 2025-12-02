@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:my_life_rpg/models/serializable.dart';
 
-class Project {
+class Project implements Serializable {
   final String id;
   String title;
   String description;
@@ -28,6 +29,7 @@ class Project {
   }
 
   // [新增] 序列化
+  @override
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
