@@ -51,71 +51,41 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.bgPanel,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusLg,
-        side: const BorderSide(color: AppColors.borderDim),
-      ),
-      child: Padding(
-        padding: AppSpacing.paddingLg,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Text(
-              "ALLOCATE TIME SEGMENT",
-              style: AppTextStyles.panelHeader.copyWith(
-                color: AppColors.accentMain,
-              ),
+    return RpgDialog(
+      title: "ALLOCATE TIME SEGMENT",
+      icon: Icons.access_time,
+      onCancel: () => Get.back(),
+      actions: [RpgButton(label: "CONFIRM", onTap: _submit)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sub-header (Time)
+          Text(
+            widget.timeRangeText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontFamily: 'Courier',
             ),
-            AppSpacing.gapV8,
-            Text(
-              widget.timeRangeText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontFamily: 'Courier',
-              ),
-            ),
-            AppSpacing.gapV20,
+          ),
+          AppSpacing.gapV20,
 
-            // Tabs
-            Row(
-              children: [
-                _buildTab("EXISTING QUEST", !isCreatingNew, false),
-                AppSpacing.gapH16,
-                _buildTab("CREATE NEW", isCreatingNew, true),
-              ],
-            ),
-            AppSpacing.gapV16,
+          // Tabs
+          Row(
+            children: [
+              _buildTab("EXISTING QUEST", !isCreatingNew, false),
+              AppSpacing.gapH16,
+              _buildTab("CREATE NEW", isCreatingNew, true),
+            ],
+          ),
+          AppSpacing.gapV16,
 
-            // Content Area
-            SizedBox(
-              height: 60, // 固定高度防止跳动
-              child: isCreatingNew
-                  ? _buildCreateInput()
-                  : _buildSelectDropdown(),
-            ),
-
-            AppSpacing.gapV24,
-
-            // Actions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                RpgButton(
-                  label: "CANCEL",
-                  type: RpgButtonType.ghost,
-                  onTap: () => Get.back(), // 传回 null 表示取消
-                ),
-                AppSpacing.gapH12,
-                RpgButton(label: "CONFIRM", onTap: _submit),
-              ],
-            ),
-          ],
-        ),
+          // Content
+          SizedBox(
+            height: 60,
+            child: isCreatingNew ? _buildCreateInput() : _buildSelectDropdown(),
+          ),
+        ],
       ),
     );
   }

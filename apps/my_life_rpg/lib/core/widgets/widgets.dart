@@ -13,3 +13,4 @@ export 'rpg_input.dart';
 export 'rpg_panel_header.dart';
 export 'rpg_progress.dart';
 export 'rpg_tag.dart';
+export 'rpg_dialog.dart';

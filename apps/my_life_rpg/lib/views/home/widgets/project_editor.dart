@@ -9,7 +9,7 @@ import 'package:my_life_rpg/services/quest_service.dart';
 class ProjectEditor extends StatefulWidget {
   final Project? project; // 如果不为空，就是编辑模式
 
-  const ProjectEditor({Key? key, this.project}) : super(key: key);
+  const ProjectEditor({super.key, this.project});
 
   @override
   State<ProjectEditor> createState() => _ProjectEditorState();
@@ -39,44 +39,44 @@ class _ProjectEditorState extends State<ProjectEditor> {
   Widget build(BuildContext context) {
     final isEdit = widget.project != null;
 
-    return Dialog(
-      backgroundColor: AppColors.bgPanel,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusLg,
-        side: BorderSide(color: AppColors.accentMain.withOpacity(0.5)),
-      ),
+    return RpgDialog(
+      title: isEdit ? "CONFIGURE PROTOCOL" : "INITIATE PROTOCOL",
+      icon: isEdit ? Icons.settings : Icons.add_circle_outline,
+      accentColor: AppColors.accentMain,
+      actions: [
+        if (isEdit)
+          TextButton(
+            onPressed: () {
+              q.deleteProject(widget.project!.id);
+              Get.back();
+            },
+            child: const Text(
+              "DELETE",
+              style: TextStyle(color: AppColors.accentDanger),
+            ),
+          ),
+        // 如果是编辑模式且有删除按钮，加个间距
+        if (isEdit) AppSpacing.gapH12,
+
+        RpgButton(label: "ENGAGE", onTap: _submit),
+      ],
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isEdit ? "CONFIGURE PROTOCOL" : "INITIATE PROTOCOL",
-              style: AppTextStyles.panelHeader,
-            ),
-            AppSpacing.gapV24,
-
-            // Title
             RpgInput(
               label: "PROTOCOL NAME",
               controller: titleCtrl,
               autofocus: true,
             ),
             AppSpacing.gapV12,
-
-            // Desc
             RpgInput(label: "STRATEGIC GOAL", controller: descCtrl),
             AppSpacing.gapV12,
-
-            // Target Hours
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    "TARGET HOURS (0 = AUTO)",
-                    style: AppTextStyles.caption,
-                  ),
+                const Expanded(
+                  child: Text("TARGET HOURS", style: AppTextStyles.caption),
                 ),
                 SizedBox(
                   width: 100,
@@ -85,42 +85,9 @@ class _ProjectEditorState extends State<ProjectEditor> {
               ],
             ),
             AppSpacing.gapV16,
-
-            // Color Picker
-            Text("COLOR CODE", style: AppTextStyles.caption),
+            const Text("COLOR CODE", style: AppTextStyles.caption),
             AppSpacing.gapV8,
-            Row(
-              children: List.generate(5, (index) => _buildColorOption(index)),
-            ),
-
-            AppSpacing.gapV24,
-
-            // Actions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (isEdit)
-                  TextButton(
-                    onPressed: () {
-                      // 删除确认逻辑略
-                      q.deleteProject(widget.project!.id);
-                      Get.back();
-                    },
-                    child: Text(
-                      "DELETE",
-                      style: TextStyle(color: AppColors.accentDanger),
-                    ),
-                  ),
-                const Spacer(),
-                RpgButton(
-                  label: "CANCEL",
-                  type: RpgButtonType.ghost,
-                  onTap: () => Get.back(),
-                ),
-                AppSpacing.gapH12,
-                RpgButton(label: "ENGAGE", onTap: _submit),
-              ],
-            ),
+            Row(children: List.generate(5, (i) => _buildColorOption(i))),
           ],
         ),
       ),
