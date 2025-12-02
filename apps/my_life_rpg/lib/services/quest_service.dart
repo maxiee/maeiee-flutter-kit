@@ -210,16 +210,44 @@ class QuestService extends GetxService {
     final p = _projectRepo.getById(id);
     if (p == null) return;
 
+    // 1. 检查标题是否改变
+    final bool nameChanged = title != null && title != p.title;
+
+    // 2. 更新项目本身
     p.title = title ?? p.title;
     p.description = desc ?? p.description;
     p.targetHours = targetHours ?? p.targetHours;
     p.colorIndex = colorIdx ?? p.colorIndex;
-    _projectRepo.listenable.refresh();
+    _projectRepo.update(p); // 触发项目列表刷新
+
+    // 3. [新增] 级联更新关联任务的 ProjectName
+    if (nameChanged) {
+      final relatedQuests = quests.where((q) => q.projectId == id).toList();
+      for (var q in relatedQuests) {
+        final updatedQ = q.copyWith(projectName: p.title);
+        _questRepo.update(updatedQ);
+      }
+      // 触发任务列表刷新 (因为任务的显示属性变了)
+      _questRepo.listenable.refresh();
+    }
   }
 
   // 删
   void deleteProject(String id) {
+    // 1. [新增] 找到所有关联任务
+    final relatedQuests = quests.where((q) => q.projectId == id).toList();
+
+    // 2. [新增] 解绑 (Detach)
+    for (var q in relatedQuests) {
+      final updatedQ = q.copyWith(setProjectNull: true);
+      _questRepo.update(updatedQ);
+    }
+
+    // 3. 删除项目
     _projectRepo.delete(id);
+
+    // 4. 强制刷新列表 (UI更新)
+    _questRepo.listenable.refresh();
   }
 
   // UseCase: 获取项目进度

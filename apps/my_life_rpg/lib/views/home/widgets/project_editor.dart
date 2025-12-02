@@ -46,10 +46,7 @@ class _ProjectEditorState extends State<ProjectEditor> {
       actions: [
         if (isEdit)
           TextButton(
-            onPressed: () {
-              q.deleteProject(widget.project!.id);
-              Get.back();
-            },
+            onPressed: _delete,
             child: const Text(
               "DELETE",
               style: TextStyle(color: AppColors.accentDanger),
@@ -136,5 +133,44 @@ class _ProjectEditorState extends State<ProjectEditor> {
       q.addProject(titleCtrl.text, descCtrl.text, hours, selectedColorIdx);
     }
     Get.back();
+  }
+
+  void _delete() {
+    if (widget.project == null) return;
+
+    // 获取关联任务数量，用于提示文案
+    final relatedCount = q.quests
+        .where((x) => x.projectId == widget.project!.id)
+        .length;
+
+    // 使用我们封装好的 RpgDialog ? 不，这里是确认弹窗，Get.defaultDialog 或 RpgDialog 都可以。
+    // 为了快速，使用 Get.defaultDialog
+    Get.defaultDialog(
+      title: "TERMINATE PROTOCOL",
+      titleStyle: AppTextStyles.panelHeader.copyWith(
+        color: AppColors.accentDanger,
+      ),
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          "Permanently delete project '${widget.project!.title}'?\n\n"
+          "$relatedCount associated missions will be DETACHED (converted to Standalone), not deleted.",
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70),
+        ),
+      ),
+      backgroundColor: AppColors.bgPanel,
+      confirmTextColor: Colors.white,
+      textConfirm: "CONFIRM",
+      textCancel: "CANCEL",
+      buttonColor: AppColors.accentDanger,
+      onConfirm: () {
+        q.deleteProject(widget.project!.id);
+        Get.back(); // Close Confirm
+        Get.back(); // Close Editor
+        // 使用 Toast 提示 (如果我们启用了 ToastUtils)
+        // ToastUtils.showSuccess("Project deleted. Missions detached.");
+      },
+    );
   }
 }

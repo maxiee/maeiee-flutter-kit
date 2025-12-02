@@ -199,6 +199,37 @@ class Quest implements Serializable {
     return todayDate.difference(nextDueDate).inDays;
   }
 
+  Quest copyWith({
+    String? title,
+    QuestType? type,
+    String? projectId,
+    String? projectName,
+    bool? isCompleted,
+    int? intervalDays,
+    DateTime? lastDoneAt,
+    DateTime? deadline,
+    bool? isAllDayDeadline,
+    List<QuestSession>? sessions,
+    // 特殊标记：传入 true 明确将 nullable 字段设为 null
+    bool setProjectNull = false,
+    bool setDeadlineNull = false,
+  }) {
+    return Quest(
+      id: this.id,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      // 如果 setProjectNull 为 true，强制赋 null；否则优先用新值，没有新值用旧值
+      projectId: setProjectNull ? null : (projectId ?? this.projectId),
+      projectName: setProjectNull ? null : (projectName ?? this.projectName),
+      isCompleted: isCompleted ?? this.isCompleted,
+      intervalDays: intervalDays ?? this.intervalDays,
+      lastDoneAt: lastDoneAt ?? this.lastDoneAt,
+      deadline: setDeadlineNull ? null : (deadline ?? this.deadline),
+      isAllDayDeadline: isAllDayDeadline ?? this.isAllDayDeadline,
+      sessions: sessions ?? this.sessions,
+    );
+  }
+
   @override
   Map<String, dynamic> toJson() => {
     'id': id,
