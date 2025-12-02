@@ -3,11 +3,13 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:my_life_rpg/services/player_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/debug/debug_console.dart';
 
 class PlayerHud extends StatelessWidget {
   final TimeService t = Get.find(); // 直接找 TimeService
+  final PlayerService p = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +77,7 @@ class PlayerHud extends StatelessWidget {
                     );
                   },
                   child: Text(
-                    t.playerTitle.value,
+                    p.playerTitle.value,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.accentMain,
                       fontWeight: FontWeight.bold,
@@ -92,7 +94,7 @@ class PlayerHud extends StatelessWidget {
               // Progress Bar
               Obx(
                 () => RpgProgress(
-                  value: t.levelProgress.value,
+                  value: p.levelProgress.value,
                   height: 6,
                   color: AppColors.accentMain,
                   backgroundColor: Colors.white.withOpacity(0.1),
@@ -108,13 +110,13 @@ class PlayerHud extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "LV.${t.playerLevel.value}",
+                      "LV.${p.playerLevel.value}",
                       style: AppTextStyles.micro.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      "TOT: ${t.totalXp.value}",
+                      "TOT: ${p.totalXp.value}",
                       style: AppTextStyles.micro.copyWith(
                         color: AppColors.textDim,
                       ),
@@ -152,7 +154,7 @@ class PlayerHud extends StatelessWidget {
           ],
         ),
         child: Text(
-          "${t.playerLevel.value}",
+          "${p.playerLevel.value}",
           style: AppTextStyles.heroNumber.copyWith(fontSize: 18),
         ),
       ),
@@ -239,7 +241,7 @@ class PlayerHud extends StatelessWidget {
             children: [
               Obx(
                 () => Text(
-                  "+${t.dailyXp.value}",
+                  "+${p.dailyXp.value}",
                   style: const TextStyle(
                     fontFamily: 'Courier',
                     fontSize: 22, // 字体加大

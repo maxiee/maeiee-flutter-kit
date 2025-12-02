@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/services/time_service.dart';
+import 'package:my_life_rpg/services/player_service.dart';
 import 'package:my_life_rpg/views/home/overlay/level_up_overlay.dart';
 
 class HomeController extends GetxController {
-  final TimeService _ts = Get.find();
+  final PlayerService _ps = Get.find();
 
   @override
   void onInit() {
@@ -18,7 +18,7 @@ class HomeController extends GetxController {
     // Rxn<int> get levelUpEvent => _levelUpEvent;
 
     // 这里先用流监听演示 (万能)
-    _ts.onLevelUp.listen((newLevel) {
+    _ps.onLevelUp.listen((newLevel) {
       if (newLevel != null) {
         // [优化] 延迟 300ms，让用户先看到任务创建成功的反馈（矩阵格子变色）
         // 然后再弹出惊喜，体验更有层次感
