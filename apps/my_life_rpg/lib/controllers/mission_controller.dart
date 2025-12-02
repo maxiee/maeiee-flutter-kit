@@ -24,26 +24,36 @@ class MissionController extends GetxController {
     final allQuests = _questService.quests;
 
     // 1. 构建规格 (Build Specification)
-    Specification<Quest> spec = BaseActiveSpec(); // 默认基础规则
+    Specification<Quest> spec;
+
+    // 1. 基础可见性规则 (Active Mission OR Active Daemon)
+    // 这是所有列表的基础
+    final baseSpec = ActiveMissionSpec().or(ActiveDaemonSpec());
 
     switch (activeFilter.value) {
       case MissionFilter.priority:
-        // 基础 + 紧急
-        spec = spec.and(UrgentSpec());
+        // 基础 AND 紧急
+        spec = baseSpec.and(UrgentSpec());
         break;
+
       case MissionFilter.daemon:
-        // 基础 + 仅Daemon
-        spec = spec.and(OnlyDaemonSpec());
+        // 仅 Daemon (忽略 ActiveMissionSpec，直接看所有 Daemon)
+        // 这里可能有业务歧义：是看“活跃的Daemon”还是“所有的Daemon”？
+        // 假设是看所有已配置的 Daemon 列表
+        spec = IsDaemonSpec();
         break;
+
       case MissionFilter.project:
-        // 基础 + 特定项目
         if (selectedProjectId.value != null) {
-          spec = spec.and(ProjectSpec(selectedProjectId.value));
+          // 项目下的所有活跃任务 (包括 Mission 和 Daemon)
+          spec = baseSpec.and(ProjectSpec(selectedProjectId.value));
+        } else {
+          spec = baseSpec;
         }
         break;
+
       case MissionFilter.all:
-      default:
-        // 仅基础规则
+        spec = baseSpec;
         break;
     }
 

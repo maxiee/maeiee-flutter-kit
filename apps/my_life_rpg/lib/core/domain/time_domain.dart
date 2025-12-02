@@ -1,3 +1,4 @@
+import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/models/block_state.dart';
 
 import '../../models/quest.dart';
@@ -24,36 +25,38 @@ class TimeDomain {
     DateTime targetDate,
     List<Quest> quests,
   ) {
-    // 1. 初始化空网格
+    // 0. 初始化空网格
     final List<BlockState> blocks = List.generate(
       blocksPerDay,
       (_) => BlockState.empty(),
     );
 
-    // 2. 填充 Sessions (实心块逻辑)
-    for (var q in quests) {
+    // 1. 预筛选：只处理跟当天有关的任务 (性能优化)
+    // 使用 OR 组合规则：(有当天 Session) OR (有当天 Deadline)
+    final relevantSpec = HasSessionOnDateSpec(
+      targetDate,
+    ).or(DeadlineOnDateSpec(targetDate));
+
+    final dailyQuests = quests
+        .where((q) => relevantSpec.isSatisfiedBy(q))
+        .toList();
+
+    // 2. 填充 Sessions (实心块)
+    // 只处理那些确实有 Session 在今天的任务
+    for (var q in dailyQuests) {
       for (var s in q.sessions) {
-        // 筛选：只处理落在目标日期的 Session
-        // 注意：这里简化了跨天逻辑，假设 Session 不跨天或只显示当天部分
+        // 二次确认 Session 是否在当天 (Spec 只是 Quest 级别的筛选)
         if (s.startTime.year == targetDate.year &&
             s.startTime.month == targetDate.month &&
             s.startTime.day == targetDate.day) {
-          // 计算起始索引
           int startBlock = getBlockIndex(s.startTime);
-
-          // 计算占用块数 (向上取整)
           int blocksCount = (s.durationSeconds / 60 / minutesPerBlock).ceil();
           if (blocksCount < 1) blocksCount = 1;
 
-          // 填充网格
           for (int i = 0; i < blocksCount; i++) {
             int blockIndex = startBlock + i;
-
-            // 边界保护：防止索引越界 (比如 23:50 开始的任务)
             if (blockIndex < blocksPerDay) {
               final old = blocks[blockIndex];
-
-              // CopyWith 逻辑 (虽然没有写 copyWith 方法，直接创建新对象)
               blocks[blockIndex] = BlockState(
                 occupiedQuestIds: [...old.occupiedQuestIds, q.id],
                 occupiedSessionIds: [...old.occupiedSessionIds, s.id],
@@ -65,24 +68,25 @@ class TimeDomain {
       }
     }
 
-    // 3. 填充 Deadlines (红框逻辑)
-    for (var q in quests) {
-      // 筛选：有具体时间的 Deadline 且在当天
-      if (q.deadline != null && !q.isAllDayDeadline) {
-        if (q.deadline!.year == targetDate.year &&
-            q.deadline!.month == targetDate.month &&
-            q.deadline!.day == targetDate.day) {
-          final blockIndex = getBlockIndex(q.deadline!);
+    // 3. 填充 Deadlines (红框)
+    // 使用 DeadlineOnDateSpec 过滤
+    final deadlineSpec = DeadlineOnDateSpec(targetDate);
+    final deadlineQuests = dailyQuests.where(
+      (q) => deadlineSpec.isSatisfiedBy(q),
+    );
 
-          if (blockIndex >= 0 && blockIndex < blocksPerDay) {
-            final old = blocks[blockIndex];
-            blocks[blockIndex] = BlockState(
-              occupiedQuestIds: old.occupiedQuestIds,
-              occupiedSessionIds: old.occupiedSessionIds,
-              deadlineQuestIds: [...old.deadlineQuestIds, q.id],
-            );
-          }
-        }
+    for (var q in deadlineQuests) {
+      // 这里的 q 已经保证是当天 Deadline 且非全天
+      // 直接获取时间即可，无需再次 if 判断
+      final blockIndex = getBlockIndex(q.deadline!);
+
+      if (blockIndex >= 0 && blockIndex < blocksPerDay) {
+        final old = blocks[blockIndex];
+        blocks[blockIndex] = BlockState(
+          occupiedQuestIds: old.occupiedQuestIds,
+          occupiedSessionIds: old.occupiedSessionIds,
+          deadlineQuestIds: [...old.deadlineQuestIds, q.id],
+        );
       }
     }
 

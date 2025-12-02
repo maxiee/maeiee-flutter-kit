@@ -9,6 +9,10 @@ abstract class Specification<T> {
   Specification<T> and(Specification<T> other) {
     return AndSpecification(this, other);
   }
+
+  Specification<T> or(Specification<T> other) => OrSpecification(this, other);
+
+  Specification<T> not() => NotSpecification(this);
 }
 
 /// 组合规格 (AND)
@@ -22,7 +26,81 @@ class AndSpecification<T> extends Specification<T> {
       left.isSatisfiedBy(item) && right.isSatisfiedBy(item);
 }
 
-// --- 具体业务规则 ---
+class OrSpecification<T> extends Specification<T> {
+  final Specification<T> left;
+  final Specification<T> right;
+  OrSpecification(this.left, this.right);
+  @override
+  bool isSatisfiedBy(T item) =>
+      left.isSatisfiedBy(item) || right.isSatisfiedBy(item);
+}
+
+class NotSpecification<T> extends Specification<T> {
+  final Specification<T> spec;
+  NotSpecification(this.spec);
+  @override
+  bool isSatisfiedBy(T item) => !spec.isSatisfiedBy(item);
+}
+
+// --- 具体业务规则 (Quest) ---
+
+// 1. 基础类型
+class IsMissionSpec extends Specification<Quest> {
+  @override
+  bool isSatisfiedBy(Quest q) => q.type == QuestType.mission;
+}
+
+class IsDaemonSpec extends Specification<Quest> {
+  @override
+  bool isSatisfiedBy(Quest q) => q.type == QuestType.daemon;
+}
+
+// 2. 状态
+class IsCompletedSpec extends Specification<Quest> {
+  @override
+  bool isSatisfiedBy(Quest q) => q.isCompleted;
+}
+
+// 3. 时间相关 (新增核心逻辑)
+
+/// 规则：是否需要在特定日期的时间矩阵中显示 Deadline
+class DeadlineOnDateSpec extends Specification<Quest> {
+  final DateTime date;
+  DeadlineOnDateSpec(this.date);
+
+  @override
+  bool isSatisfiedBy(Quest q) {
+    if (q.deadline == null) return false;
+    // 忽略全天任务 (全天任务显示在顶部，不占用格子)
+    if (q.isAllDayDeadline) return false;
+
+    return q.deadline!.year == date.year &&
+        q.deadline!.month == date.month &&
+        q.deadline!.day == date.day;
+  }
+}
+
+/// 规则：是否需要在特定日期的时间矩阵中显示 Session 占用
+/// 注意：这个规则比较重，因为它需要遍历 Sessions
+class HasSessionOnDateSpec extends Specification<Quest> {
+  final DateTime date;
+  HasSessionOnDateSpec(this.date);
+
+  @override
+  bool isSatisfiedBy(Quest q) {
+    for (var s in q.sessions) {
+      // 简单判断：Session 的开始时间是当天
+      if (s.startTime.year == date.year &&
+          s.startTime.month == date.month &&
+          s.startTime.day == date.day) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+// --- 组合业务规则 ---
 
 /// 规则：活跃的任务 (未完成的 Mission)
 class ActiveMissionSpec extends Specification<Quest> {
