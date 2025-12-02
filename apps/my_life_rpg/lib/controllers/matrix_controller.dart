@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:my_life_rpg/core/theme/app_spacing.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
@@ -144,6 +145,7 @@ class MatrixController extends GetxController {
 
     if (result != null && result is Map) {
       final isNew = result['isNew'] as bool;
+      String targetQuestId;
 
       if (isNew) {
         final title = result['title'] as String;
@@ -151,37 +153,31 @@ class MatrixController extends GetxController {
           title: title,
           type: QuestType.mission,
         );
-        _questService.manualAllocate(newQ.id, startTime, endTime);
+        targetQuestId = newQ.id;
       } else {
-        final qId = result['id'] as String;
-        _questService.manualAllocate(qId, startTime, endTime);
+        targetQuestId = result['id'] as String;
+      }
+
+      final allocateResult = _questService.manualAllocate(
+        targetQuestId,
+        startTime,
+        endTime,
+      );
+
+      if (!allocateResult.isSuccess) {
+        // 注掉 snackbar，Get.snackbar 跟 Flutter 3.38 有冲突
+        // UI 反馈逻辑移动到了这里
+        // Get.snackbar(
+        //   "Allocation Failed",
+        //   allocateResult.errorMessage ?? "Unknown error",
+        //   backgroundColor: AppColors.bgPanel,
+        //   colorText: AppColors.accentDanger,
+        //   margin: AppSpacing.paddingMd,
+        // );
+      } else {
+        // Get.snackbar("Success", "Time allocated.");
       }
     }
-  }
-
-  Widget _buildTab(String label, bool isActive, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isActive ? AppColors.accentMain : Colors.transparent,
-              width: 2,
-            ),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? AppColors.accentMain : Colors.grey,
-            fontFamily: 'Courier',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
   }
 }
 

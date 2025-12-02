@@ -3,6 +3,7 @@ import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/quest_repository.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/project_logic.dart';
+import 'package:my_life_rpg/core/utils/result.dart';
 import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
 import '../models/project.dart';
@@ -122,9 +123,9 @@ class QuestService extends GetxService {
   }
 
   // UseCase: 手动补录时间
-  void manualAllocate(String questId, DateTime start, DateTime end) {
+  Result<void> manualAllocate(String questId, DateTime start, DateTime end) {
     final q = _questRepo.getById(questId);
-    if (q == null) return;
+    if (q == null) Result.err("Quest not found.");
 
     // 业务规则：防止跨天 (Service 层处理边界校验是合理的)
     DateTime safeEnd = end;
@@ -138,8 +139,7 @@ class QuestService extends GetxService {
 
     // 业务规则：碰撞检测 (调用 Helper)
     if (TimeDomain.hasOverlap(start, safeEnd, allSessions)) {
-      Get.snackbar("Conflict", "Time slot overlap detected.");
-      return;
+      return Result.err("Time slot conflict detected!");
     }
 
     final session = QuestSession(
@@ -149,8 +149,10 @@ class QuestService extends GetxService {
       logs: [QuestLog(createdAt: DateTime.now(), content: "Manual Allocation")],
     );
 
-    q.sessions.add(session); // 这里直接操作了内存对象的 List，如果换数据库需要深拷贝逻辑
-    _questRepo.listenable.refresh();
+    q!.sessions.add(session); // 这里直接操作了内存对象的 List，如果换数据库需要深拷贝逻辑
+    _questRepo.update(q); // 确保触发更新
+
+    return Result.ok();
   }
 
   // 查 (获取今日活跃) - 这种 helper 方法可以放这
