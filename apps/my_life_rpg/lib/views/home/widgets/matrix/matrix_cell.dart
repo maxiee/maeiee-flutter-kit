@@ -14,7 +14,7 @@ class MatrixCell extends StatelessWidget {
   final VoidCallback onTap;
 
   const MatrixCell({
-    super.key,
+    Key? key,
     required this.state,
     required this.isSelected,
     required this.isLeftConnected,
@@ -22,24 +22,24 @@ class MatrixCell extends StatelessWidget {
     required this.isRowStart,
     required this.isRowEnd,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // 1. 样式计算
+    // 1. 样式计算 (只计算背景和边框)
     Color fillColor = Colors.white.withOpacity(0.05);
     Color borderColor = Colors.transparent;
-    String? labelText;
-    Color textColor = AppColors.textPrimary;
+    String? tooltipMessage; // [新增]
 
-    // 获取 Service 用于查找 Quest 信息
-    // (性能优化注：虽然在 build 里 find 不是很完美，但对于 96 个格子来说损耗可忽略。
-    // 极致优化是由父组件传入 Quest 对象，但那样父组件逻辑会变重，此处取折中)
     final QuestService qs = Get.find();
 
     if (state.deadlineQuestIds.isNotEmpty) {
       fillColor = AppColors.accentDanger.withOpacity(0.2);
       borderColor = AppColors.accentDanger;
+      // 查找 deadline 标题
+      final qId = state.deadlineQuestIds.first;
+      final quest = qs.quests.firstWhereOrNull((q) => q.id == qId);
+      tooltipMessage = "${quest?.title ?? 'Unknown'} [DEADLINE]";
     } else if (state.occupiedSessionIds.isNotEmpty) {
       final qId = state.occupiedQuestIds.last;
       final quest = qs.quests.firstWhereOrNull((q) => q.id == qId);
@@ -48,24 +48,17 @@ class MatrixCell extends StatelessWidget {
         final baseColor = AppColors.getQuestColor(quest.type);
         fillColor = baseColor.withOpacity(0.4);
         borderColor = baseColor.withOpacity(0.5);
-
-        // 只有当左侧没有连接时，才显示标题（避免长条 Session 重复显示）
-        if (!isLeftConnected) {
-          labelText = quest.title;
-        }
+        tooltipMessage = quest.title; // [新增]
       }
     }
 
-    // 选中覆盖色
     if (isSelected) borderColor = Colors.white;
 
-    // 2. 形状计算 (连接逻辑)
+    // 2. 形状计算
     BorderRadius radius;
     if (state.occupiedSessionIds.isEmpty) {
-      // 空白格：独立圆角
       radius = BorderRadius.circular(2);
     } else {
-      // 占用格：处理连接
       radius = BorderRadius.horizontal(
         left: (isLeftConnected && !isRowStart)
             ? Radius.zero
@@ -77,24 +70,20 @@ class MatrixCell extends StatelessWidget {
     }
 
     // 3. 渲染
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: fillColor,
-          borderRadius: radius,
-          border: Border.all(color: borderColor),
+    // [修改]: 移除内部 Text，包裹 Tooltip
+    return Tooltip(
+      message: tooltipMessage ?? "",
+      // 只有有内容时才显示 Tooltip
+      triggerMode: tooltipMessage != null ? TooltipTriggerMode.longPress : null,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: fillColor,
+            borderRadius: radius,
+            border: Border.all(color: borderColor),
+          ),
         ),
-        child: labelText != null
-            ? Text(
-                labelText,
-                style: AppTextStyles.micro.copyWith(color: textColor),
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-              )
-            : null,
       ),
     );
   }

@@ -154,6 +154,7 @@ class TemporalMatrix extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Stack(
         children: [
+          // Layer 1: 背景网格 (Cells)
           Row(
             children: [
               // Ruler
@@ -188,6 +189,16 @@ class TemporalMatrix extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+
+          // Layer 2: 智能文字层 (Labels) - [新增]
+          // 这里的 padding left = 24 (Ruler) + 8 (Gap) = 32
+          Positioned.fill(
+            left: 32,
+            child: IgnorePointer(
+              // 文字层不拦截点击
+              child: _buildLabelLayer(hour),
+            ),
           ),
 
           // Now Cursor
@@ -258,6 +269,103 @@ class TemporalMatrix extends StatelessWidget {
         return const SizedBox(width: 0);
       }
       return const SizedBox(width: 2);
+    });
+  }
+
+  Widget _buildLabelLayer(int hour) {
+    return Obx(() {
+      return Row(
+        children: List.generate(7, (k) {
+          // 偶数是格子，奇数是 Gap
+          if (k % 2 != 0) return const SizedBox(width: 2); // Gap
+
+          final quarter = k ~/ 2;
+          final index = (hour * 4) + quarter;
+          final state = timeService.timeBlocks[index];
+
+          // 空格子 -> 占位
+          if (state.occupiedSessionIds.isEmpty) {
+            return const Expanded(child: SizedBox());
+          }
+
+          // 占用格子
+          // 核心逻辑：只有当它是 "本行内该 Session 的第一块" 时，才渲染文字
+          // 并且计算它在本行剩余的长度，作为 Overflow 的约束
+
+          final String currentSessionId = state.occupiedSessionIds.last;
+
+          // 检查前一个格子是否是同一个 Session (在本行内)
+          bool isContinuation = false;
+          if (quarter > 0) {
+            final prevIndex = index - 1;
+            final prevState = timeService.timeBlocks[prevIndex];
+            if (prevState.occupiedSessionIds.isNotEmpty &&
+                prevState.occupiedSessionIds.last == currentSessionId) {
+              isContinuation = true;
+            }
+          }
+
+          if (isContinuation) {
+            // 如果是延续，只占位，不渲染文字
+            return const Expanded(child: SizedBox());
+          }
+
+          // 如果是新的片段 (Start of segment in this row)
+          // 计算剩余长度，以便显示更长的文字
+          int span = 1;
+          for (int j = quarter + 1; j < 4; j++) {
+            final nextIdx = (hour * 4) + j;
+            final nextSt = timeService.timeBlocks[nextIdx];
+            if (nextSt.occupiedSessionIds.isNotEmpty &&
+                nextSt.occupiedSessionIds.last == currentSessionId) {
+              span++;
+            } else {
+              break;
+            }
+          }
+
+          // 获取文字
+          String label = "";
+          final quest = questService.quests.firstWhereOrNull(
+            (q) => q.id == state.occupiedQuestIds.last,
+          );
+          if (quest != null) label = quest.title;
+
+          return Expanded(
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                // 计算允许的总宽度: (单格宽度 * span) + (间隙宽度 * (span-1))
+                // constraints.maxWidth 是单格宽度
+                final totalWidth =
+                    (constraints.maxWidth * span) + ((span - 1) * 2.0);
+
+                return OverflowBox(
+                  alignment: Alignment.centerLeft,
+                  minWidth: 0,
+                  maxWidth: totalWidth, // 允许文字跨越 span 个格子
+                  child: Container(
+                    width: totalWidth, // 强制占满计算出的宽度
+                    padding: const EdgeInsets.only(left: 4),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      label,
+                      style: AppTextStyles.micro.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          const Shadow(color: Colors.black, blurRadius: 2),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis, // 超出 span 长度后省略
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        }),
+      );
     });
   }
 }
