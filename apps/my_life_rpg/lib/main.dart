@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart'; // 别忘了这个
 import 'package:my_life_rpg/core/data/data_seeder.dart';
 import 'package:my_life_rpg/core/data/initial_binding.dart';
 import 'package:my_life_rpg/core/theme/app_theme.dart';
+import 'package:my_life_rpg/views/home/home_binding.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 
 void main() async {
@@ -23,8 +24,15 @@ class MyApp extends StatelessWidget {
       onReady: () {
         DataSeeder.run();
       },
+      initialRoute: '/home',
+      getPages: [
+        GetPage(
+          name: '/home',
+          page: () => HomeView(),
+          binding: HomeBinding(), // [关键] 绑定控制器
+        ),
+      ],
       theme: AppTheme.darkTheme, // 使用统一的赛博朋克主题
-      home: HomeView(),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
+import 'package:my_life_rpg/views/session/session_binding.dart';
 import '../../../models/quest.dart';
 import '../../session/session_view.dart';
 
@@ -12,7 +13,7 @@ class MissionCard extends StatelessWidget {
   final Quest quest;
   final QuestService q = Get.find();
 
-  MissionCard({Key? key, required this.quest}) : super(key: key);
+  MissionCard({super.key, required this.quest});
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +74,7 @@ class MissionCard extends StatelessWidget {
                       final result = await Get.to(
                         () => SessionView(),
                         arguments: quest,
+                        binding: SessionBinding(),
                       );
 
                       if (result != null && result is int) {

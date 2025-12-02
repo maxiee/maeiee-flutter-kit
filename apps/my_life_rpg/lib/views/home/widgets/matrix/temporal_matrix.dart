@@ -11,7 +11,7 @@ class TemporalMatrix extends StatelessWidget {
   // 1. 依赖注入：不再使用 GameController
   final QuestService questService = Get.find();
   final TimeService timeService = Get.find();
-  final MatrixController c = Get.put(MatrixController());
+  final MatrixController c = Get.find();
 
   TemporalMatrix({super.key});
 

@@ -10,7 +10,7 @@ class SessionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.put(SessionController());
+    final SessionController c = Get.find();
 
     return Scaffold(
       backgroundColor: AppColors.bgDarkest, // 比首页更深一点，更沉浸
