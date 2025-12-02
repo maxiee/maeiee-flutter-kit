@@ -127,6 +127,11 @@ class Quest implements Serializable {
     List<QuestSession>? sessions,
   }) : sessions = sessions ?? [];
 
+  bool get isUrgent => hoursUntilDeadline < 24;
+  bool get isOverdue => hoursUntilDeadline < 0;
+
+  bool get isDaemonOverdue => type == QuestType.daemon && (dueDays ?? -99) > 0;
+
   // 计算属性：聚合总时长
   int get totalDurationSeconds =>
       sessions.fold(0, (sum, s) => sum + s.durationSeconds);

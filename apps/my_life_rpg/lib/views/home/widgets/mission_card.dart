@@ -11,9 +11,18 @@ import '../../session/session_view.dart';
 
 class MissionCard extends StatelessWidget {
   final Quest quest;
-  final QuestService q = Get.find();
 
-  MissionCard({super.key, required this.quest});
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onToggle;
+
+  const MissionCard({
+    super.key,
+    required this.quest,
+    this.onTap,
+    this.onLongPress,
+    this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +46,7 @@ class MissionCard extends StatelessWidget {
               // 1. 左侧 Checkbox 区域 (仅响应点击)
               Material(
                 child: InkWell(
-                  onTap: () => q.toggleQuestCompletion(quest.id),
+                  onTap: onToggle,
                   child: Container(
                     width: 40,
                     color: isDaemon
@@ -70,52 +79,9 @@ class MissionCard extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () async {
-                      final result = await Get.to(
-                        () => SessionView(),
-                        arguments: quest,
-                        binding: SessionBinding(),
-                      );
-
-                      if (result != null && result is int) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "任务结算",
-                                    style: AppTextStyles.body.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.accentSafe,
-                                    ),
-                                  ),
-                                  Text(
-                                    "投入了 ${(result / 60).toStringAsFixed(1)} 分钟",
-                                    style: AppTextStyles.body,
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: AppColors.bgPanel,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppSpacing.borderRadiusMd,
-                                side: const BorderSide(
-                                  color: AppColors.borderDim,
-                                ),
-                              ),
-                              margin: AppSpacing.paddingLg,
-                            ),
-                          );
-                        }
-                      }
-                    },
+                    onTap: onTap,
                     // 长按 -> 编辑
-                    onLongPress: () {
-                      Get.dialog(QuestEditor(quest: quest));
-                    },
+                    onLongPress: onLongPress,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.md,

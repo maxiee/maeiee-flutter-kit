@@ -6,6 +6,8 @@ import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
+import 'package:my_life_rpg/views/session/session_binding.dart';
+import 'package:my_life_rpg/views/session/session_view.dart';
 import '../../../../models/quest.dart';
 
 class MissionPanel extends StatelessWidget {
@@ -36,13 +38,41 @@ class MissionPanel extends StatelessWidget {
                 padding: AppSpacing.paddingSm,
                 itemCount: tasks.length,
                 separatorBuilder: (_, __) => AppSpacing.gapV8,
-                itemBuilder: (ctx, i) => MissionCard(quest: tasks[i]),
+                itemBuilder: (ctx, i) {
+                  final quest = tasks[i];
+                  // [修改点]: 在这里注入业务逻辑
+                  return MissionCard(
+                    quest: quest,
+                    onToggle: () => q.toggleQuestCompletion(quest.id),
+                    onLongPress: () => Get.dialog(QuestEditor(quest: quest)),
+                    onTap: () => _handleCardTap(context, quest),
+                  );
+                },
               );
             }),
           ),
         ],
       ),
     );
+  }
+
+  void _handleCardTap(BuildContext context, Quest quest) async {
+    final result = await Get.to(
+      () => SessionView(),
+      arguments: quest,
+      binding: SessionBinding(),
+    );
+
+    // 反馈逻辑
+    if (result != null && result is int && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("投入了 ${(result / 60).toStringAsFixed(1)} 分钟"),
+          backgroundColor: AppColors.bgPanel,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildHeader() {
