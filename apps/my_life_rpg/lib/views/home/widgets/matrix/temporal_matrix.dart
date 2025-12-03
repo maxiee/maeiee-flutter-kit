@@ -64,10 +64,14 @@ class TemporalMatrix extends StatelessWidget {
 
       if (dayDeadlines.isEmpty) return const SizedBox.shrink();
 
-      return Container(
-        height: AppSpacing.hourRowHeight,
-        color: AppColors.accentDanger.withOpacity(0.1),
+      return RpgContainer(
+        style: RpgContainerStyle.card,
+        overrideColor: AppColors.accentDanger,
+        height: AppSpacing.hourRowHeight + 8, // 稍微高一点
         padding: AppSpacing.paddingHorizontalMd,
+        // 这里不需要圆角背景，因为通常 Marquee 是长条形的。
+        // 但为了保持一致性，我们可以让它看起来像个 Alert 条
+        margin: const EdgeInsets.only(bottom: 1), // 分隔线
         child: Row(
           children: [
             const Icon(

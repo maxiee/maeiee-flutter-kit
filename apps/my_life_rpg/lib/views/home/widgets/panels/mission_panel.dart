@@ -81,16 +81,16 @@ class MissionPanel extends StatelessWidget {
       child: Row(
         children: [
           // 左侧：过滤器 Tab
-          _buildFilterTab("ALL", MissionFilter.all),
+          _buildChip("ALL", MissionFilter.all),
           AppSpacing.gapH8,
-          _buildFilterTab(
+          _buildChip(
             "URGENT",
             MissionFilter.priority,
             icon: Icons.warning_amber,
             color: AppColors.accentDanger,
           ),
           AppSpacing.gapH8,
-          _buildFilterTab(
+          _buildChip(
             "DAEMON",
             MissionFilter.daemon,
             icon: Icons.loop,
@@ -132,50 +132,21 @@ class MissionPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterTab(
+  Widget _buildChip(
     String label,
     MissionFilter filter, {
     IconData? icon,
     Color? color,
   }) {
-    return Obx(() {
-      final isActive = mc.activeFilter.value == filter;
-      final displayColor = isActive ? (color ?? Colors.white) : Colors.grey;
-
-      return InkWell(
+    return Obx(
+      () => RpgFilterChip(
+        label: label,
+        selected: mc.activeFilter.value == filter,
         onTap: () => mc.setFilter(filter),
-        borderRadius: BorderRadius.circular(4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isActive
-                ? displayColor.withOpacity(0.1)
-                : Colors.transparent,
-            border: Border.all(
-              color: isActive ? displayColor : Colors.transparent,
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 12, color: displayColor),
-                const SizedBox(width: 4),
-              ],
-              Text(
-                label,
-                style: AppTextStyles.micro.copyWith(
-                  color: displayColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    });
+        icon: icon,
+        color: color,
+      ),
+    );
   }
 
   Widget _buildEmptyState() {

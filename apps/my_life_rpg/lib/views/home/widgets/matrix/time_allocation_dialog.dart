@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/rpg_tab_bar.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/models/quest.dart';
@@ -60,23 +61,15 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sub-header (Time)
-          Text(
-            widget.timeRangeText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontFamily: 'Courier',
-            ),
-          ),
+          RpgText.header(widget.timeRangeText),
           AppSpacing.gapV20,
 
           // Tabs
-          Row(
-            children: [
-              _buildTab("EXISTING QUEST", !isCreatingNew, false),
-              AppSpacing.gapH16,
-              _buildTab("CREATE NEW", isCreatingNew, true),
-            ],
+          RpgTabBar(
+            tabs: const ["EXISTING QUEST", "CREATE NEW"],
+            selectedIndex: isCreatingNew ? 1 : 0,
+            onTabSelected: (index) =>
+                setState(() => isCreatingNew = index == 1),
           ),
           AppSpacing.gapV16,
 
