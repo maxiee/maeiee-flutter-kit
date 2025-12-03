@@ -1,4 +1,3 @@
-// lib/views/home/widgets/matrix/session_inspector.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -90,24 +89,31 @@ class SessionInspector extends StatelessWidget {
           AppSpacing.gapV20,
 
           // 2. 时间信息块 (Time Capsule)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black26,
-              border: Border.all(color: Colors.white10),
-              borderRadius: BorderRadius.circular(4),
-            ),
+          RpgContainer(
+            style: RpgContainerStyle.panel,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStat("START", startStr),
+                RpgStat(
+                  label: "START",
+                  value: startStr,
+                  compact: true,
+                  alignment: CrossAxisAlignment.start,
+                ),
                 const Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
-                _buildStat("END", endStr),
+                RpgStat(
+                  label: "END",
+                  value: endStr,
+                  compact: true,
+                  alignment: CrossAxisAlignment.start,
+                ),
                 Container(width: 1, height: 24, color: Colors.white10),
-                _buildStat(
-                  "DURATION",
-                  "${durationMin}m",
-                  valueColor: Colors.white,
+                RpgStat(
+                  label: "DURATION",
+                  value: "${durationMin}m",
+                  valueColor: AppColors.accentSafe,
+                  compact: true,
+                  alignment: CrossAxisAlignment.end,
                 ),
               ],
             ),
@@ -140,23 +146,6 @@ class SessionInspector extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildStat(String label, String value, {Color? valueColor}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.micro.copyWith(color: Colors.grey)),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Courier',
-            color: valueColor ?? AppColors.accentSafe,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 }

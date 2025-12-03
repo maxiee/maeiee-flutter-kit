@@ -163,47 +163,28 @@ class _QuestEditorState extends State<QuestEditor> {
         AppSpacing.gapV16,
 
         if (!isDaemon) ...[
-          // Mission: Project Selector
-          const Text("LINK TO CAMPAIGN:", style: AppTextStyles.caption),
-          AppSpacing.gapV8,
-          Container(
-            padding: AppSpacing.paddingHorizontalMd,
-            decoration: BoxDecoration(
-              color: AppColors.bgInput,
-              borderRadius: AppSpacing.borderRadiusMd,
-              border: Border.all(color: AppColors.borderDim),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Project>(
-                value: selectedProject,
-                dropdownColor: AppColors.bgCard,
-                isExpanded: true,
-                hint: const Text(
-                  "STANDALONE",
-                  style: TextStyle(color: AppColors.textDim, fontSize: 12),
-                ),
-                items: [
-                  const DropdownMenuItem<Project>(
-                    value: null,
-                    child: Text("STANDALONE", style: TextStyle(fontSize: 12)),
-                  ),
-                  ...q.projects.map(
-                    (p) => DropdownMenuItem(
-                      value: p,
-                      child: Text(
-                        p.title,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ),
-                ],
-                onChanged: (val) => setState(() => selectedProject = val),
+          // [REFACTORED] Mission: Project Selector
+          RpgSelect<Project>(
+            label: "LINK TO CAMPAIGN:",
+            value: selectedProject,
+            hint: "STANDALONE",
+            items: [
+              const DropdownMenuItem<Project>(
+                value: null,
+                child: Text("STANDALONE", style: TextStyle(fontSize: 12)),
               ),
-            ),
+              ...q.projects.map(
+                (p) => DropdownMenuItem(
+                  value: p,
+                  child: Text(p.title, style: const TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
+            onChanged: (val) => setState(() => selectedProject = val),
           ),
         ] else ...[
-          // Daemon: Interval Selector
-          const Text("EXECUTION INTERVAL:", style: AppTextStyles.caption),
+          // Daemon Interval 保持原样或后续优化
+          const RpgText.caption("EXECUTION INTERVAL:"),
           AppSpacing.gapV8,
           Row(
             children: [
@@ -237,25 +218,35 @@ class _QuestEditorState extends State<QuestEditor> {
     return Column(
       children: [
         // Stats Summary
-        Container(
-          padding: const EdgeInsets.all(12),
+        RpgContainer(
+          style: RpgContainerStyle.card,
+          overrideColor: color,
           margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(
-                "TOTAL TIME",
-                "${(widget.quest!.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
+              RpgStat(
+                label: "TOTAL TIME",
+                value: (widget.quest!.totalDurationSeconds / 3600)
+                    .toStringAsFixed(1),
+                unit: "h",
+                compact: true,
               ),
-              _buildStatItem("SESSIONS", "${sessions.length}"),
-              _buildStatItem(
-                "AVG TIME",
-                "${sessions.isNotEmpty ? (widget.quest!.totalDurationSeconds / sessions.length / 60).toStringAsFixed(0) : 0}m",
+              RpgStat(
+                label: "SESSIONS",
+                value: "${sessions.length}",
+                compact: true,
+              ),
+              RpgStat(
+                label: "AVG TIME",
+                value: sessions.isNotEmpty
+                    ? (widget.quest!.totalDurationSeconds /
+                              sessions.length /
+                              60)
+                          .toStringAsFixed(0)
+                    : "0",
+                unit: "m",
+                compact: true,
               ),
             ],
           ),
@@ -277,15 +268,11 @@ class _QuestEditorState extends State<QuestEditor> {
               final durationStr =
                   "${(s.durationSeconds / 60).toStringAsFixed(0)}m";
 
-              return Container(
+              return RpgContainer(
+                style: RpgContainerStyle.panel,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.white10),
                 ),
                 child: Row(
                   children: [
@@ -333,22 +320,6 @@ class _QuestEditorState extends State<QuestEditor> {
             },
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: 'Courier',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(label, style: AppTextStyles.micro.copyWith(color: Colors.grey)),
       ],
     );
   }

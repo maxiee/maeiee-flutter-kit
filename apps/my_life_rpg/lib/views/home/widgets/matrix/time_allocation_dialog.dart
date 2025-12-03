@@ -138,38 +138,25 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
       );
     }
 
-    return Container(
-      padding: AppSpacing.paddingHorizontalMd,
-      decoration: BoxDecoration(
-        color: AppColors.bgInput,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.borderDim),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: activeQuests.any((q) => q.id == selectedQuestId)
-              ? selectedQuestId
-              : null,
-          dropdownColor: AppColors.bgCard,
-          isExpanded: true,
-          style: AppTextStyles.body,
-          items: activeQuests
-              .map(
-                (q) => DropdownMenuItem(
-                  value: q.id,
-                  child: Text(
-                    q.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (val) {
-            if (val != null) setState(() => selectedQuestId = val);
-          },
-        ),
-      ),
+    return RpgSelect<String>(
+      value: activeQuests.any((q) => q.id == selectedQuestId)
+          ? selectedQuestId
+          : null,
+      items: activeQuests
+          .map(
+            (q) => DropdownMenuItem(
+              value: q.id,
+              child: Text(
+                q.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: (val) {
+        if (val != null) setState(() => selectedQuestId = val);
+      },
     );
   }
 

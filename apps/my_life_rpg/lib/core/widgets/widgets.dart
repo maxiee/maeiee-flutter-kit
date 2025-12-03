@@ -14,3 +14,6 @@ export 'rpg_panel_header.dart';
 export 'rpg_progress.dart';
 export 'rpg_tag.dart';
 export 'rpg_dialog.dart';
+export 'rpg_select.dart';
+export 'rpg_stat.dart';
+export 'rpg_text.dart';
