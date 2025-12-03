@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
-import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/player_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
@@ -97,7 +96,7 @@ class PlayerHud extends StatelessWidget {
                   children: [
                     RpgText.micro("LV.${p.playerLevel.value}"),
                     RpgText.micro(
-                      "TOT: ${p.totalXp.value}",
+                      "经验: ${p.totalXp.value}",
                       color: AppColors.textDim,
                     ),
                   ],
@@ -152,11 +151,11 @@ class PlayerHud extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const RpgText.micro("TEMPORAL SPECTRUM"),
+              const RpgText.micro("时间分布"),
               // 可以加个小百分比显示
               Obx(
                 () => RpgText.micro(
-                  "${(t.effectiveRatio.value * 100).toInt()}% EFFICIENCY",
+                  "${(t.effectiveRatio.value * 100).toInt()}% 效率",
                   color: AppColors.accentSafe,
                 ),
               ),
@@ -175,9 +174,9 @@ class PlayerHud extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _legendDot(AppColors.accentSafe, "ACTIVE"),
-              _legendDot(const Color(0xFF8B2C2C), "ENTROPY"),
-              _legendDot(AppColors.bgCard, "FUTURE"),
+              _legendDot(AppColors.accentSafe, "有效"),
+              _legendDot(const Color(0xFF8B2C2C), "耗散"),
+              _legendDot(AppColors.bgCard, "未来"),
             ],
           ),
         ],
@@ -203,14 +202,12 @@ class PlayerHud extends StatelessWidget {
   Widget _buildDailyModule() {
     return Row(
       children: [
-        Expanded(
-          child: _statColumn(p.dailyXp, "DAILY XP", AppColors.accentSystem),
-        ),
+        Expanded(child: _statColumn(p.dailyXp, "今日产出", AppColors.accentSystem)),
         Container(width: 1, height: 24, color: AppColors.borderDim),
         Expanded(
           child: _statColumn(
             t.timeRemainingStr,
-            "T-MINUS",
+            "距离休眠",
             AppColors.accentDanger,
           ),
         ),

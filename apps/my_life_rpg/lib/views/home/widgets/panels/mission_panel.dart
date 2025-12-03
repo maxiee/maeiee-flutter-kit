@@ -81,17 +81,17 @@ class MissionPanel extends StatelessWidget {
       child: Row(
         children: [
           // 左侧：过滤器 Tab
-          _buildChip("ALL", MissionFilter.all),
+          _buildChip("全部", MissionFilter.all),
           AppSpacing.gapH8,
           _buildChip(
-            "URGENT",
+            "紧急",
             MissionFilter.priority,
             icon: Icons.warning_amber,
             color: AppColors.accentDanger,
           ),
           AppSpacing.gapH8,
           _buildChip(
-            "DAEMON",
+            "习惯",
             MissionFilter.daemon,
             icon: Icons.loop,
             color: AppColors.accentSystem,
@@ -103,7 +103,7 @@ class MissionPanel extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: RpgTag(
-                  label: "PROJECT FILTER ACTIVE",
+                  label: "当前项目",
                   color: AppColors.accentMain,
                   icon: Icons.filter_alt,
                 ),
@@ -118,13 +118,13 @@ class MissionPanel extends StatelessWidget {
           RpgIconButton(
             icon: Icons.loop,
             color: AppColors.accentSystem,
-            tooltip: "Initialize Daemon",
+            tooltip: "新建习惯",
             onTap: () => Get.dialog(const QuestEditor(type: QuestType.daemon)),
           ),
           RpgIconButton(
             icon: Icons.add_task,
             color: AppColors.accentMain,
-            tooltip: "Deploy Mission",
+            tooltip: "新建待办",
             onTap: () => Get.dialog(const QuestEditor(type: QuestType.mission)),
           ),
         ],
@@ -156,9 +156,9 @@ class MissionPanel extends StatelessWidget {
         children: [
           Icon(Icons.filter_list_off, size: 48, color: Colors.white10),
           AppSpacing.gapV16,
-          Text("NO OPERATIONS FOUND", style: AppTextStyles.caption),
+          Text("列表为空", style: AppTextStyles.caption),
           Text(
-            "ADJUST FILTERS OR DEPLOY NEW",
+            "尝试调整筛选或新建任务",
             style: AppTextStyles.micro.copyWith(color: Colors.grey),
           ),
         ],

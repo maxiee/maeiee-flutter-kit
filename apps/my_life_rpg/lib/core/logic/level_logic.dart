@@ -56,12 +56,12 @@ class LevelLogic {
 
   // 赛博朋克风格称号表
   static String _getTitle(int level) {
-    if (level >= 60) return "CYBER DEITY"; // 赛博神
-    if (level >= 50) return "SYSTEM ARCHITECT"; // 架构师
-    if (level >= 40) return "NETRUNNER LEGEND"; // 传奇黑客
-    if (level >= 30) return "SENIOR OPERATOR"; // 高级操作员
-    if (level >= 20) return "CONSOLE COWBOY"; // 控制台牛仔
-    if (level >= 10) return "SCRIPT KIDDIE"; // 脚本小子
-    return "NOVICE"; // 新手
+    if (level >= 60) return "赛博之神 (Cyber Deity)";
+    if (level >= 50) return "系统架构师";
+    if (level >= 40) return "传奇黑客";
+    if (level >= 30) return "高级干员";
+    if (level >= 20) return "控制台游侠";
+    if (level >= 10) return "脚本小子";
+    return "菜鸟 (Novice)";
   }
 }

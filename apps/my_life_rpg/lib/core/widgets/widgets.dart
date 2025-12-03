@@ -4,7 +4,7 @@
 library;
 
 export 'rpg_button.dart';
-export 'rpg_chip.dart';
+export 'rpg_filter_chip.dart.dart';
 export 'rpg_container.dart';
 export 'rpg_divider.dart';
 export 'rpg_empty_state.dart';

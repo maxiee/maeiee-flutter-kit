@@ -72,9 +72,9 @@ class _QuestEditorState extends State<QuestEditor> {
     // 动态计算标题
     String title;
     if (isEdit) {
-      title = isDaemon ? "CONFIGURE DAEMON" : "CONFIGURE MISSION";
+      title = isDaemon ? "编辑习惯" : "编辑待办";
     } else {
-      title = isDaemon ? "INITIALIZE DAEMON" : "DEPLOY MISSION";
+      title = isDaemon ? "新建习惯" : "新建待办";
     }
 
     // 构建核心内容
@@ -98,8 +98,8 @@ class _QuestEditorState extends State<QuestEditor> {
                   fontWeight: FontWeight.bold,
                 ),
                 tabs: const [
-                  Tab(text: "CONFIGURATION"),
-                  Tab(text: "CHRONICLES"),
+                  Tab(text: "配置"),
+                  Tab(text: "历史记录"),
                 ],
               ),
             ),
@@ -130,14 +130,14 @@ class _QuestEditorState extends State<QuestEditor> {
           TextButton(
             onPressed: _delete,
             child: const Text(
-              "DELETE",
+              "删除",
               style: TextStyle(color: AppColors.accentDanger),
             ),
           ),
         if (isEdit) AppSpacing.gapH12,
 
         RpgButton(
-          label: isEdit ? "UPDATE" : "EXECUTE",
+          label: isEdit ? "保存" : "创建",
           type: isDaemon ? RpgButtonType.secondary : RpgButtonType.primary,
           onTap: _submit,
         ),
@@ -154,7 +154,7 @@ class _QuestEditorState extends State<QuestEditor> {
       children: [
         RpgInput(
           controller: titleController,
-          label: "IDENTIFIER (TITLE)",
+          label: "任务名称",
           accentColor: color,
           autofocus: !isEdit,
         ),
@@ -165,13 +165,13 @@ class _QuestEditorState extends State<QuestEditor> {
         if (!isDaemon) ...[
           // [REFACTORED] Mission: Project Selector
           RpgSelect<Project>(
-            label: "LINK TO CAMPAIGN:",
+            label: "所属项目:",
             value: selectedProject,
-            hint: "STANDALONE",
+            hint: "无项目 (Standalone)",
             items: [
               const DropdownMenuItem<Project>(
                 value: null,
-                child: Text("STANDALONE", style: TextStyle(fontSize: 12)),
+                child: Text("无项目 (Standalone)", style: TextStyle(fontSize: 12)),
               ),
               ...q.projects.map(
                 (p) => DropdownMenuItem(
@@ -184,15 +184,15 @@ class _QuestEditorState extends State<QuestEditor> {
           ),
         ] else ...[
           // Daemon Interval 保持原样或后续优化
-          const RpgText.caption("EXECUTION INTERVAL:"),
+          const RpgText.caption("重复周期:"),
           AppSpacing.gapV8,
           Row(
             children: [
-              _buildIntervalChip(1, "DAILY"),
+              _buildIntervalChip(1, "每天"),
               AppSpacing.gapH8,
-              _buildIntervalChip(7, "WEEKLY"),
+              _buildIntervalChip(7, "每周"),
               AppSpacing.gapH8,
-              _buildIntervalChip(30, "MONTHLY"),
+              _buildIntervalChip(30, "每月"),
             ],
           ),
         ],
@@ -212,7 +212,7 @@ class _QuestEditorState extends State<QuestEditor> {
     sessions.sort((a, b) => b.startTime.compareTo(a.startTime));
 
     if (sessions.isEmpty) {
-      return const Center(child: RpgEmptyState(message: "NO DATA RECORDED"));
+      return const Center(child: RpgEmptyState(message: "暂无记录"));
     }
 
     return Column(
@@ -226,19 +226,15 @@ class _QuestEditorState extends State<QuestEditor> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               RpgStat(
-                label: "TOTAL TIME",
+                label: "总时长",
                 value: (widget.quest!.totalDurationSeconds / 3600)
                     .toStringAsFixed(1),
                 unit: "h",
                 compact: true,
               ),
+              RpgStat(label: "次数", value: "${sessions.length}", compact: true),
               RpgStat(
-                label: "SESSIONS",
-                value: "${sessions.length}",
-                compact: true,
-              ),
-              RpgStat(
-                label: "AVG TIME",
+                label: "平均",
                 value: sessions.isNotEmpty
                     ? (widget.quest!.totalDurationSeconds /
                               sessions.length /
@@ -336,7 +332,7 @@ class _QuestEditorState extends State<QuestEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "TEMPORAL ANCHOR (DEADLINE):",
+          "截止时间 (Deadline):",
           style: AppTextStyles.caption.copyWith(color: Colors.grey),
         ),
         AppSpacing.gapV8,
@@ -386,7 +382,7 @@ class _QuestEditorState extends State<QuestEditor> {
                     ),
                     AppSpacing.gapH8,
                     Text(
-                      selectedDeadline == null ? "NO DEADLINE" : "ACTIVE",
+                      selectedDeadline == null ? "无截止" : "已启用",
                       style: AppTextStyles.body.copyWith(
                         color: selectedDeadline != null ? color : Colors.grey,
                         fontSize: 12,
@@ -447,7 +443,7 @@ class _QuestEditorState extends State<QuestEditor> {
                     borderRadius: AppSpacing.borderRadiusMd,
                   ),
                   child: Text(
-                    isAllDay ? "ALL DAY" : "PRECISE",
+                    isAllDay ? "全天" : "精确",
                     style: AppTextStyles.body.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -582,14 +578,14 @@ class _QuestEditorState extends State<QuestEditor> {
         color: AppColors.accentDanger,
       ),
       content: const Text(
-        "Permanently remove this operation and its history?\n(XP will be retained in history, but mission logs will be lost)",
+        "确定要删除此任务及其历史记录吗？\n(已获得的经验会保留)",
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.white70),
       ),
       backgroundColor: AppColors.bgPanel,
       confirmTextColor: Colors.white,
-      textConfirm: "DELETE",
-      textCancel: "CANCEL",
+      textConfirm: "删除",
+      textCancel: "取消",
       buttonColor: AppColors.accentDanger,
       onConfirm: () {
         q.deleteQuest(widget.quest!.id);
