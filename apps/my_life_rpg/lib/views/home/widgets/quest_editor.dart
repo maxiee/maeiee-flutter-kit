@@ -5,11 +5,11 @@ import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import '../../../models/project.dart';
-import '../../../models/quest.dart';
+import '../../../models/task.dart';
 
 class QuestEditor extends StatefulWidget {
-  final Quest? quest; // 编辑时传入
-  final QuestType? type;
+  final Task? quest; // 编辑时传入
+  final TaskType? type;
 
   const QuestEditor({super.key, this.type, this.quest});
 
@@ -21,7 +21,7 @@ class _QuestEditorState extends State<QuestEditor> {
   final QuestService q = Get.find();
 
   late TextEditingController titleController;
-  late QuestType activeType;
+  late TaskType activeType;
 
   // 表单状态
   Project? selectedProject;
@@ -56,7 +56,7 @@ class _QuestEditorState extends State<QuestEditor> {
       intervalDays = existing.intervalDays > 0 ? existing.intervalDays : 7;
     } else {
       // 新建模式
-      activeType = widget.type ?? QuestType.mission;
+      activeType = widget.type ?? TaskType.todo;
       titleController = TextEditingController();
       // 默认值
       intervalDays = 1; // Daemon 默认 Daily
@@ -66,7 +66,7 @@ class _QuestEditorState extends State<QuestEditor> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.quest != null;
-    final isDaemon = widget.type == QuestType.daemon;
+    final isDaemon = widget.type == TaskType.routine;
     final color = isDaemon ? AppColors.accentSystem : AppColors.accentMain;
 
     // 动态计算标题
@@ -147,7 +147,7 @@ class _QuestEditorState extends State<QuestEditor> {
   }
 
   Widget _buildConfigForm(BuildContext context, Color color, bool isEdit) {
-    final isDaemon = activeType == QuestType.daemon;
+    final isDaemon = activeType == TaskType.routine;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,7 +550,7 @@ class _QuestEditorState extends State<QuestEditor> {
         project: selectedProject,
         deadline: selectedDeadline,
         isAllDayDeadline: isAllDay,
-        interval: activeType == QuestType.daemon ? intervalDays : 0,
+        interval: activeType == TaskType.routine ? intervalDays : 0,
       );
     }
     // 如果是新建模式
@@ -559,7 +559,7 @@ class _QuestEditorState extends State<QuestEditor> {
         title: title,
         type: activeType,
         project: selectedProject,
-        interval: activeType == QuestType.daemon ? intervalDays : 0,
+        interval: activeType == TaskType.routine ? intervalDays : 0,
         deadline: selectedDeadline,
         isAllDayDeadline: isAllDay,
       );

@@ -8,7 +8,7 @@ import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
 import 'package:my_life_rpg/views/session/session_binding.dart';
 import 'package:my_life_rpg/views/session/session_view.dart';
-import '../../../../models/quest.dart';
+import '../../../../models/task.dart';
 
 class MissionPanel extends StatelessWidget {
   final QuestService q = Get.find();
@@ -56,7 +56,7 @@ class MissionPanel extends StatelessWidget {
     );
   }
 
-  void _handleCardTap(BuildContext context, Quest quest) async {
+  void _handleCardTap(BuildContext context, Task quest) async {
     final result = await Get.to(
       () => SessionView(),
       arguments: quest,
@@ -119,13 +119,13 @@ class MissionPanel extends StatelessWidget {
             icon: Icons.loop,
             color: AppColors.accentSystem,
             tooltip: "新建习惯",
-            onTap: () => Get.dialog(const QuestEditor(type: QuestType.daemon)),
+            onTap: () => Get.dialog(const QuestEditor(type: TaskType.routine)),
           ),
           RpgIconButton(
             icon: Icons.add_task,
             color: AppColors.accentMain,
             tooltip: "新建待办",
-            onTap: () => Get.dialog(const QuestEditor(type: QuestType.mission)),
+            onTap: () => Get.dialog(const QuestEditor(type: TaskType.todo)),
           ),
         ],
       ),

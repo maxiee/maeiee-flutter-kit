@@ -4,7 +4,7 @@ import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/rpg_tab_bar.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 
 class TimeAllocationDialog extends StatefulWidget {
   final String timeRangeText;
@@ -31,7 +31,7 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
   final TextEditingController _titleController = TextEditingController();
 
   // 数据源
-  late List<Quest> activeQuests;
+  late List<Task> activeQuests;
 
   @override
   void initState() {

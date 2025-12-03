@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/logic/level_logic.dart';
 import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 
 class PlayerService extends GetxService {
@@ -67,7 +67,7 @@ class PlayerService extends GetxService {
       grandTotalXp += StandardXpStrategy.instance.calculateBase(questSeconds);
 
       // Bonus XP
-      if (q.type == QuestType.mission && q.isCompleted) {
+      if (q.type == TaskType.todo && q.isCompleted) {
         grandTotalXp += StandardXpStrategy.instance.calculate(0, true);
         // 如果是今天完成的，todayXp 也要加 Bonus?
         // 暂时不加复杂判断，保持简单

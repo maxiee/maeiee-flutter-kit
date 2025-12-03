@@ -3,10 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import '../../../models/quest.dart';
+import '../../../models/task.dart';
 
 class MissionCard extends StatelessWidget {
-  final Quest quest;
+  final Task quest;
 
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -23,7 +23,7 @@ class MissionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 区分类型
-    final isDaemon = quest.type == QuestType.daemon;
+    final isDaemon = quest.type == TaskType.routine;
     final dueDays = quest.dueDays ?? 0;
 
     return RpgContainer(

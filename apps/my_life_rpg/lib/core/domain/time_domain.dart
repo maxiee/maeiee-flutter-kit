@@ -2,7 +2,7 @@ import 'package:my_life_rpg/core/constants.dart';
 import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/models/block_state.dart';
 
-import '../../models/quest.dart';
+import '../../models/task.dart';
 
 /// [TimeDomain]
 /// 包含所有与时间计算相关的纯算法。
@@ -20,7 +20,7 @@ class TimeDomain {
   /// Returns: 固定长度为 96 的 BlockState 列表
   static List<BlockState> generateDailyBlocks(
     DateTime targetDate,
-    List<Quest> quests,
+    List<Task> quests,
   ) {
     // 0. 初始化空网格
     final List<BlockState> blocks = List.generate(
@@ -100,7 +100,7 @@ class TimeDomain {
   static bool hasOverlap(
     DateTime start,
     DateTime end,
-    List<QuestSession> existingSessions, {
+    List<FocusSession> existingSessions, {
     String? excludeSessionId,
   }) {
     for (var s in existingSessions) {
@@ -120,7 +120,7 @@ class TimeDomain {
 
   // 纯函数：计算自然日内的有效时长 (解决跨天问题的核心算法)
   static int calculateEffectiveSeconds(
-    List<QuestSession> sessions,
+    List<FocusSession> sessions,
     DateTime targetDate,
   ) {
     int total = 0;

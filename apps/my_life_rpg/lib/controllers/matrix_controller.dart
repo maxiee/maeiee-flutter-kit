@@ -6,7 +6,7 @@ import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/time_allocation_dialog.dart';
-import '../models/quest.dart';
+import '../models/task.dart';
 
 class MatrixController extends GetxController {
   // 依赖注入：直接获取 Service
@@ -151,7 +151,7 @@ class MatrixController extends GetxController {
         final title = result['title'] as String;
         final newQ = _questService.addNewQuest(
           title: title,
-          type: QuestType.mission,
+          type: TaskType.todo,
         );
         targetQuestId = newQ.id;
       } else {

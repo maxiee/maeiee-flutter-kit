@@ -1,6 +1,6 @@
 // lib/core/theme/app_colors.dart
 import 'package:flutter/material.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 
 class AppColors {
   // --- Base Backgrounds ---
@@ -26,11 +26,11 @@ class AppColors {
   static const borderBright = Colors.white24;
 
   // [新增] 业务语义颜色获取方法
-  static Color getQuestColor(QuestType type) {
+  static Color getQuestColor(TaskType type) {
     switch (type) {
-      case QuestType.daemon:
+      case TaskType.routine:
         return accentSystem; // Cyan
-      case QuestType.mission:
+      case TaskType.todo:
         return accentMain; // Orange
     }
   }

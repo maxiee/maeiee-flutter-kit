@@ -2,7 +2,7 @@
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/core/logic/quest_priority_logic.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 
 enum MissionFilter {
@@ -20,11 +20,11 @@ class MissionController extends GetxController {
   final selectedProjectId = RxnString(); // 当 filter == project 时有效
 
   // 计算属性：根据筛选器返回过滤后的任务列表
-  List<Quest> get filteredQuests {
+  List<Task> get filteredQuests {
     final allQuests = _questService.quests;
 
     // 1. 构建规格 (Build Specification)
-    Specification<Quest> spec;
+    Specification<Task> spec;
 
     // 1. 基础可见性规则 (Active Mission OR Active Daemon)
     // 这是所有列表的基础

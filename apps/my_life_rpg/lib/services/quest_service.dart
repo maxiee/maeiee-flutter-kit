@@ -5,7 +5,7 @@ import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/project_logic.dart';
 import 'package:my_life_rpg/core/utils/result.dart';
 import 'package:uuid/uuid.dart';
-import '../models/quest.dart';
+import '../models/task.dart';
 import '../models/project.dart';
 
 class QuestService extends GetxService {
@@ -14,21 +14,21 @@ class QuestService extends GetxService {
   final ProjectRepository _projectRepo = Get.find();
 
   // 对外暴露的 Getters (只读)
-  RxList<Quest> get quests => _questRepo.listenable;
+  RxList<Task> get quests => _questRepo.listenable;
   List<Project> get projects => _projectRepo.listenable;
 
   // --- 业务逻辑 (Use Cases) ---
 
   // UseCase: 创建新任务
-  Quest addNewQuest({
+  Task addNewQuest({
     required String title,
-    required QuestType type,
+    required TaskType type,
     Project? project,
     int interval = 0,
     DateTime? deadline,
     bool isAllDayDeadline = true,
   }) {
-    final newQuest = Quest(
+    final newQuest = Task(
       id: const Uuid().v4(),
       title: title,
       type: type,
@@ -36,7 +36,7 @@ class QuestService extends GetxService {
       projectName: project?.title,
       intervalDays: interval,
       // 业务规则：Daemon 默认初始化状态处理
-      lastDoneAt: type == QuestType.daemon
+      lastDoneAt: type == TaskType.routine
           ? DateTime.now().subtract(Duration(days: interval + 1))
           : null,
       sessions: [],
@@ -59,7 +59,7 @@ class QuestService extends GetxService {
     final old = _questRepo.getById(id);
     if (old == null) return;
 
-    final updated = Quest(
+    final updated = Task(
       id: old.id,
       title: title ?? old.title,
       type: old.type,
@@ -85,10 +85,10 @@ class QuestService extends GetxService {
     final q = _questRepo.getById(id);
     if (q == null) return;
 
-    Quest updated;
-    if (q.type == QuestType.daemon) {
+    Task updated;
+    if (q.type == TaskType.routine) {
       // 业务规则：Daemon 完成意味着刷新 CD
-      updated = Quest(
+      updated = Task(
         id: q.id,
         title: q.title,
         type: q.type,
@@ -103,7 +103,7 @@ class QuestService extends GetxService {
       );
     } else {
       // 业务规则：Mission 切换状态
-      updated = Quest(
+      updated = Task(
         // 这里为了简单，其实 copyWith 方法会更好，但我们没生成
         id: q.id,
         title: q.title,
@@ -142,11 +142,11 @@ class QuestService extends GetxService {
       return Result.err("Time slot conflict detected!");
     }
 
-    final session = QuestSession(
+    final session = FocusSession(
       startTime: start,
       endTime: safeEnd,
       durationSeconds: safeEnd.difference(start).inSeconds,
-      logs: [QuestLog(createdAt: DateTime.now(), content: "Manual Allocation")],
+      logs: [TaskLog(createdAt: DateTime.now(), content: "Manual Allocation")],
     );
 
     q!.sessions.add(session); // 这里直接操作了内存对象的 List，如果换数据库需要深拷贝逻辑
@@ -156,9 +156,8 @@ class QuestService extends GetxService {
   }
 
   // 查 (获取今日活跃) - 这种 helper 方法可以放这
-  List<Quest> get activeMissions => quests
-      .where((q) => q.type == QuestType.mission && !q.isCompleted)
-      .toList();
+  List<Task> get activeMissions =>
+      quests.where((q) => q.type == TaskType.todo && !q.isCompleted).toList();
 
   // 通知更新 (用于 SessionController 结束时手动触发)
   void notifyUpdate() {
@@ -265,7 +264,7 @@ class QuestService extends GetxService {
   }
 
   // UseCase: 获取 Session
-  ({Quest quest, QuestSession session})? getSessionById(String sessionId) {
+  ({Task quest, FocusSession session})? getSessionById(String sessionId) {
     for (var q in quests) {
       for (var s in q.sessions) {
         if (s.id == sessionId) return (quest: q, session: s);

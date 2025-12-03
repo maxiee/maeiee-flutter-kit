@@ -1,5 +1,5 @@
 // lib/core/data/specifications.dart
-import '../../models/quest.dart';
+import '../../models/task.dart';
 
 /// 基础规格接口
 abstract class Specification<T> {
@@ -45,31 +45,31 @@ class NotSpecification<T> extends Specification<T> {
 // --- 具体业务规则 (Quest) ---
 
 // 1. 基础类型
-class IsMissionSpec extends Specification<Quest> {
+class IsMissionSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) => q.type == QuestType.mission;
+  bool isSatisfiedBy(Task q) => q.type == TaskType.todo;
 }
 
-class IsDaemonSpec extends Specification<Quest> {
+class IsDaemonSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) => q.type == QuestType.daemon;
+  bool isSatisfiedBy(Task q) => q.type == TaskType.routine;
 }
 
 // 2. 状态
-class IsCompletedSpec extends Specification<Quest> {
+class IsCompletedSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) => q.isCompleted;
+  bool isSatisfiedBy(Task q) => q.isCompleted;
 }
 
 // 3. 时间相关 (新增核心逻辑)
 
 /// 规则：是否需要在特定日期的时间矩阵中显示 Deadline
-class DeadlineOnDateSpec extends Specification<Quest> {
+class DeadlineOnDateSpec extends Specification<Task> {
   final DateTime date;
   DeadlineOnDateSpec(this.date);
 
   @override
-  bool isSatisfiedBy(Quest q) {
+  bool isSatisfiedBy(Task q) {
     if (q.deadline == null) return false;
     // 忽略全天任务 (全天任务显示在顶部，不占用格子)
     if (q.isAllDayDeadline) return false;
@@ -82,12 +82,12 @@ class DeadlineOnDateSpec extends Specification<Quest> {
 
 /// 规则：是否需要在特定日期的时间矩阵中显示 Session 占用
 /// 注意：这个规则比较重，因为它需要遍历 Sessions
-class HasSessionOnDateSpec extends Specification<Quest> {
+class HasSessionOnDateSpec extends Specification<Task> {
   final DateTime date;
   HasSessionOnDateSpec(this.date);
 
   @override
-  bool isSatisfiedBy(Quest q) {
+  bool isSatisfiedBy(Task q) {
     for (var s in q.sessions) {
       // 简单判断：Session 的开始时间是当天
       if (s.startTime.year == date.year &&
@@ -103,16 +103,16 @@ class HasSessionOnDateSpec extends Specification<Quest> {
 // --- 组合业务规则 ---
 
 /// 规则：活跃的任务 (未完成的 Mission)
-class ActiveMissionSpec extends Specification<Quest> {
+class ActiveMissionSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) => q.type == QuestType.mission && !q.isCompleted;
+  bool isSatisfiedBy(Task q) => q.type == TaskType.todo && !q.isCompleted;
 }
 
 /// 规则：活跃的守护进程 (昨天/今天/未来到期的)
-class ActiveDaemonSpec extends Specification<Quest> {
+class ActiveDaemonSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) {
-    if (q.type != QuestType.daemon) return false;
+  bool isSatisfiedBy(Task q) {
+    if (q.type != TaskType.routine) return false;
     final due = q.dueDays ?? -999;
     // 只要不是很久以前(<-1)已经完成且未到期的，都算活跃列表里可见
     // 修正逻辑：列表里通常显示 "Due Today", "Overdue", "Due Tomorrow"
@@ -121,33 +121,33 @@ class ActiveDaemonSpec extends Specification<Quest> {
 }
 
 /// 规则：基础可见性 (Active Mission OR Active Daemon)
-class BaseActiveSpec extends Specification<Quest> {
+class BaseActiveSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) {
+  bool isSatisfiedBy(Task q) {
     return ActiveMissionSpec().isSatisfiedBy(q) ||
         ActiveDaemonSpec().isSatisfiedBy(q);
   }
 }
 
 /// 规则：特定项目
-class ProjectSpec extends Specification<Quest> {
+class ProjectSpec extends Specification<Task> {
   final String? projectId;
   ProjectSpec(this.projectId);
 
   @override
-  bool isSatisfiedBy(Quest q) => q.projectId == projectId;
+  bool isSatisfiedBy(Task q) => q.projectId == projectId;
 }
 
 /// 规则：仅 Daemon 类型
-class OnlyDaemonSpec extends Specification<Quest> {
+class OnlyDaemonSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) => q.type == QuestType.daemon;
+  bool isSatisfiedBy(Task q) => q.type == TaskType.routine;
 }
 
 /// 规则：紧急任务 (Deadline < 24h 或 Overdue Daemon)
-class UrgentSpec extends Specification<Quest> {
+class UrgentSpec extends Specification<Task> {
   @override
-  bool isSatisfiedBy(Quest q) {
+  bool isSatisfiedBy(Task q) {
     final isUrgentMission = q.hoursUntilDeadline < 24;
     final isOverdueDaemon = (q.dueDays ?? -99) > 0;
     return isUrgentMission || isOverdueDaemon;

@@ -1,4 +1,4 @@
-import '../../models/quest.dart';
+import '../../models/task.dart';
 
 /// [QuestPriorityLogic]
 /// 负责计算任务的优先级分数和排序规则。
@@ -9,7 +9,7 @@ class QuestPriorityLogic {
   /// 负数: a 排在 b 前面
   /// 正数: a 排在 b 后面
   /// 0: 相等
-  static int compare(Quest a, Quest b) {
+  static int compare(Task a, Task b) {
     // 1. Deadline 已过 (最高优先级，绝对置顶)
     final aOverdue = a.hoursUntilDeadline < 0;
     final bOverdue = b.hoursUntilDeadline < 0;
@@ -34,10 +34,10 @@ class QuestPriorityLogic {
 
   /// 内部辅助：计算紧急程度分数
   /// 分数越高越紧急
-  static double _calculateUrgencyScore(Quest q) {
+  static double _calculateUrgencyScore(Task q) {
     // 策略 A: 守护进程 (Daemon)
     // 根据拖延天数计算，拖得越久分越高
-    if (q.type == QuestType.daemon) {
+    if (q.type == TaskType.routine) {
       final due = q.dueDays ?? 0;
       // 只有到期(>0)的任务才有高分，每拖一天 +10分
       return due > 0 ? due * 10.0 : 0.0;

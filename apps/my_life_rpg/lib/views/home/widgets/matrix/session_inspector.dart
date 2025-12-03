@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 
 class SessionInspector extends StatelessWidget {
-  final Quest quest;
-  final QuestSession session;
+  final Task quest;
+  final FocusSession session;
 
   const SessionInspector({
     super.key,
@@ -28,7 +28,7 @@ class SessionInspector extends StatelessWidget {
     final durationMin = session.durationSeconds ~/ 60;
 
     // 颜色
-    final color = quest.type == QuestType.daemon
+    final color = quest.type == TaskType.routine
         ? AppColors.accentSystem
         : AppColors.accentMain;
 

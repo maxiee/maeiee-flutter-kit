@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import '../../controllers/session_controller.dart';
-import '../../models/quest.dart';
+import '../../models/task.dart';
 
 class SessionView extends StatelessWidget {
   const SessionView({super.key});
@@ -173,7 +173,7 @@ class SessionView extends StatelessWidget {
     );
   }
 
-  Widget _buildLogRow(SessionController c, QuestLog log) {
+  Widget _buildLogRow(SessionController c, TaskLog log) {
     Color typeColor;
     IconData typeIcon;
 

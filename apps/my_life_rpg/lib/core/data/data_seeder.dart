@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:my_life_rpg/models/quest.dart';
+import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 
 /// [DataSeeder]
@@ -33,14 +33,14 @@ class DataSeeder {
     // 2. 添加 Mission (关联项目)
     qs.addNewQuest(
       title: "阅读 RenderObject 源码",
-      type: QuestType.mission,
+      type: TaskType.todo,
       project: pFlutter,
       deadline: DateTime.now().add(const Duration(hours: 4)), // 今天稍晚
     );
 
     qs.addNewQuest(
       title: "编写 MVP 架构文档",
-      type: QuestType.mission,
+      type: TaskType.todo,
       project: pIndie,
       deadline: DateTime.now().add(const Duration(days: 2)), // 后天
     );
@@ -48,20 +48,20 @@ class DataSeeder {
     // 3. 添加 Standalone Mission (无项目)
     qs.addNewQuest(
       title: "购买猫粮",
-      type: QuestType.mission,
+      type: TaskType.todo,
       deadline: DateTime.now().subtract(const Duration(hours: 1)), // 已逾期 (测试用)
     );
 
     // 4. 添加 Daemon (循环任务)
     qs.addNewQuest(
       title: "清理厨房水槽",
-      type: QuestType.daemon,
+      type: TaskType.routine,
       interval: 1, // 每日
     );
 
     qs.addNewQuest(
       title: "每周周报复盘",
-      type: QuestType.daemon,
+      type: TaskType.routine,
       interval: 7, // 每周
     );
   }

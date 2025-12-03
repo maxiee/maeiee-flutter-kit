@@ -6,15 +6,15 @@ import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/session/session_summary_view.dart';
-import '../models/quest.dart';
+import '../models/task.dart';
 
 class SessionController extends GetxController
     with GetTickerProviderStateMixin {
   final QuestService _questService = Get.find();
 
-  late Quest quest;
+  late Task quest;
   // 新增：当前会话对象
-  late QuestSession currentSession;
+  late FocusSession currentSession;
 
   // 计时器状态
   Timer? _timer;
@@ -28,7 +28,7 @@ class SessionController extends GetxController
   // 界面状态
   final textController = TextEditingController();
   final scrollController = ScrollController();
-  final displayLogs = <QuestLog>[].obs; // 展示用的混合日志列表 (历史 + 新增)
+  final displayLogs = <TaskLog>[].obs; // 展示用的混合日志列表 (历史 + 新增)
 
   // 动画控制器 (用于呼吸效果)
   late AnimationController pulseController;
@@ -39,15 +39,15 @@ class SessionController extends GetxController
     super.onInit();
 
     // 1. 获取传递过来的 Quest 对象
-    if (Get.arguments is Quest) {
-      quest = Get.arguments as Quest;
+    if (Get.arguments is Task) {
+      quest = Get.arguments as Task;
     } else {
       // 防止空参数崩溃 (调试用)
-      quest = Quest(id: 'mock', title: '调试任务', type: QuestType.mission);
+      quest = Task(id: 'mock', title: '调试任务', type: TaskType.todo);
     }
 
     // 1. 创建当前会话对象
-    currentSession = QuestSession(startTime: DateTime.now());
+    currentSession = FocusSession(startTime: DateTime.now());
     quest.sessions.add(currentSession);
 
     // [修复点]：将 notifyUpdate 推迟到帧结束
@@ -144,7 +144,7 @@ class SessionController extends GetxController
     final text = content ?? textController.text.trim();
     if (text.isEmpty) return;
 
-    final newLog = QuestLog(
+    final newLog = TaskLog(
       createdAt: DateTime.now(),
       content: text,
       type: type,
@@ -231,7 +231,7 @@ class SessionController extends GetxController
     final xpEarned = StandardXpStrategy.instance.calculate(effective, false);
 
     final logsCount = currentSession.logs.length;
-    final isDaemon = quest.type == QuestType.daemon;
+    final isDaemon = quest.type == TaskType.routine;
 
     // 3. 通知全局更新 (让 Matrix 和 HUD 知道这块时间被占用了)
     _questService.notifyUpdate();

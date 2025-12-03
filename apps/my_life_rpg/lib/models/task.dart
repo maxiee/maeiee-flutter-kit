@@ -1,32 +1,26 @@
-// lib/models/quest.dart
 import 'package:my_life_rpg/models/serializable.dart';
 import 'package:uuid/uuid.dart';
 
-enum QuestType {
-  mission, // 普通任务 (一次性)
-  daemon, // 守护进程 (循环)
+enum TaskType {
+  todo, // 单次待办
+  routine, // 循环习惯
 }
 
-extension QuestTypeExt on QuestType {
-  String toJson() => toString().split('.').last;
+extension TaskTypeExt on TaskType {
+  String get name => toString().split('.').last;
 
-  static QuestType fromJson(String json) {
-    return QuestType.values.firstWhere(
-      (e) => e.toJson() == json,
-      orElse: () => QuestType.mission,
-    );
-  }
-
-  // UI 相关属性也可以放这里，或者单独放到 theme helper
-  String get label => this == QuestType.daemon ? "DAEMON" : "MISSION";
+  static TaskType fromJson(String json) => TaskType.values.firstWhere(
+    (e) => e.name == json,
+    orElse: () => TaskType.todo,
+  );
 }
 
 enum LogType {
-  normal, // 普通文本
-  milestone, // 里程碑 (金色)
-  bug, // 坑/Bug (红色)
-  idea, // 想法 (青色)
-  rest, // 休息 (绿色)
+  normal, // 笔记
+  milestone, // 节点
+  bug, // 问题
+  idea, // 灵感
+  rest, // 休息
 }
 
 extension LogTypeExt on LogType {
@@ -40,53 +34,55 @@ extension LogTypeExt on LogType {
   }
 }
 
-class QuestLog {
+class TaskLog {
   final String id;
   final DateTime createdAt;
   final String content; // 你的简短笔记
   final LogType type; // 新增属性
 
-  QuestLog({
+  TaskLog({
     String? id,
     required this.createdAt,
     required this.content,
     this.type = LogType.normal, // 默认为普通
   }) : id = id ?? const Uuid().v4();
 
+  // Dart 3 风格写法
   Map<String, dynamic> toJson() => {
     'id': id,
     'createdAt': createdAt.toIso8601String(),
     'content': content,
-    'type': type.toString().split('.').last,
+    'type': type.name, // 使用 .name
   };
 
-  factory QuestLog.fromJson(Map<String, dynamic> json) => QuestLog(
+  factory TaskLog.fromJson(Map<String, dynamic> json) => TaskLog(
     id: json['id'],
     createdAt: DateTime.parse(json['createdAt']),
     content: json['content'],
     type: LogType.values.firstWhere(
-      (e) => e.toString() == 'LogType.${json['type']}',
+      (e) => e.name == json['type'],
       orElse: () => LogType.normal,
     ),
   );
 }
 
-class QuestSession {
+class FocusSession {
   final String id;
   final DateTime startTime;
   DateTime? endTime; // null 表示正在进行中
-  int durationSeconds; // 这是总的物理时长 (结束 - 开始)
-  // [新增] 暂停总时长 (秒)
-  int pausedSeconds;
-  final List<QuestLog> logs; // 这个时间片内产生的 Log
+  int durationSeconds; // 物理时长
+  int pausedSeconds; // 暂停时长
 
-  QuestSession({
+  // 不再直接存 Log，Log 属于 Task 还是 Session？通常 Log 发生在 Session 期间
+  final List<TaskLog> logs;
+
+  FocusSession({
     String? id,
     required this.startTime,
     this.endTime,
     this.durationSeconds = 0,
     this.pausedSeconds = 0,
-    List<QuestLog>? logs,
+    List<TaskLog>? logs,
   }) : id = id ?? const Uuid().v4(),
        logs = logs ?? [];
 
@@ -103,22 +99,22 @@ class QuestSession {
     'logs': logs.map((e) => e.toJson()).toList(),
   };
 
-  factory QuestSession.fromJson(Map<String, dynamic> json) => QuestSession(
+  factory FocusSession.fromJson(Map<String, dynamic> json) => FocusSession(
     id: json['id'],
     startTime: DateTime.parse(json['startTime']),
     endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
     durationSeconds: json['durationSeconds'] ?? 0,
     pausedSeconds: json['pausedSeconds'] ?? 0,
     logs:
-        (json['logs'] as List?)?.map((e) => QuestLog.fromJson(e)).toList() ??
-        [],
+        (json['logs'] as List?)?.map((e) => TaskLog.fromJson(e)).toList() ?? [],
   );
 }
 
-class Quest implements Serializable {
+class Task implements Serializable {
+  @override
   final String id;
   final String title;
-  final QuestType type;
+  final TaskType type;
 
   // 关联 Project
   final String? projectId; // 比如关联 "Flutter学习" 项目
@@ -127,7 +123,7 @@ class Quest implements Serializable {
   // 状态
   bool isCompleted; // 是否已完成 (打钩)
 
-  // Daemon 专用属性
+  // Routine 专用
   final int intervalDays; // 间隔周期 (天)
   final DateTime? lastDoneAt; // 上次完成时间（对于 Routine 是完成时间，对于 Project 是最后一次活跃时间）
 
@@ -136,9 +132,9 @@ class Quest implements Serializable {
 
   // 核心变化：不再直接存 logs，而是存 sessions
   // 为了兼容旧数据或快速查看，你可以保留一个 get allLogs => sessions.expand((s) => s.logs).toList();
-  final List<QuestSession> sessions;
+  final List<FocusSession> sessions;
 
-  Quest({
+  Task({
     required this.id,
     required this.title,
     required this.type,
@@ -149,20 +145,20 @@ class Quest implements Serializable {
     this.lastDoneAt,
     this.deadline,
     this.isAllDayDeadline = true,
-    List<QuestSession>? sessions,
+    List<FocusSession>? sessions,
   }) : sessions = sessions ?? [];
 
   bool get isUrgent => hoursUntilDeadline < 24;
   bool get isOverdue => hoursUntilDeadline < 0;
 
-  bool get isDaemonOverdue => type == QuestType.daemon && (dueDays ?? -99) > 0;
+  bool get isDaemonOverdue => type == TaskType.routine && (dueDays ?? -99) > 0;
 
   // 计算属性：聚合总时长
   int get totalDurationSeconds =>
       sessions.fold(0, (sum, s) => sum + s.durationSeconds);
 
   // 计算属性：扁平化所有日志 (按时间倒序，方便 UI 展示)
-  List<QuestLog> get allLogs {
+  List<TaskLog> get allLogs {
     final all = sessions.expand((s) => s.logs).toList();
     all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return all;
@@ -181,7 +177,7 @@ class Quest implements Serializable {
   // >0 = 已逾期 X 天 (Overdue)
   // <0 = 还有 X 天 (Future)
   int? get dueDays {
-    if (type != QuestType.daemon || lastDoneAt == null) return null;
+    if (type != TaskType.routine || lastDoneAt == null) return null;
 
     // 剥离时间，只保留日期部分 (00:00:00)
     final lastDate = DateTime(
@@ -199,9 +195,9 @@ class Quest implements Serializable {
     return todayDate.difference(nextDueDate).inDays;
   }
 
-  Quest copyWith({
+  Task copyWith({
     String? title,
-    QuestType? type,
+    TaskType? type,
     String? projectId,
     String? projectName,
     bool? isCompleted,
@@ -209,13 +205,12 @@ class Quest implements Serializable {
     DateTime? lastDoneAt,
     DateTime? deadline,
     bool? isAllDayDeadline,
-    List<QuestSession>? sessions,
+    List<FocusSession>? sessions,
     // 特殊标记：传入 true 明确将 nullable 字段设为 null
     bool setProjectNull = false,
-    bool setDeadlineNull = false,
   }) {
-    return Quest(
-      id: this.id,
+    return Task(
+      id: id,
       title: title ?? this.title,
       type: type ?? this.type,
       // 如果 setProjectNull 为 true，强制赋 null；否则优先用新值，没有新值用旧值
@@ -224,7 +219,7 @@ class Quest implements Serializable {
       isCompleted: isCompleted ?? this.isCompleted,
       intervalDays: intervalDays ?? this.intervalDays,
       lastDoneAt: lastDoneAt ?? this.lastDoneAt,
-      deadline: setDeadlineNull ? null : (deadline ?? this.deadline),
+      deadline: deadline ?? this.deadline,
       isAllDayDeadline: isAllDayDeadline ?? this.isAllDayDeadline,
       sessions: sessions ?? this.sessions,
     );
@@ -234,7 +229,7 @@ class Quest implements Serializable {
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
-    'type': type.toJson(),
+    'type': type.name,
     'projectId': projectId,
     'projectName': projectName,
     'isCompleted': isCompleted,
@@ -245,10 +240,10 @@ class Quest implements Serializable {
     'sessions': sessions.map((s) => s.toJson()).toList(),
   };
 
-  factory Quest.fromJson(Map<String, dynamic> json) => Quest(
+  factory Task.fromJson(Map<String, dynamic> json) => Task(
     id: json['id'],
     title: json['title'],
-    type: QuestTypeExt.fromJson(json['type']),
+    type: TaskTypeExt.fromJson(json['type']),
     projectId: json['projectId'],
     projectName: json['projectName'],
     isCompleted: json['isCompleted'] ?? false,
@@ -262,7 +257,7 @@ class Quest implements Serializable {
     isAllDayDeadline: json['isAllDayDeadline'] ?? true,
     sessions:
         (json['sessions'] as List?)
-            ?.map((e) => QuestSession.fromJson(e))
+            ?.map((e) => FocusSession.fromJson(e))
             .toList() ??
         [],
   );
