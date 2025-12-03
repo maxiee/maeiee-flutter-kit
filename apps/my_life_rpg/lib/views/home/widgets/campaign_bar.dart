@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/widgets/rpg_container.dart';
+import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/models/project.dart';
 import 'package:my_life_rpg/services/quest_service.dart';
 import 'package:my_life_rpg/views/home/widgets/project_editor.dart';
 
 class CampaignBar extends StatelessWidget {
   final QuestService q = Get.find();
+
+  CampaignBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +49,11 @@ class CampaignBar extends StatelessWidget {
       child: InkWell(
         onTap: () => Get.dialog(const ProjectEditor()),
         borderRadius: BorderRadius.circular(4),
-        child: Container(
+        child: const RpgContainer(
           width: 48, // 正方形
           height: 48, // 填满高度
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.bgCard.withOpacity(0.3), //稍微暗一点，区分内容
-            border: Border.all(color: Colors.white12),
-            borderRadius: BorderRadius.circular(4),
-          ),
+          style: RpgContainerStyle.outline,
+          padding: EdgeInsets.zero,
           child: const Icon(Icons.add, color: AppColors.accentMain, size: 20),
         ),
       ),
@@ -76,46 +76,13 @@ class CampaignBar extends StatelessWidget {
         onTap: () => mc.selectProject(p.id), // [修改点]：点击不再是编辑，而是筛选
         onLongPress: () =>
             Get.dialog(ProjectEditor(project: p)), // [修改点]：长按才是编辑
-        child: AnimatedContainer(
+        child: RpgContainer(
           // 使用 AnimatedContainer 做过渡
-          duration: const Duration(milliseconds: 200),
           width: 130,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? p.color.withOpacity(0.15)
-                : AppColors.bgCard, // 选中背景变亮
-            border: Border(
-              left: BorderSide(
-                color: p.color,
-                width: isSelected ? 6 : 3, // 选中左侧条变宽
-              ),
-              // 选中时，边框发光
-              top: BorderSide(
-                color: isSelected
-                    ? p.color.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.05),
-              ),
-              right: BorderSide(
-                color: isSelected
-                    ? p.color.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.05),
-              ),
-              bottom: BorderSide(
-                color: isSelected
-                    ? p.color.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.05),
-              ),
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: p.color.withOpacity(0.2),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : [],
-          ),
+          style: RpgContainerStyle.card,
+          focused: isSelected,
+          overrideColor: p.color, // 将项目颜色传递给容器
+          padding: EdgeInsets.zero, //
           child: Stack(
             children: [
               // 1. 进度条作为底部填充 (或者底边框)
@@ -147,25 +114,12 @@ class CampaignBar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // 上层：标题
-                    Text(
-                      p.title.toUpperCase(),
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11, // 字体调小，更精致
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    RpgText.caption(p.title.toUpperCase(), color: Colors.white),
                     const SizedBox(height: 2),
                     // 下层：百分比数字 (Micro Style)
-                    Text(
-                      "PROG: $percentStr",
-                      style: AppTextStyles.micro.copyWith(
-                        color: p.color.withOpacity(0.8),
-                        fontSize: 9,
-                        letterSpacing: 0.5,
-                      ),
+                    RpgText.micro(
+                      "PROG: ${(progress * 100).toInt()}%",
+                      color: p.color.withOpacity(0.8),
                     ),
                   ],
                 ),

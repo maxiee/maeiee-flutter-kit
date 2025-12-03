@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
+import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/services/player_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
@@ -11,21 +12,12 @@ class PlayerHud extends StatelessWidget {
   final TimeService t = Get.find(); // 直接找 TimeService
   final PlayerService p = Get.find();
 
+  PlayerHud({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgPanel,
-        borderRadius: AppSpacing.borderRadiusXl,
-        border: Border.all(color: AppColors.borderDim),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return RpgContainer(
+      style: RpgContainerStyle.panel,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
@@ -76,15 +68,9 @@ class PlayerHud extends StatelessWidget {
                       barrierColor: Colors.transparent,
                     );
                   },
-                  child: Text(
+                  child: RpgText.caption(
                     p.playerTitle.value,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.accentMain,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    color: AppColors.accentMain,
                   ),
                 ),
               ),
@@ -109,17 +95,10 @@ class PlayerHud extends StatelessWidget {
                 () => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "LV.${p.playerLevel.value}",
-                      style: AppTextStyles.micro.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
+                    RpgText.micro("LV.${p.playerLevel.value}"),
+                    RpgText.micro(
                       "TOT: ${p.totalXp.value}",
-                      style: AppTextStyles.micro.copyWith(
-                        color: AppColors.textDim,
-                      ),
+                      color: AppColors.textDim,
                     ),
                   ],
                 ),
@@ -153,8 +132,8 @@ class PlayerHud extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          "${p.playerLevel.value}",
+        child: RpgText(
+          p.playerLevel.value.toString(),
           style: AppTextStyles.heroNumber.copyWith(fontSize: 18),
         ),
       ),
@@ -173,17 +152,12 @@ class PlayerHud extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "TEMPORAL SPECTRUM",
-                style: AppTextStyles.micro.copyWith(letterSpacing: 1.5),
-              ),
+              const RpgText.micro("TEMPORAL SPECTRUM"),
               // 可以加个小百分比显示
               Obx(
-                () => Text(
+                () => RpgText.micro(
                   "${(t.effectiveRatio.value * 100).toInt()}% EFFICIENCY",
-                  style: AppTextStyles.micro.copyWith(
-                    color: AppColors.accentSafe,
-                  ),
+                  color: AppColors.accentSafe,
                 ),
               ),
             ],
@@ -220,71 +194,46 @@ class PlayerHud extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: AppTextStyles.micro.copyWith(color: Colors.grey, fontSize: 8),
-        ),
+        RpgText.micro(label, color: Colors.grey),
       ],
     );
   }
 
   // 右侧：倒计时
   Widget _buildDailyModule() {
-    // 使用 Row 将两个数据并排，填满空间
     return Row(
       children: [
-        // 1. Daily XP (Output)
         Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center, // 居中对齐
-            children: [
-              Obx(
-                () => Text(
-                  "+${p.dailyXp.value}",
-                  style: const TextStyle(
-                    fontFamily: 'Courier',
-                    fontSize: 22, // 字体加大
-                    color: AppColors.accentSystem,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text(
-                "DAILY XP",
-                style: AppTextStyles.micro.copyWith(color: AppColors.textDim),
-              ),
-            ],
-          ),
+          child: _statColumn(p.dailyXp, "DAILY XP", AppColors.accentSystem),
         ),
-
-        // 微型分割线
         Container(width: 1, height: 24, color: AppColors.borderDim),
-
-        // 2. Sleep Timer (Deadline)
         Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center, // 居中对齐
-            children: [
-              Obx(
-                () => Text(
-                  t.timeRemainingStr.value,
-                  style: const TextStyle(
-                    fontFamily: 'Courier',
-                    fontSize: 22, // 字体加大
-                    color: AppColors.accentDanger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text(
-                "T-MINUS",
-                style: AppTextStyles.micro.copyWith(color: AppColors.textDim),
-              ),
-            ],
+          child: _statColumn(
+            t.timeRemainingStr,
+            "T-MINUS",
+            AppColors.accentDanger,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _statColumn(Rx<Object> value, String label, Color color) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Obx(
+          () => Text(
+            value.value.toString(),
+            style: TextStyle(
+              fontFamily: 'Courier',
+              fontSize: 22,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        RpgText.micro(label, color: AppColors.textDim),
       ],
     );
   }
