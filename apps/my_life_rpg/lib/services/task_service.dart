@@ -59,19 +59,16 @@ class TaskService extends GetxService {
     final old = _taskRepo.getById(id);
     if (old == null) return;
 
-    final updated = Task(
-      id: old.id,
-      title: title ?? old.title,
-      type: old.type,
-      projectId: project?.id, // 允许 null (Standalone)
+    final updated = old.copyWith(
+      title: title,
+      projectId: project?.id,
       projectName: project?.title,
-      isCompleted: old.isCompleted,
-      intervalDays: interval ?? old.intervalDays,
-      lastDoneAt: old.lastDoneAt,
       deadline: deadline,
-      isAllDayDeadline: isAllDayDeadline ?? old.isAllDayDeadline,
-      sessions: old.sessions,
+      isAllDayDeadline: isAllDayDeadline,
+      intervalDays: interval,
+      setProjectNull: project == null && title != null,
     );
+
     _taskRepo.update(updated);
   }
 
@@ -85,39 +82,9 @@ class TaskService extends GetxService {
     final q = _taskRepo.getById(id);
     if (q == null) return;
 
-    Task updated;
-    if (q.type == TaskType.routine) {
-      // 业务规则：Daemon 完成意味着刷新 CD
-      updated = Task(
-        id: q.id,
-        title: q.title,
-        type: q.type,
-        projectId: q.projectId,
-        projectName: q.projectName,
-        isCompleted: false, // 永远为 false
-        intervalDays: q.intervalDays,
-        lastDoneAt: DateTime.now(), // 刷新
-        sessions: q.sessions,
-        deadline: q.deadline,
-        isAllDayDeadline: q.isAllDayDeadline,
-      );
-    } else {
-      // 业务规则：Mission 切换状态
-      updated = Task(
-        // 这里为了简单，其实 copyWith 方法会更好，但我们没生成
-        id: q.id,
-        title: q.title,
-        type: q.type,
-        projectId: q.projectId,
-        projectName: q.projectName,
-        isCompleted: !q.isCompleted,
-        intervalDays: q.intervalDays,
-        lastDoneAt: q.lastDoneAt,
-        sessions: q.sessions,
-        deadline: q.deadline,
-        isAllDayDeadline: q.isAllDayDeadline,
-      );
-    }
+    // 业务逻辑下沉到 Model，Service 变得极其干净
+    final updated = q.onToggle();
+
     _taskRepo.update(updated);
     _projectRepo.listenable.refresh(); // 触发项目进度刷新
   }
@@ -233,10 +200,10 @@ class TaskService extends GetxService {
 
   // 删
   void deleteProject(String id) {
-    // 1. [新增] 找到所有关联任务
+    // 1. 找到所有关联任务
     final relatedQuests = tasks.where((q) => q.projectId == id).toList();
 
-    // 2. [新增] 解绑 (Detach)
+    // 2. 解绑 (Detach)
     for (var q in relatedQuests) {
       final updatedQ = q.copyWith(setProjectNull: true);
       _taskRepo.update(updatedQ);

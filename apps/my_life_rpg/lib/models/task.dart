@@ -121,7 +121,7 @@ class Task implements Serializable {
   final String? projectName; // 冗余存一个名字方便显示
 
   // 状态
-  bool isCompleted; // 是否已完成 (打钩)
+  final bool isCompleted; // 是否已完成 (打钩)
 
   // Routine 专用
   final int intervalDays; // 间隔周期 (天)
@@ -193,6 +193,18 @@ class Task implements Serializable {
 
     // 计算差值
     return todayDate.difference(nextDueDate).inDays;
+  }
+
+  // 领域行为：执行完成/切换操作
+  Task onToggle() {
+    if (type == TaskType.routine) {
+      // 业务规则：Daemon 完成意味着刷新 CD，且状态永远保持为 Active (false)
+      // 只有 lastDoneAt 变了
+      return copyWith(isCompleted: false, lastDoneAt: DateTime.now());
+    } else {
+      // 业务规则：Mission 切换状态
+      return copyWith(isCompleted: !isCompleted);
+    }
   }
 
   Task copyWith({
