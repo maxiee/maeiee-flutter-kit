@@ -21,9 +21,24 @@ class SessionView extends StatelessWidget {
             _buildHeader(c),
 
             // 2. 呼吸计时器 (Pulse Timer) -> 改为支持点击暂停
+            // [修改] 优化后的计时器区域
             GestureDetector(
-              onTap: c.togglePause, // 点击整个区域暂停
-              child: _buildPulseTimer(c),
+              onTap: c.togglePause,
+              child: Container(
+                // 固定高度容器，避免布局跳动
+                height: 180,
+                width: double.infinity,
+                // 这里作为 Stack 的容器
+                child: Stack(
+                  children: [
+                    // Layer 1: 动画背景 (60 FPS)
+                    Positioned.fill(child: _buildAnimatedBackground(c)),
+
+                    // Layer 2: 数据内容 (1 FPS / Event driven)
+                    Positioned.fill(child: _buildTimerContent(c)),
+                  ],
+                ),
+              ),
             ),
 
             const RpgDivider(),
@@ -49,6 +64,113 @@ class SessionView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAnimatedBackground(SessionController c) {
+    return AnimatedBuilder(
+      animation: c.pulseAnimation,
+      builder: (ctx, child) {
+        // 为了获取当前颜色状态，这里不得不读一次 Obx 变量，但我们可以优化
+        // 实际上 isPaused 改变频率极低。
+        // 我们可以只让 AnimatedBuilder 处理 opacity。
+        // 背景色变化放到 Obx 里？
+        // 不，背景色和动画状态强相关。
+        // 这种混合场景，最优化方案是：
+        // 让 AnimatedBuilder 只负责传值给 Container 的 opacity/shadow
+
+        return Obx(() {
+          final isPaused = c.isPaused.value;
+          // 如果暂停，停止呼吸（虽然 controller 停了，但 value 可能停在中间）
+          // 这里的逻辑：暂停变红，非暂停呼吸。
+
+          final opacity = isPaused ? 1.0 : c.pulseAnimation.value;
+          final baseColor = isPaused
+              ? const Color(0xFF2A0000)
+              : const Color(0xFF151515);
+
+          return Container(
+            color: baseColor,
+            // 我们也可以在这里画一些动态的网格或扫描线，现在先保持简单
+          );
+        });
+      },
+    );
+  }
+
+  Widget _buildTimerContent(SessionController c) {
+    return Obx(() {
+      final isPaused = c.isPaused.value;
+      // 颜色逻辑也放在这里，因为它不需要 60fps 变化，只有 isPaused 变了才变
+      // 只有 text shadow 需要呼吸？
+      // 原代码：HeroNumber 的 color 和 shadow 都在呼吸。
+      // 如果要让文字呼吸，Obx 还是得套在 AnimatedBuilder 里，或者文字单独套 AnimatedBuilder。
+
+      final label = isPaused ? "SYSTEM PAUSED" : "SESSION IN PROGRESS";
+      final stateColor = isPaused
+          ? AppColors.accentDanger
+          : AppColors.accentMain;
+
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 时间文字：单独套一个 AnimatedBuilder 来做呼吸效果，避免重排版整个 Column
+          AnimatedBuilder(
+            animation: c.pulseAnimation,
+            builder: (_, __) {
+              final opacity = isPaused ? 1.0 : c.pulseAnimation.value;
+              return Text(
+                c.formatDuration(c.effectiveSeconds.value),
+                style: AppTextStyles.heroNumber.copyWith(
+                  color: stateColor.withOpacity(opacity),
+                  shadows: [
+                    BoxShadow(
+                      color: stateColor.withOpacity(0.3 * opacity),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          AppSpacing.gapV4,
+
+          // 状态标签
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isPaused)
+                const Icon(
+                  Icons.pause,
+                  color: AppColors.accentDanger,
+                  size: 14,
+                ),
+              if (isPaused) AppSpacing.gapH8,
+              Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: isPaused ? AppColors.accentDanger : AppColors.textDim,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          // 提示语
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              isPaused ? "TAP TO RESUME" : "TAP TO PAUSE",
+              style: AppTextStyles.micro.copyWith(
+                color: isPaused ? Colors.white30 : Colors.black, // 黑字=隐藏式提示
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildHeader(SessionController c) {
@@ -80,96 +202,6 @@ class SessionView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPulseTimer(SessionController c) {
-    return AnimatedBuilder(
-      animation: c.pulseAnimation,
-      builder: (ctx, child) {
-        return Obx(() {
-          final isPaused = c.isPaused.value;
-          final opacity = isPaused ? 1.0 : c.pulseAnimation.value;
-          final color = isPaused
-              ? AppColors.accentDanger
-              : AppColors.accentMain;
-          final label = isPaused ? "SYSTEM PAUSED" : "SESSION IN PROGRESS";
-
-          return Container(
-            width: double.infinity,
-            padding:
-                AppSpacing.paddingVerticalLg + AppSpacing.paddingVerticalMd,
-            color: isPaused
-                ? const Color(0xFF2A0000)
-                : const Color(0xFF151515), // 暂停变红背景
-            child: Column(
-              children: [
-                // 显示有效时长
-                Text(
-                  c.formatDuration(c.effectiveSeconds.value),
-                  style: AppTextStyles.heroNumber.copyWith(
-                    color: color.withOpacity(opacity),
-                    shadows: [
-                      BoxShadow(
-                        color: color.withOpacity(0.3 * opacity),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-                AppSpacing.gapV4,
-
-                // 状态标签
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isPaused)
-                      const Icon(
-                        Icons.pause,
-                        color: AppColors.accentDanger,
-                        size: 14,
-                      ),
-                    if (isPaused) AppSpacing.gapH8,
-                    Text(
-                      label,
-                      style: AppTextStyles.caption.copyWith(
-                        color: isPaused
-                            ? AppColors.accentDanger
-                            : AppColors.textDim,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // 提示语
-                if (isPaused)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      "TAP TO RESUME",
-                      style: AppTextStyles.micro.copyWith(
-                        color: Colors.white30,
-                      ),
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      "TAP TO PAUSE",
-                      style: AppTextStyles.micro.copyWith(
-                        color: Colors.black,
-                      ), // 隐藏式提示
-                    ),
-                  ),
-              ],
-            ),
-          );
-        });
-      },
     );
   }
 
