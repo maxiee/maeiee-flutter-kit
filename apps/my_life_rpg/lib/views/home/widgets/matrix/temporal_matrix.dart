@@ -248,9 +248,35 @@ class TemporalMatrix extends StatelessWidget {
         final isLeftConnected = c.isConnected(index - 1, index);
         final isRightConnected = c.isConnected(index, index + 1);
 
+        // [新增] 业务逻辑提升至此 (Data Logic Lifting)
+        Color fillColor = Colors.white.withOpacity(0.05);
+        Color borderColor = Colors.transparent;
+        String? tooltipMessage;
+
+        if (state.deadlineQuestIds.isNotEmpty) {
+          fillColor = AppColors.accentDanger.withOpacity(0.2);
+          borderColor = AppColors.accentDanger;
+
+          final qId = state.deadlineQuestIds.first;
+          final quest = questService.tasks.firstWhereOrNull((q) => q.id == qId);
+          tooltipMessage = "${quest?.title ?? 'Unknown'} [DEADLINE]";
+        } else if (state.occupiedSessionIds.isNotEmpty) {
+          final qId = state.occupiedQuestIds.last;
+          final quest = questService.tasks.firstWhereOrNull((q) => q.id == qId);
+
+          if (quest != null) {
+            final baseColor = AppColors.getQuestColor(quest.type);
+            fillColor = baseColor.withOpacity(0.4);
+            borderColor = baseColor.withOpacity(0.5);
+            tooltipMessage = quest.title;
+          }
+        }
+
         // [修改点]: 调用 MatrixCell 组件
         return MatrixCell(
-          state: state,
+          color: fillColor,
+          borderColor: borderColor,
+          tooltip: tooltipMessage,
           isSelected: isSelected,
           isLeftConnected: isLeftConnected,
           isRightConnected: isRightConnected,

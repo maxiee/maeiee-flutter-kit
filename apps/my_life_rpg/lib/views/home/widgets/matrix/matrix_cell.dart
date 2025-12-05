@@ -1,87 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/models/block_state.dart';
-import 'package:my_life_rpg/services/task_service.dart';
 
 class MatrixCell extends StatelessWidget {
-  final BlockState state;
+  final Color color;
+  final Color borderColor;
+  final String? tooltip;
+
+  // 保留布局属性
   final bool isSelected;
+  final VoidCallback onTap;
+
+  // 辅助布局属性 (用于圆角计算，这部分属于 UI 逻辑，可以保留，也可以由父级传 Radius)
+  // 为了保持改动最小且合理，我们保留这部分 UI 逻辑，但把数据逻辑移走
   final bool isLeftConnected;
   final bool isRightConnected;
   final bool isRowStart;
   final bool isRowEnd;
-  final VoidCallback onTap;
 
   const MatrixCell({
-    Key? key,
-    required this.state,
+    super.key,
+    required this.color,
+    required this.borderColor,
+    this.tooltip,
     required this.isSelected,
     required this.isLeftConnected,
     required this.isRightConnected,
     required this.isRowStart,
     required this.isRowEnd,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // 1. 样式计算 (只计算背景和边框)
-    Color fillColor = Colors.white.withOpacity(0.05);
-    Color borderColor = Colors.transparent;
-    String? tooltipMessage; // [新增]
-
-    final TaskService qs = Get.find();
-
-    if (state.deadlineQuestIds.isNotEmpty) {
-      fillColor = AppColors.accentDanger.withOpacity(0.2);
-      borderColor = AppColors.accentDanger;
-      // 查找 deadline 标题
-      final qId = state.deadlineQuestIds.first;
-      final quest = qs.tasks.firstWhereOrNull((q) => q.id == qId);
-      tooltipMessage = "${quest?.title ?? 'Unknown'} [DEADLINE]";
-    } else if (state.occupiedSessionIds.isNotEmpty) {
-      final qId = state.occupiedQuestIds.last;
-      final quest = qs.tasks.firstWhereOrNull((q) => q.id == qId);
-
-      if (quest != null) {
-        final baseColor = AppColors.getQuestColor(quest.type);
-        fillColor = baseColor.withOpacity(0.4);
-        borderColor = baseColor.withOpacity(0.5);
-        tooltipMessage = quest.title; // [新增]
-      }
-    }
-
-    if (isSelected) borderColor = Colors.white;
+    // 1. 样式微调
+    Color finalBorderColor = borderColor;
+    if (isSelected) finalBorderColor = Colors.white;
 
     // 2. 形状计算
     BorderRadius radius;
-    if (state.occupiedSessionIds.isEmpty) {
-      radius = BorderRadius.circular(2);
-    } else {
-      radius = BorderRadius.horizontal(
-        left: (isLeftConnected && !isRowStart)
-            ? Radius.zero
-            : const Radius.circular(2),
-        right: (isRightConnected && !isRowEnd)
-            ? Radius.zero
-            : const Radius.circular(2),
-      );
-    }
+    radius = BorderRadius.horizontal(
+      left: (isLeftConnected && !isRowStart)
+          ? Radius.zero
+          : const Radius.circular(2),
+      right: (isRightConnected && !isRowEnd)
+          ? Radius.zero
+          : const Radius.circular(2),
+    );
 
     // 3. 渲染
     // [修改]: 移除内部 Text，包裹 Tooltip
     return Tooltip(
-      message: tooltipMessage ?? "",
-      // 只有有内容时才显示 Tooltip
-      triggerMode: tooltipMessage != null ? TooltipTriggerMode.longPress : null,
+      message: tooltip ?? "",
+      triggerMode: tooltip != null ? TooltipTriggerMode.longPress : null,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: fillColor,
+            color: color,
             borderRadius: radius,
-            border: Border.all(color: borderColor),
+            border: Border.all(color: finalBorderColor),
           ),
         ),
       ),
