@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/rpg_tab_bar.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/models/task.dart';
 
 class TimeAllocationDialog extends StatefulWidget {
   final String timeRangeText;
   final DateTime startTime;
   final DateTime endTime;
-  final QuestService questService;
+  final TaskService questService;
 
   const TimeAllocationDialog({
     super.key,
@@ -37,7 +37,7 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
   void initState() {
     super.initState();
     // 过滤活跃任务
-    activeQuests = widget.questService.quests
+    activeQuests = widget.questService.tasks
         .where((q) => !q.isCompleted)
         .toList();
 

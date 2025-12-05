@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';
 import 'package:my_life_rpg/views/session/session_binding.dart';
@@ -11,7 +11,7 @@ import 'package:my_life_rpg/views/session/session_view.dart';
 import '../../../../models/task.dart';
 
 class MissionPanel extends StatelessWidget {
-  final QuestService q = Get.find();
+  final TaskService q = Get.find();
   final MissionController mc = Get.find();
 
   MissionPanel({super.key});
@@ -43,7 +43,7 @@ class MissionPanel extends StatelessWidget {
                   // [修改点]: 在这里注入业务逻辑
                   return MissionCard(
                     quest: quest,
-                    onToggle: () => q.toggleQuestCompletion(quest.id),
+                    onToggle: () => q.toggleTaskCompletion(quest.id),
                     onLongPress: () => Get.dialog(QuestEditor(quest: quest)),
                     onTap: () => _handleCardTap(context, quest),
                   );

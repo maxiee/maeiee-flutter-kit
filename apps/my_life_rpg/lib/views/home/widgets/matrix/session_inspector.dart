@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/models/task.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 class SessionInspector extends StatelessWidget {
   final Task quest;
@@ -18,7 +18,7 @@ class SessionInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final QuestService qs = Get.find();
+    final TaskService qs = Get.find();
 
     // 计算时间
     final startStr = DateFormat('HH:mm').format(session.startTime);

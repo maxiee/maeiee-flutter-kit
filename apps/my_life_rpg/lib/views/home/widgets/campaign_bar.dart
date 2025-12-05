@@ -5,11 +5,11 @@ import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/rpg_container.dart';
 import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/models/project.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/home/widgets/project_editor.dart';
 
 class CampaignBar extends StatelessWidget {
-  final QuestService q = Get.find();
+  final TaskService q = Get.find();
 
   CampaignBar({super.key});
 

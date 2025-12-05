@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:my_life_rpg/models/task.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 /// [DataSeeder]
 /// 负责在应用启动时填充初始数据 (Mock Data)。
@@ -8,13 +8,13 @@ import 'package:my_life_rpg/services/quest_service.dart';
 class DataSeeder {
   static void run() {
     // 确保 Service 已注入
-    if (!Get.isRegistered<QuestService>()) return;
+    if (!Get.isRegistered<TaskService>()) return;
 
-    final QuestService qs = Get.find();
+    final TaskService qs = Get.find();
 
     // [修改点]：如果已经有数据（比如从硬盘加载了），就不要再播种了
     // 这样保证用户的数据不会被 Mock 数据覆盖或重复添加
-    if (qs.projects.isNotEmpty || qs.quests.isNotEmpty) {
+    if (qs.projects.isNotEmpty || qs.tasks.isNotEmpty) {
       print("💾 Data loaded from storage. Seeder skipped.");
       return;
     }
@@ -31,14 +31,14 @@ class DataSeeder {
     final pIndie = qs.projects.firstWhere((p) => p.title.contains("NEXUS"));
 
     // 2. 添加 Mission (关联项目)
-    qs.addNewQuest(
+    qs.addNewTask(
       title: "阅读 RenderObject 源码",
       type: TaskType.todo,
       project: pFlutter,
       deadline: DateTime.now().add(const Duration(hours: 4)), // 今天稍晚
     );
 
-    qs.addNewQuest(
+    qs.addNewTask(
       title: "编写 MVP 架构文档",
       type: TaskType.todo,
       project: pIndie,
@@ -46,20 +46,20 @@ class DataSeeder {
     );
 
     // 3. 添加 Standalone Mission (无项目)
-    qs.addNewQuest(
+    qs.addNewTask(
       title: "购买猫粮",
       type: TaskType.todo,
       deadline: DateTime.now().subtract(const Duration(hours: 1)), // 已逾期 (测试用)
     );
 
     // 4. 添加 Daemon (循环任务)
-    qs.addNewQuest(
+    qs.addNewTask(
       title: "清理厨房水槽",
       type: TaskType.routine,
       interval: 1, // 每日
     );
 
-    qs.addNewQuest(
+    qs.addNewTask(
       title: "每周周报复盘",
       type: TaskType.routine,
       interval: 7, // 每周

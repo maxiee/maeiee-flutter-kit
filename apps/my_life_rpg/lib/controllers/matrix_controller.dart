@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
-import 'package:my_life_rpg/core/theme/app_spacing.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/time_allocation_dialog.dart';
@@ -10,7 +8,7 @@ import '../models/task.dart';
 
 class MatrixController extends GetxController {
   // 依赖注入：直接获取 Service
-  final QuestService _questService = Get.find();
+  final TaskService _questService = Get.find();
   final TimeService _timeService = Get.find();
 
   // 交互状态
@@ -73,7 +71,7 @@ class MatrixController extends GetxController {
     final result = _questService.getSessionById(sessionId);
     if (result == null) return;
 
-    final quest = result.quest;
+    final quest = result.task;
     final session = result.session;
 
     Get.dialog(
@@ -149,7 +147,7 @@ class MatrixController extends GetxController {
 
       if (isNew) {
         final title = result['title'] as String;
-        final newQ = _questService.addNewQuest(
+        final newQ = _questService.addNewTask(
           title: title,
           type: TaskType.todo,
         );

@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/models/block_state.dart';
-import 'quest_service.dart';
+import 'task_service.dart';
 
 class TimeService extends GetxService {
-  final QuestService _questService = Get.find(); // 依赖注入
+  final TaskService _questService = Get.find(); // 依赖注入
 
   // 状态
   final selectedDate = DateTime.now().obs;
@@ -44,7 +44,7 @@ class TimeService extends GetxService {
     timeBlocks.value = List.generate(96, (_) => BlockState.empty());
 
     // 监听：任务列表变化 或 日期选择变化 都要刷新
-    ever(_questService.quests, (_) => refreshMatrix());
+    ever(_questService.tasks, (_) => refreshMatrix());
 
     _heartbeat = Timer.periodic(
       const Duration(minutes: 1),
@@ -104,7 +104,7 @@ class TimeService extends GetxService {
     // 遍历所有任务，找出落在 targetDate 这一天的 Session
     int effectiveSeconds = 0;
 
-    final allSessions = _questService.quests.expand((q) => q.sessions).toList();
+    final allSessions = _questService.tasks.expand((q) => q.sessions).toList();
 
     effectiveSeconds = TimeDomain.calculateEffectiveSeconds(
       allSessions,
@@ -137,7 +137,7 @@ class TimeService extends GetxService {
   void _refreshTimeBlocks() {
     // 1. 准备数据
     final targetDate = selectedDate.value;
-    final allQuests = _questService.quests; // 获取最新的任务列表
+    final allQuests = _questService.tasks; // 获取最新的任务列表
 
     // 2. 调用纯领域算法生成网格
     // 这行代码体现了业务逻辑与状态管理的分离

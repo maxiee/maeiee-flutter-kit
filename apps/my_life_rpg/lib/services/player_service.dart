@@ -3,10 +3,10 @@ import 'package:my_life_rpg/core/logic/level_logic.dart';
 import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/models/task.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 class PlayerService extends GetxService {
-  final QuestService _questService = Get.find();
+  final TaskService _questService = Get.find();
 
   // --- State ---
   final playerLevel = 1.obs;
@@ -25,7 +25,7 @@ class PlayerService extends GetxService {
   void onInit() {
     super.onInit();
     // 监听任务数据变化，一旦任务变动（时间增加/完成），重新计算玩家状态
-    ever(_questService.quests, (_) => refreshStats());
+    ever(_questService.tasks, (_) => refreshStats());
 
     // 初始计算
     refreshStats();
@@ -40,7 +40,7 @@ class PlayerService extends GetxService {
     int todayXp = 0;
     final now = DateTime.now();
 
-    for (var q in _questService.quests) {
+    for (var q in _questService.tasks) {
       // 1. 计算总 XP
       int questSeconds = q.totalDurationSeconds;
 

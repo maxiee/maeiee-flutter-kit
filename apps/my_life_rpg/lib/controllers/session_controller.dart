@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/logic/xp_strategy.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/session/session_summary_view.dart';
 import '../models/task.dart';
 
 class SessionController extends GetxController
     with GetTickerProviderStateMixin {
-  final QuestService _questService = Get.find();
+  final TaskService _questService = Get.find();
 
   late Task quest;
   // 新增：当前会话对象
@@ -272,7 +272,7 @@ class SessionController extends GetxController
       // 如果用户标记了完成/循环
       if (shouldComplete) {
         // 调用 Service 切换完成状态 (这会处理 Daemon 的 CD 重置)
-        _questService.toggleQuestCompletion(quest.id);
+        _questService.toggleTaskCompletion(quest.id);
       }
 
       // 可选：在这里弹出 SnackBar 提示保存成功

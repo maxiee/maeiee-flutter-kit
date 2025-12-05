@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/models/block_state.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 class MatrixCell extends StatelessWidget {
   final BlockState state;
@@ -31,18 +31,18 @@ class MatrixCell extends StatelessWidget {
     Color borderColor = Colors.transparent;
     String? tooltipMessage; // [新增]
 
-    final QuestService qs = Get.find();
+    final TaskService qs = Get.find();
 
     if (state.deadlineQuestIds.isNotEmpty) {
       fillColor = AppColors.accentDanger.withOpacity(0.2);
       borderColor = AppColors.accentDanger;
       // 查找 deadline 标题
       final qId = state.deadlineQuestIds.first;
-      final quest = qs.quests.firstWhereOrNull((q) => q.id == qId);
+      final quest = qs.tasks.firstWhereOrNull((q) => q.id == qId);
       tooltipMessage = "${quest?.title ?? 'Unknown'} [DEADLINE]";
     } else if (state.occupiedSessionIds.isNotEmpty) {
       final qId = state.occupiedQuestIds.last;
-      final quest = qs.quests.firstWhereOrNull((q) => q.id == qId);
+      final quest = qs.tasks.firstWhereOrNull((q) => q.id == qId);
 
       if (quest != null) {
         final baseColor = AppColors.getQuestColor(quest.type);

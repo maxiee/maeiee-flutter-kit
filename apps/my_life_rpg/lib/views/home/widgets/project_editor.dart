@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import 'package:my_life_rpg/models/project.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 class ProjectEditor extends StatefulWidget {
   final Project? project; // 如果不为空，就是编辑模式
@@ -16,7 +16,7 @@ class ProjectEditor extends StatefulWidget {
 }
 
 class _ProjectEditorState extends State<ProjectEditor> {
-  final QuestService q = Get.find();
+  final TaskService q = Get.find();
 
   late TextEditingController titleCtrl;
   late TextEditingController descCtrl;
@@ -139,7 +139,7 @@ class _ProjectEditorState extends State<ProjectEditor> {
     if (widget.project == null) return;
 
     // 获取关联任务数量，用于提示文案
-    final relatedCount = q.quests
+    final relatedCount = q.tasks
         .where((x) => x.projectId == widget.project!.id)
         .length;
 

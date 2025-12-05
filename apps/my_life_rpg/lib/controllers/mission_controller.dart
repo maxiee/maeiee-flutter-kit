@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/core/logic/quest_priority_logic.dart';
 import 'package:my_life_rpg/models/task.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 
 enum MissionFilter {
   all, // 显示所有活跃任务
@@ -13,7 +13,7 @@ enum MissionFilter {
 }
 
 class MissionController extends GetxController {
-  final QuestService _questService = Get.find();
+  final TaskService _questService = Get.find();
 
   // 筛选状态
   final activeFilter = MissionFilter.all.obs;
@@ -21,7 +21,7 @@ class MissionController extends GetxController {
 
   // 计算属性：根据筛选器返回过滤后的任务列表
   List<Task> get filteredQuests {
-    final allQuests = _questService.quests;
+    final allQuests = _questService.tasks;
 
     // 1. 构建规格 (Build Specification)
     Specification<Task> spec;

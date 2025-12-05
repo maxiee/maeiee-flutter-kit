@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/matrix_cell.dart';
 import '../../../../controllers/matrix_controller.dart';
@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 
 class TemporalMatrix extends StatelessWidget {
   // 1. 依赖注入：不再使用 GameController
-  final QuestService questService = Get.find();
+  final TaskService questService = Get.find();
   final TimeService timeService = Get.find();
   final MatrixController c = Get.find();
 
@@ -55,7 +55,7 @@ class TemporalMatrix extends StatelessWidget {
       final selected = timeService.selectedDate.value;
       // 这里的逻辑依然比较重，但在 Obx 里也还好
       // 理想情况下应该移到 Controller 的 computed 属性里
-      final dayDeadlines = questService.quests.where((q) {
+      final dayDeadlines = questService.tasks.where((q) {
         if (q.deadline == null || !q.isAllDayDeadline) return false;
         return q.deadline!.year == selected.year &&
             q.deadline!.month == selected.month &&
@@ -330,7 +330,7 @@ class TemporalMatrix extends StatelessWidget {
 
           // 获取文字
           String label = "";
-          final quest = questService.quests.firstWhereOrNull(
+          final quest = questService.tasks.firstWhereOrNull(
             (q) => q.id == state.occupiedQuestIds.last,
           );
           if (quest != null) label = quest.title;

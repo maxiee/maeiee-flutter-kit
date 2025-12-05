@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/services/quest_service.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import '../../../models/project.dart';
 import '../../../models/task.dart';
 
@@ -18,7 +18,7 @@ class QuestEditor extends StatefulWidget {
 }
 
 class _QuestEditorState extends State<QuestEditor> {
-  final QuestService q = Get.find();
+  final TaskService q = Get.find();
 
   late TextEditingController titleController;
   late TaskType activeType;
@@ -544,7 +544,7 @@ class _QuestEditorState extends State<QuestEditor> {
 
     // 如果是编辑模式
     if (widget.quest != null) {
-      q.updateQuest(
+      q.updateTask(
         widget.quest!.id,
         title: title,
         project: selectedProject,
@@ -555,7 +555,7 @@ class _QuestEditorState extends State<QuestEditor> {
     }
     // 如果是新建模式
     else {
-      q.addNewQuest(
+      q.addNewTask(
         title: title,
         type: activeType,
         project: selectedProject,
@@ -588,7 +588,7 @@ class _QuestEditorState extends State<QuestEditor> {
       textCancel: "取消",
       buttonColor: AppColors.accentDanger,
       onConfirm: () {
-        q.deleteQuest(widget.quest!.id);
+        q.deleteTask(widget.quest!.id);
         Get.back(); // Close Confirm
         Get.back(); // Close Editor
       },
