@@ -28,7 +28,7 @@ class MissionController extends GetxController {
 
     // 1. 基础可见性规则 (Active Mission OR Active Daemon)
     // 这是所有列表的基础
-    final baseSpec = ActiveMissionSpec().or(ActiveDaemonSpec());
+    final baseSpec = ActiveTodoSpec().or(ActiveRoutineSpec());
 
     switch (activeFilter.value) {
       case MissionFilter.priority:
@@ -40,7 +40,7 @@ class MissionController extends GetxController {
         // 仅 Daemon (忽略 ActiveMissionSpec，直接看所有 Daemon)
         // 这里可能有业务歧义：是看“活跃的Daemon”还是“所有的Daemon”？
         // 假设是看所有已配置的 Daemon 列表
-        spec = IsDaemonSpec();
+        spec = IsRoutineSpec();
         break;
 
       case MissionFilter.project:

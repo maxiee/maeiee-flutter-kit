@@ -1,7 +1,7 @@
 // lib/core/data/specifications.dart
 import '../../models/task.dart';
 
-/// 基础规格接口
+// --- 基础 Specification 接口保持不变 (T 泛型) ---
 abstract class Specification<T> {
   bool isSatisfiedBy(T item);
 
@@ -42,15 +42,15 @@ class NotSpecification<T> extends Specification<T> {
   bool isSatisfiedBy(T item) => !spec.isSatisfiedBy(item);
 }
 
-// --- 具体业务规则 (Quest) ---
+// --- 具体业务规则 (Task) ---
 
 // 1. 基础类型
-class IsMissionSpec extends Specification<Task> {
+class IsTodoSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) => q.type == TaskType.todo;
 }
 
-class IsDaemonSpec extends Specification<Task> {
+class IsRoutineSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) => q.type == TaskType.routine;
 }
@@ -103,13 +103,13 @@ class HasSessionOnDateSpec extends Specification<Task> {
 // --- 组合业务规则 ---
 
 /// 规则：活跃的任务 (未完成的 Mission)
-class ActiveMissionSpec extends Specification<Task> {
+class ActiveTodoSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) => q.type == TaskType.todo && !q.isCompleted;
 }
 
 /// 规则：活跃的守护进程 (昨天/今天/未来到期的)
-class ActiveDaemonSpec extends Specification<Task> {
+class ActiveRoutineSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) {
     if (q.type != TaskType.routine) return false;
@@ -124,8 +124,8 @@ class ActiveDaemonSpec extends Specification<Task> {
 class BaseActiveSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) {
-    return ActiveMissionSpec().isSatisfiedBy(q) ||
-        ActiveDaemonSpec().isSatisfiedBy(q);
+    return ActiveTodoSpec().isSatisfiedBy(q) ||
+        ActiveRoutineSpec().isSatisfiedBy(q);
   }
 }
 
@@ -138,8 +138,8 @@ class ProjectSpec extends Specification<Task> {
   bool isSatisfiedBy(Task q) => q.projectId == projectId;
 }
 
-/// 规则：仅 Daemon 类型
-class OnlyDaemonSpec extends Specification<Task> {
+/// 规则：仅 Routine 类型
+class OnlyRoutineSpec extends Specification<Task> {
   @override
   bool isSatisfiedBy(Task q) => q.type == TaskType.routine;
 }
