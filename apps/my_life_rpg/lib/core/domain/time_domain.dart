@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:my_life_rpg/core/constants.dart';
 import 'package:my_life_rpg/core/data/specifications.dart';
 import 'package:my_life_rpg/models/block_state.dart';
@@ -85,6 +86,61 @@ class TimeDomain {
           occupiedSessionIds: old.occupiedSessionIds,
           deadlineQuestIds: [...old.deadlineQuestIds, q.id],
         );
+      }
+    }
+
+    // [新增] 4. 后处理：计算 Label 和 Span (按小时行处理)
+    // 遍历每一行 (24行)
+    for (int h = 0; h < 24; h++) {
+      int rowStart = h * 4;
+
+      // 遍历该行的 4 个 quarter
+      for (int i = 0; i < 4; i++) {
+        int currentIndex = rowStart + i;
+        BlockState current = blocks[currentIndex];
+
+        // 如果该格为空，跳过
+        if (current.occupiedSessionIds.isEmpty) continue;
+
+        String currentSessionId = current.occupiedSessionIds.last;
+        String currentQuestId = current.occupiedQuestIds.last;
+
+        // 检查前一个格子 (同一行内) 是否是同一个 Session
+        bool isContinuation = false;
+        if (i > 0) {
+          BlockState prev = blocks[currentIndex - 1];
+          if (prev.occupiedSessionIds.isNotEmpty &&
+              prev.occupiedSessionIds.last == currentSessionId) {
+            isContinuation = true;
+          }
+        }
+
+        // 如果是延续块，它不需要 Label
+        if (isContinuation) continue;
+
+        // 如果是新块 (Header)，计算 Span
+        int span = 1;
+        for (int j = i + 1; j < 4; j++) {
+          int nextIndex = rowStart + j;
+          BlockState next = blocks[nextIndex];
+          if (next.occupiedSessionIds.isNotEmpty &&
+              next.occupiedSessionIds.last == currentSessionId) {
+            span++;
+          } else {
+            break;
+          }
+        }
+
+        // 查找 Quest Title (为了不可变，这里需要遍历 quests 列表，虽然是 O(N)，但在 Domain 层计算一次比 View 层每帧算好)
+        // 优化：dailyQuests 比较小
+        String title = "Unknown";
+        final q = dailyQuests.firstWhereOrNull(
+          (task) => task.id == currentQuestId,
+        );
+        if (q != null) title = q.title;
+
+        // 更新当前 Block 的状态
+        blocks[currentIndex] = current.copyWith(label: title, span: span);
       }
     }
 
