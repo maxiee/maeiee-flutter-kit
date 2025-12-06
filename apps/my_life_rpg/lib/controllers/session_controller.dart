@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:my_life_rpg/core/logic/xp_strategy.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/session/session_summary_view.dart';
 import '../models/task.dart';
@@ -224,12 +223,6 @@ class SessionController extends GetxController
     // [关键修正] XP 计算应该基于【有效时长】，而不是物理时长
     final effective = totalDuration - currentSession.pausedSeconds;
 
-    // 3. [重构点] 使用策略计算 XP (View Model 预备)
-    // 此时尚未确认完成，只计算基础时长 XP
-    // 这里的 false 表示 isCompleted=false，结算弹窗里的 Toggle 会决定最终结果
-    // 但目前 SessionSummaryView 接收的是一个静态值，我们先按基础值传
-    final xpEarned = StandardXpStrategy.instance.calculate(effective, false);
-
     final logsCount = currentSession.logs.length;
     final isDaemon = quest.type == TaskType.routine;
 
@@ -237,12 +230,13 @@ class SessionController extends GetxController
     _questService.notifyUpdate();
 
     // 4. 弹出结算模态窗 (等待用户决策)
+    // 弹出新的 Report Dialog
     final result = await Get.generalDialog(
-      pageBuilder: (ctx, anim1, anim2) {
+      pageBuilder: (ctx, _, __) {
         return SessionSummaryView(
           durationSeconds: effective,
           logsCount: logsCount,
-          xpEarned: xpEarned,
+          // xpEarned: xpEarned, // 删除参数
           isDaemon: isDaemon,
         );
       },

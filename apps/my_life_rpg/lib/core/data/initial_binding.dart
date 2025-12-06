@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/task_repository.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
-import 'package:my_life_rpg/services/player_service.dart';
+import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 
@@ -23,6 +23,6 @@ class InitialBinding extends Bindings {
     // 顺序很重要：QuestService 依赖 Repo，TimeService 依赖 QuestService
     Get.put(TaskService(), permanent: true);
     Get.put(TimeService(), permanent: true);
-    Get.put(PlayerService(), permanent: true);
+    Get.put(PerformanceService(), permanent: true);
   }
 }

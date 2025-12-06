@@ -3,13 +3,13 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
-import 'package:my_life_rpg/services/player_service.dart';
+import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/debug/debug_console.dart';
 
 class PlayerHud extends StatelessWidget {
   final TimeService t = Get.find(); // 直接找 TimeService
-  final PlayerService p = Get.find();
+  final PerformanceService p = Get.find();
 
   PlayerHud({super.key});
 
@@ -25,8 +25,8 @@ class PlayerHud extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            // 1. Identity (30%) - 身份卡
-            Expanded(flex: 30, child: _buildIdentityModule()),
+            // 1. Output Metrics (30%) - 产出指标
+            Expanded(flex: 30, child: _buildOutputModule()),
 
             const RpgVerticalDivider(indent: 8, endIndent: 8),
 
@@ -35,107 +35,44 @@ class PlayerHud extends StatelessWidget {
 
             const RpgVerticalDivider(indent: 8, endIndent: 8),
 
-            // 3. Daily Stats (30%) - 仪表盘
-            // 改为 Flex 30，给它更多呼吸空间
-            Expanded(flex: 30, child: _buildDailyModule()),
+            // 3. System Status (30%) - 系统状态
+            Expanded(flex: 30, child: _buildSystemModule()),
           ],
         ),
       ),
     );
   }
 
-  // 左侧：今日产出
-  Widget _buildIdentityModule() {
-    return Row(
+  // 左侧：累计产出
+  Widget _buildOutputModule() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLevelBadge(),
-        AppSpacing.gapH12,
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Obx(
-                () => InkWell(
-                  // [修改] 包裹 InkWell
-                  onDoubleTap: () {
-                    // 触发控制台
-                    LogService.d("Console requested by user", tag: "HUD");
-                    Get.dialog(
-                      DebugConsole(),
-                      barrierColor: Colors.transparent,
-                    );
-                  },
-                  child: RpgText.caption(
-                    p.playerTitle.value,
-                    color: AppColors.accentMain,
-                  ),
-                ),
+        RpgText.caption("累计产出", color: Colors.grey),
+        AppSpacing.gapV4,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Obx(
+              () => Text(
+                p.totalHoursStr,
+                style: AppTextStyles.heroNumber.copyWith(fontSize: 32),
               ),
-
-              AppSpacing.gapV4,
-
-              // Progress Bar
-              Obx(
-                () => RpgProgress(
-                  value: p.levelProgress.value,
-                  height: 6,
-                  color: AppColors.accentMain,
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  showGlow: true,
-                ),
-              ),
-
-              AppSpacing.gapV4,
-
-              // LV & Total XP
-              Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RpgText.micro("LV.${p.playerLevel.value}"),
-                    RpgText.micro(
-                      "经验: ${p.totalXp.value}",
-                      color: AppColors.textDim,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        // 右侧留一点空隙给分割线
-        AppSpacing.gapH8,
-      ],
-    );
-  }
-
-  Widget _buildLevelBadge() {
-    return Obx(
-      () => Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.accentMain.withOpacity(0.6),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accentMain.withOpacity(0.2),
-              blurRadius: 12,
             ),
+            const SizedBox(width: 4),
+            RpgText.caption("HOURS", color: AppColors.accentMain),
           ],
         ),
-        child: RpgText(
-          p.playerLevel.value.toString(),
-          style: AppTextStyles.heroNumber.copyWith(fontSize: 18),
+        AppSpacing.gapV4,
+        Obx(
+          () => RpgText.micro(
+            "COMPLETION RATE: ${p.completionRateStr}",
+            color: AppColors.textDim,
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -198,30 +135,40 @@ class PlayerHud extends StatelessWidget {
     );
   }
 
-  // 右侧：倒计时
-  Widget _buildDailyModule() {
+  // 右侧：今日 & 倒计时
+  Widget _buildSystemModule() {
     return Row(
       children: [
-        Expanded(child: _statColumn(p.dailyXp, "今日产出", AppColors.accentSystem)),
+        Expanded(
+          child: _statColumn(
+            obsValue: p.dailyHoursStr.obs, // 需要转一下类型或者直接改 _statColumn 签名
+            label: "TODAY (H)",
+            color: AppColors.accentSystem,
+          ),
+        ),
         Container(width: 1, height: 24, color: AppColors.borderDim),
         Expanded(
           child: _statColumn(
-            t.timeRemainingStr,
-            "距离休眠",
-            AppColors.accentDanger,
+            obsValue: t.timeRemainingStr,
+            label: "T-MINUS",
+            color: AppColors.accentDanger,
           ),
         ),
       ],
     );
   }
 
-  Widget _statColumn(Rx<Object> value, String label, Color color) {
+  Widget _statColumn({
+    required RxString obsValue,
+    required String label,
+    required Color color,
+  }) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Obx(
           () => Text(
-            value.value.toString(),
+            obsValue.value,
             style: TextStyle(
               fontFamily: 'Courier',
               fontSize: 22,
