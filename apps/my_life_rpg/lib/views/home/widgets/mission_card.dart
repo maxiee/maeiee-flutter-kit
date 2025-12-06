@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:my_life_rpg/models/project.dart';
+import 'package:my_life_rpg/services/task_service.dart';
 import '../../../models/task.dart';
 
 class MissionCard extends StatelessWidget {
@@ -11,7 +14,9 @@ class MissionCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final VoidCallback? onToggle;
 
-  const MissionCard({
+  final TaskService _qs = Get.find();
+
+  MissionCard({
     super.key,
     required this.quest,
     this.onTap,
@@ -21,6 +26,22 @@ class MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. 确定颜色逻辑
+    // 默认颜色
+    Color accentColor = quest.type == TaskType.routine
+        ? AppColors.accentSystem
+        : AppColors.accentMain;
+
+    // [新增] 如果有关联项目，优先使用项目颜色
+    if (quest.projectId != null) {
+      final Project? proj = _qs.projects.firstWhereOrNull(
+        (p) => p.id == quest.projectId,
+      );
+      if (proj != null) {
+        accentColor = proj.color;
+      }
+    }
+
     // 区分类型
     final isDaemon = quest.type == TaskType.routine;
     final dueDays = quest.dueDays ?? 0;
@@ -37,21 +58,19 @@ class MissionCard extends StatelessWidget {
                 onTap: onToggle,
                 child: Container(
                   width: 40,
-                  color: isDaemon
-                      ? AppColors.accentSystem.withOpacity(0.1) // 循环任务用青色背景区分
-                      : Colors.white.withOpacity(0.02),
+                  color: accentColor.withOpacity(0.1),
                   alignment: Alignment.center,
                   child: isDaemon
                       ? Icon(
                           Icons.refresh,
                           size: AppSpacing.iconMd - 2,
-                          color: AppColors.accentSystem,
+                          color: accentColor, // [修改] 图标颜色
                         ) // 循环图标
                       : Container(
                           width: 18,
                           height: 18,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
+                            border: Border.all(color: accentColor), // [修改] 边框颜色
                             borderRadius: AppSpacing.borderRadiusSm,
                           ),
                         ),
@@ -89,7 +108,7 @@ class MissionCard extends StatelessWidget {
                                 ),
                                 child: RpgTag(
                                   label: quest.projectName!,
-                                  color: AppColors.accentMain,
+                                  color: accentColor,
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -126,7 +145,7 @@ class MissionCard extends StatelessWidget {
                                   child: LinearProgressIndicator(
                                     value: quest.checklistProgress,
                                     backgroundColor: Colors.white10,
-                                    color: AppColors.accentMain,
+                                    color: accentColor,
                                     minHeight: 2,
                                   ),
                                 ),
