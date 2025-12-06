@@ -21,6 +21,7 @@ cat <<EOF >> "$OUTPUT_FILE"
 
 1. 请将每次的改动，控制在一个 Commit 能够解决的范围内。并且在给出代码修改建议时，请给出明确的代码修改位置和内容。
 2. 对于程序中所有文案使用中文
+3. 遵循  K.I.S.S (Keep It Simple, Stupid) 原则
 
 ## 设计语言：工业级赛博朋克 (Industrial Cyberpunk)
 - **视觉风格**：高对比度霓虹色（青色 Cyan #00FFFF / 洋红 Magenta #FF00FF）搭配深黑背景。界面应像一个精密复杂的黑客终端或太空飞船控制台。
