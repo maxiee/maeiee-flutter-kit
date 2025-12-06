@@ -146,95 +146,97 @@ class TemporalMatrix extends StatelessWidget {
   }
 
   Widget _buildHourRow(int hour) {
-    final now = DateTime.now();
-    final isCurrentHour =
-        timeService.selectedDate.value.year == now.year &&
-        timeService.selectedDate.value.month == now.month &&
-        timeService.selectedDate.value.day == now.day &&
-        hour == now.hour;
+    // [修改点 1] 将时间判断逻辑放入 Obx，并依赖 timeService.currentTime
+    // 这样每当 Service 里的时间更新，这一整行都会重绘
+    return Obx(() {
+      final now = timeService.currentTime.value; // [关键] 依赖 Observable
 
-    return Container(
-      height: AppSpacing.hourRowHeight,
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Stack(
-        children: [
-          // Layer 1: 背景网格 (Cells)
-          Row(
-            children: [
-              // Ruler
-              SizedBox(
-                width: 24,
-                child: Text(
-                  hour.toString().padLeft(2, '0'),
-                  style: AppTextStyles.caption.copyWith(
-                    color: isCurrentHour
-                        ? AppColors.accentDanger
-                        : AppColors.textDim,
-                    fontWeight: isCurrentHour
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+      final isCurrentHour =
+          timeService.selectedDate.value.year == now.year &&
+          timeService.selectedDate.value.month == now.month &&
+          timeService.selectedDate.value.day == now.day &&
+          hour == now.hour;
+
+      return Container(
+        height: AppSpacing.hourRowHeight,
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Stack(
+          children: [
+            // Layer 1: 背景网格 (Cells)
+            Row(
+              children: [
+                // Ruler (左侧数字)
+                SizedBox(
+                  width: 24,
+                  child: Text(
+                    hour.toString().padLeft(2, '0'),
+                    style: AppTextStyles.caption.copyWith(
+                      color: isCurrentHour
+                          ? AppColors.accentDanger
+                          : AppColors.textDim,
+                      fontWeight: isCurrentHour
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
-              ),
-              AppSpacing.gapH8,
+                AppSpacing.gapH8,
 
-              // 4个 Smart Cells
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildCellWrapper(hour, 0),
-                    _buildGap(hour, 0, 1),
-                    _buildCellWrapper(hour, 1),
-                    _buildGap(hour, 1, 2),
-                    _buildCellWrapper(hour, 2),
-                    _buildGap(hour, 2, 3),
-                    _buildCellWrapper(hour, 3),
-                  ],
+                // 4个 Smart Cells
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildCellWrapper(hour, 0),
+                      _buildGap(hour, 0, 1),
+                      _buildCellWrapper(hour, 1),
+                      _buildGap(hour, 1, 2),
+                      _buildCellWrapper(hour, 2),
+                      _buildGap(hour, 2, 3),
+                      _buildCellWrapper(hour, 3),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-
-          // Layer 2: 智能文字层 (Labels) - [新增]
-          // 这里的 padding left = 24 (Ruler) + 8 (Gap) = 32
-          Positioned.fill(
-            left: 32,
-            child: IgnorePointer(
-              // 文字层不拦截点击
-              child: _buildLabelLayer(hour),
+              ],
             ),
-          ),
 
-          // Now Cursor
-          if (isCurrentHour)
+            // Layer 2: 智能文字层 (Labels)
             Positioned.fill(
               left: 32,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: now.minute / 60.0,
-                  child: Container(
-                    alignment: Alignment.centerRight,
+              child: IgnorePointer(child: _buildLabelLayer(hour)),
+            ),
+
+            // [修改点 2] Now Cursor (红线)
+            // 因为外层已经包裹了 Obx 且依赖了 now，这里会自动刷新
+            if (isCurrentHour)
+              Positioned.fill(
+                left: 32,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: now.minute / 60.0, // 根据分钟计算位置
                     child: Container(
-                      width: 2,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: AppColors.accentDanger,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accentDanger.withOpacity(0.8),
-                            blurRadius: 4,
-                          ),
-                        ],
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        width: 2,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: AppColors.accentDanger,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.accentDanger.withOpacity(0.8),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   // 使用 Expanded 包裹 MatrixCell

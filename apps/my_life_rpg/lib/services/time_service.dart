@@ -36,6 +36,8 @@ class TimeService extends GetxService {
     0,
   ); // 次日 01:00
 
+  final currentTime = DateTime.now().obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -46,10 +48,12 @@ class TimeService extends GetxService {
     // 监听：任务列表变化 或 日期选择变化 都要刷新
     ever(_questService.tasks, (_) => refreshMatrix());
 
-    _heartbeat = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _calculateTimeMetrics(),
-    );
+    _heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
+      // 1. 更新时钟信号
+      currentTime.value = DateTime.now();
+      // 2. 重新计算指标
+      _calculateTimeMetrics();
+    });
     _calculateTimeMetrics();
   }
 
