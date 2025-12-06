@@ -27,6 +27,7 @@ class TaskService extends GetxService {
     int interval = 0,
     DateTime? deadline,
     bool isAllDayDeadline = true,
+    List<SubTask>? checklist,
   }) {
     final newTask = Task(
       id: const Uuid().v4(),
@@ -42,6 +43,7 @@ class TaskService extends GetxService {
       sessions: [],
       deadline: deadline,
       isAllDayDeadline: isAllDayDeadline,
+      checklist: checklist ?? [],
     );
     _taskRepo.add(newTask);
     return newTask;
@@ -55,6 +57,7 @@ class TaskService extends GetxService {
     DateTime? deadline,
     bool? isAllDayDeadline,
     int? interval,
+    List<SubTask>? checklist,
   }) {
     final old = _taskRepo.getById(id);
     if (old == null) return;
@@ -67,6 +70,7 @@ class TaskService extends GetxService {
       isAllDayDeadline: isAllDayDeadline,
       intervalDays: interval,
       setProjectNull: project == null && title != null,
+      checklist: checklist ?? old.checklist,
     );
 
     _taskRepo.update(updated);

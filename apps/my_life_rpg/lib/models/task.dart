@@ -110,6 +110,26 @@ class FocusSession {
   );
 }
 
+class SubTask {
+  String id;
+  String title;
+  bool isCompleted;
+
+  SubTask({String? id, required this.title, this.isCompleted = false})
+    : id = id ?? const Uuid().v4();
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'isCompleted': isCompleted,
+  };
+  factory SubTask.fromJson(Map<String, dynamic> json) => SubTask(
+    id: json['id'],
+    title: json['title'],
+    isCompleted: json['isCompleted'] ?? false,
+  );
+}
+
 class Task implements Serializable {
   @override
   final String id;
@@ -134,6 +154,8 @@ class Task implements Serializable {
   // 为了兼容旧数据或快速查看，你可以保留一个 get allLogs => sessions.expand((s) => s.logs).toList();
   final List<FocusSession> sessions;
 
+  final List<SubTask> checklist;
+
   Task({
     required this.id,
     required this.title,
@@ -146,7 +168,9 @@ class Task implements Serializable {
     this.deadline,
     this.isAllDayDeadline = true,
     List<FocusSession>? sessions,
-  }) : sessions = sessions ?? [];
+    List<SubTask>? checklist,
+  }) : sessions = sessions ?? [],
+       checklist = checklist ?? [];
 
   bool get isUrgent => hoursUntilDeadline < 24;
   bool get isOverdue => hoursUntilDeadline < 0;
@@ -207,6 +231,12 @@ class Task implements Serializable {
     }
   }
 
+  double get checklistProgress {
+    if (checklist.isEmpty) return 0.0;
+    final done = checklist.where((e) => e.isCompleted).length;
+    return done / checklist.length;
+  }
+
   Task copyWith({
     String? title,
     TaskType? type,
@@ -218,6 +248,7 @@ class Task implements Serializable {
     DateTime? deadline,
     bool? isAllDayDeadline,
     List<FocusSession>? sessions,
+    List<SubTask>? checklist,
     // 特殊标记：传入 true 明确将 nullable 字段设为 null
     bool setProjectNull = false,
   }) {
@@ -234,6 +265,7 @@ class Task implements Serializable {
       deadline: deadline ?? this.deadline,
       isAllDayDeadline: isAllDayDeadline ?? this.isAllDayDeadline,
       sessions: sessions ?? this.sessions,
+      checklist: checklist ?? this.checklist,
     );
   }
 
@@ -250,6 +282,7 @@ class Task implements Serializable {
     'deadline': deadline?.toIso8601String(),
     'isAllDayDeadline': isAllDayDeadline,
     'sessions': sessions.map((s) => s.toJson()).toList(),
+    'checklist': checklist.map((s) => s.toJson()).toList(),
   };
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
@@ -270,6 +303,11 @@ class Task implements Serializable {
     sessions:
         (json['sessions'] as List?)
             ?.map((e) => FocusSession.fromJson(e))
+            .toList() ??
+        [],
+    checklist:
+        (json['checklist'] as List?)
+            ?.map((e) => SubTask.fromJson(e))
             .toList() ??
         [],
   );

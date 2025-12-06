@@ -21,6 +21,7 @@ class _QuestEditorState extends State<QuestEditor> {
   final TaskService q = Get.find();
 
   late TextEditingController titleController;
+  late TextEditingController subTaskController;
   late TaskType activeType;
 
   // 表单状态
@@ -30,9 +31,13 @@ class _QuestEditorState extends State<QuestEditor> {
   DateTime? selectedDeadline;
   bool isAllDay = true;
 
+  List<SubTask> checklist = [];
+
   @override
   void initState() {
     super.initState();
+
+    subTaskController = TextEditingController();
 
     // 1. 确定模式 (编辑 vs 新建)
     if (widget.quest != null) {
@@ -54,13 +59,27 @@ class _QuestEditorState extends State<QuestEditor> {
 
       // 回填 Interval
       intervalDays = existing.intervalDays > 0 ? existing.intervalDays : 7;
+
+      // [关键] 深拷贝 list，避免直接修改原始对象的引用
+      // SubTask 虽然是对象，但我们暂时只修改其属性或增删列表，
+      // 为了安全，这里重新构建 List。如果 SubTask 也是不可变的，需要 copyWith。
+      // 这里假设 SubTask 是可变的 (Models 里的定义)，直接 List.from 即可
+      checklist = List.from(existing.checklist);
     } else {
       // 新建模式
       activeType = widget.type ?? TaskType.todo;
       titleController = TextEditingController();
       // 默认值
       intervalDays = 1; // Daemon 默认 Daily
+      checklist = [];
     }
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    subTaskController.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,8 +99,11 @@ class _QuestEditorState extends State<QuestEditor> {
     // 构建核心内容
     Widget content;
     if (!isEdit) {
-      // 新建模式：直接显示配置表单
-      content = _buildConfigForm(context, color, isEdit);
+      // 新建模式：使用 SingleChildScrollView 自动适应内容高度
+      // 如果内容过多，也需要限制最大高度，防止把按钮顶出屏幕
+      content = SingleChildScrollView(
+        child: _buildConfigForm(context, color, isEdit),
+      );
     } else {
       // 编辑模式：包含 TabView
       content = DefaultTabController(
@@ -103,8 +125,8 @@ class _QuestEditorState extends State<QuestEditor> {
                 ],
               ),
             ),
-            SizedBox(
-              height: 350, // 限制高度，允许内部滚动
+
+            Expanded(
               child: TabBarView(
                 children: [
                   SingleChildScrollView(
@@ -158,12 +180,19 @@ class _QuestEditorState extends State<QuestEditor> {
           accentColor: color,
           autofocus: !isEdit,
         ),
+
+        // 2. Tactical Breakdown (子任务区域)
+        // 仅对 Todo 显示，Daemon 通常不需要复杂的 check list (或者你需要也可以加)
+        if (!isDaemon) ...[AppSpacing.gapV16, _buildChecklistSection(color)],
+
         AppSpacing.gapV16,
+        const RpgDivider(),
+        AppSpacing.gapV16,
+
         _buildDeadlineSelector(color),
         AppSpacing.gapV16,
 
         if (!isDaemon) ...[
-          // [REFACTORED] Mission: Project Selector
           RpgSelect<Project>(
             label: "所属项目:",
             value: selectedProject,
@@ -198,6 +227,169 @@ class _QuestEditorState extends State<QuestEditor> {
         ],
       ],
     );
+  }
+
+  Widget _buildChecklistSection(Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Header Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const RpgText.caption("TACTICAL BREAKDOWN"),
+            if (checklist.isNotEmpty)
+              RpgText.micro(
+                "${checklist.where((e) => e.isCompleted).length}/${checklist.length}",
+                color: color,
+              ),
+          ],
+        ),
+        AppSpacing.gapV8,
+
+        // 输入行
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 36, // 紧凑一点
+                child: TextField(
+                  controller: subTaskController,
+                  style: AppTextStyles.body,
+                  decoration: InputDecoration(
+                    hintText: "Add sub-routine...",
+                    hintStyle: AppTextStyles.body.copyWith(
+                      color: Colors.white24,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 0,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  // 回车提交
+                  onSubmitted: (_) => _addSubTask(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: _addSubTask,
+              borderRadius: BorderRadius.circular(4),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: color.withOpacity(0.5)),
+                ),
+                child: Icon(Icons.add, color: color, size: 18),
+              ),
+            ),
+          ],
+        ),
+
+        AppSpacing.gapV8,
+
+        // 列表展示
+        if (checklist.isNotEmpty)
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.borderDim),
+              borderRadius: BorderRadius.circular(4),
+              color: Colors.black26,
+            ),
+            child: Column(
+              children: List.generate(checklist.length, (index) {
+                final item = checklist[index];
+                return _buildSubTaskItem(item, index, color);
+              }),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSubTaskItem(SubTask item, int index, Color color) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            item.isCompleted = !item.isCompleted;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: [
+              // 状态框
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: item.isCompleted
+                      ? color.withOpacity(0.5)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: item.isCompleted ? color : Colors.grey,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: item.isCompleted
+                    ? const Icon(Icons.check, size: 12, color: Colors.black)
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              // 内容
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: AppTextStyles.body.copyWith(
+                    color: item.isCompleted ? Colors.grey : Colors.white,
+                    decoration: item.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
+                  ),
+                ),
+              ),
+              // 删除
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    checklist.removeAt(index);
+                  });
+                },
+                child: const Icon(
+                  Icons.close,
+                  size: 14,
+                  color: AppColors.textDim,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _addSubTask() {
+    final text = subTaskController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      checklist.add(SubTask(title: text));
+      subTaskController.clear();
+    });
+    // 保持焦点，方便连续输入
+    // FocusScope.of(context).requestFocus(); // TextField 默认会保持焦点，不需要额外操作
   }
 
   // --- TAB 2: History (新增) ---
@@ -339,60 +531,7 @@ class _QuestEditorState extends State<QuestEditor> {
         Row(
           children: [
             // 开关
-            InkWell(
-              onTap: () async {
-                if (selectedDeadline == null) {
-                  // 首次点击，默认选明天
-                  final now = DateTime.now();
-                  setState(
-                    () => selectedDeadline = DateTime(
-                      now.year,
-                      now.month,
-                      now.day + 1,
-                    ),
-                  );
-                } else {
-                  // 取消
-                  setState(() => selectedDeadline = null);
-                }
-              },
-              borderRadius: AppSpacing.borderRadiusMd,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: selectedDeadline != null
-                      ? color.withOpacity(0.2)
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: selectedDeadline != null
-                        ? color
-                        : AppColors.borderBright,
-                  ),
-                  borderRadius: AppSpacing.borderRadiusMd,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.timer_off_outlined,
-                      size: AppSpacing.iconMd - 2,
-                      color: selectedDeadline != null ? color : Colors.grey,
-                    ),
-                    AppSpacing.gapH8,
-                    Text(
-                      selectedDeadline == null ? "无截止" : "已启用",
-                      style: AppTextStyles.body.copyWith(
-                        color: selectedDeadline != null ? color : Colors.grey,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _deadlineToggleBtn(color),
 
             AppSpacing.gapH12,
 
@@ -486,6 +625,37 @@ class _QuestEditorState extends State<QuestEditor> {
     );
   }
 
+  Widget _deadlineToggleBtn(Color color) {
+    return InkWell(
+      onTap: () async {
+        if (selectedDeadline == null) {
+          final now = DateTime.now();
+          setState(
+            () => selectedDeadline = DateTime(now.year, now.month, now.day + 1),
+          );
+        } else {
+          setState(() => selectedDeadline = null);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selectedDeadline != null ? color : Colors.grey,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          selectedDeadline != null ? "ACTIVE" : "DISABLED",
+          style: TextStyle(
+            color: selectedDeadline != null ? color : Colors.grey,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPickerChip(String text, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -551,6 +721,7 @@ class _QuestEditorState extends State<QuestEditor> {
         deadline: selectedDeadline,
         isAllDayDeadline: isAllDay,
         interval: activeType == TaskType.routine ? intervalDays : 0,
+        checklist: checklist,
       );
     }
     // 如果是新建模式
@@ -562,6 +733,7 @@ class _QuestEditorState extends State<QuestEditor> {
         interval: activeType == TaskType.routine ? intervalDays : 0,
         deadline: selectedDeadline,
         isAllDayDeadline: isAllDay,
+        checklist: checklist,
       );
     }
 

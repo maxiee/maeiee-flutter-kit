@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/core/widgets/rpg_text.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 import '../../../models/task.dart';
 
@@ -115,6 +114,32 @@ class MissionCard extends StatelessWidget {
                         ),
                         // 任务标题
                         RpgText.body(quest.title),
+                        // [新增] 子任务微型进度条
+                        if (quest.checklist.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              // 进度条
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(2),
+                                  child: LinearProgressIndicator(
+                                    value: quest.checklistProgress,
+                                    backgroundColor: Colors.white10,
+                                    color: AppColors.accentMain,
+                                    minHeight: 2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 数字 2/5
+                              RpgText.micro(
+                                "${quest.checklist.where((e) => e.isCompleted).length}/${quest.checklist.length}",
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
