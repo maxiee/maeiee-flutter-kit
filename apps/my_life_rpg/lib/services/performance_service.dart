@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/utils/logger.dart';
 import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 
@@ -20,10 +21,14 @@ class PerformanceService extends GetxService {
   void onInit() {
     super.onInit();
     // 监听任务数据变化，重新计算统计数据
-    ever(_taskService.tasks, (_) => _calculateMetrics());
+    ever(_taskService.tasks, (_) => refreshMetrics());
+
+    // 初始化计算
+    refreshMetrics();
   }
 
-  void _calculateMetrics() {
+  // 公开此方法，允许 TaskService 显式调用
+  void refreshMetrics() {
     int totalSec = 0;
     int dailySec = 0;
     int completed = 0;
@@ -34,32 +39,36 @@ class PerformanceService extends GetxService {
     for (var task in _taskService.tasks) {
       // 1. 任务计数
       if (task.type == TaskType.todo) {
-        if (task.isCompleted) {
+        if (task.isCompleted)
           completed++;
-        } else {
+        else
           active++;
-        }
       }
 
-      // 2. 时长统计 (基于物理时间)
-      // 累加历史 Session
-      totalSec += task.totalDurationSeconds;
-
-      // 累加今日 Session
+      // 2. 时长统计 (核心修复点)
+      // 直接遍历 sessions 累加，确保数据源是最新的
+      int taskTotal = 0;
       for (var s in task.sessions) {
-        // 判断是否属于"今天" (简单处理，不含跨天分割，那是 TimeDomain 的事)
+        // 计算单个 Session 时长
+        int duration = s.effectiveSeconds;
+
+        // 如果是进行中，实时补算
+        if (s.endTime == null) {
+          final currentRunning = now.difference(s.startTime).inSeconds;
+          duration = currentRunning - s.pausedSeconds;
+        }
+
+        taskTotal += duration;
+
+        // 统计今日 (Daily Output)
+        // 判定标准：开始时间是今天 (简化逻辑)
         if (s.startTime.year == now.year &&
             s.startTime.month == now.month &&
             s.startTime.day == now.day) {
-          // 如果 Session 正在进行中，实时计算
-          if (s.endTime == null) {
-            final currentDuration = now.difference(s.startTime).inSeconds;
-            dailySec += (currentDuration - s.pausedSeconds);
-          } else {
-            dailySec += s.effectiveSeconds;
-          }
+          dailySec += duration;
         }
       }
+      totalSec += taskTotal;
     }
 
     // 更新状态
@@ -67,20 +76,25 @@ class PerformanceService extends GetxService {
     dailyFocusSeconds.value = dailySec;
     completedTasksCount.value = completed;
     activeTasksCount.value = active;
+
+    // [Debug] 输出日志，确认计算发生
+    LogService.d(
+      "Metrics Updated: Total=${totalHoursStr}h, Daily=${dailyHoursStr}h",
+      tag: "PerfService",
+    );
   }
 
-  // 计算属性：总小时数 (保留1位小数)
+  // [优化] 累计时长：显示 2 位小数 (例如 15分钟 = 0.25h)
   String get totalHoursStr =>
-      (totalFocusSeconds.value / 3600).toStringAsFixed(1);
+      (totalFocusSeconds.value / 3600).toStringAsFixed(2);
 
-  // 计算属性：今日小时数
+  // 今日时长
   String get dailyHoursStr =>
       (dailyFocusSeconds.value / 3600).toStringAsFixed(1);
 
-  // 计算属性：完成率
   String get completionRateStr {
     final total = completedTasksCount.value + activeTasksCount.value;
-    if (total == 0) return "N/A";
+    if (total == 0) return "0%"; // 避免 N/A
     return "${((completedTasksCount.value / total) * 100).toInt()}%";
   }
 }
