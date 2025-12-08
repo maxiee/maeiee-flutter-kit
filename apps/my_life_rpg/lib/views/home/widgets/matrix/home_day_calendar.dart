@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kalender/kalender.dart';
 import 'package:my_life_rpg/controllers/matrix_controller.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/core/widgets/widgets.dart';
 
 class HomeDayCalendar extends StatelessWidget {
@@ -29,7 +29,16 @@ class HomeDayCalendar extends StatelessWidget {
         ),
 
         header: null,
-        body: CalendarBody<SessionData>(),
+        body: CalendarBody<SessionData>(
+          multiDayTileComponents: TileComponents(
+            tileBuilder: (calendarEvent, info) {
+              return Container(
+                color: AppColors.accentMain.withOpacity(0.2),
+                child: Center(child: Text(calendarEvent.data!.task.title)),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

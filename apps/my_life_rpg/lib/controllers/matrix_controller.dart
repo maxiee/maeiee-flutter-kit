@@ -98,19 +98,15 @@ class MatrixController extends GetxController {
 
   /// [回调 3] onEventCreated (异步): 真正的业务逻辑
   Future<void> onEventCreated(CalendarEvent<SessionData> event) async {
-    final start = event.dateTimeRange.start;
-    final end = event.dateTimeRange.end;
-
-    // 格式化时间
-    final timeStr =
-        "${_fmt(start.hour)}:${_fmt(start.minute)} - ${_fmt(end.hour)}:${_fmt(end.minute)}";
+    // 初始拖拽的时间，仅作为 Dialog 的默认值
+    final initialStart = event.dateTimeRange.start;
+    final initialEnd = event.dateTimeRange.end;
 
     // 1. 弹出对话框
     final result = await Get.dialog(
       TimeAllocationDialog(
-        timeRangeText: timeStr,
-        startTime: start,
-        endTime: end,
+        startTime: initialStart,
+        endTime: initialEnd,
         questService: _questService,
       ),
       barrierColor: Colors.black54,
@@ -118,6 +114,10 @@ class MatrixController extends GetxController {
 
     // 2. 处理结果
     if (result != null && result is Map) {
+      // 读取用户微调后的时间
+      final finalStart = result['startTime'] as DateTime;
+      final finalEnd = result['endTime'] as DateTime;
+
       final isNew = result['isNew'] as bool;
       String targetQuestId;
 
@@ -134,8 +134,8 @@ class MatrixController extends GetxController {
 
       final allocateResult = _questService.manualAllocate(
         targetQuestId,
-        start,
-        end,
+        finalStart,
+        finalEnd,
       );
 
       if (!allocateResult.isSuccess) {
