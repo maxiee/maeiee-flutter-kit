@@ -1,23 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kalender/kalender.dart';
+import 'package:my_life_rpg/core/theme/app_colors.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/time_allocation_dialog.dart';
 import '../models/task.dart';
 
+/// 封装事件数据，方便在 UI 层获取上下文
+class SessionData {
+  final Task task;
+  final FocusSession session;
+  SessionData(this.task, this.session);
+}
+
 class MatrixController extends GetxController {
   // 依赖注入：直接获取 Service
   final TaskService _questService = Get.find();
   final TimeService _timeService = Get.find();
 
-  // 交互状态
-  final selectionStart = RxnInt(); // 第一次点击的格子索引
-  final selectionEnd = RxnInt(); // 第二次点击的格子索引
+  final eventsController = DefaultEventsController<SessionData>();
+  final calendarController = CalendarController<SessionData>();
 
-  final eventsController = DefaultEventsController();
-  final calendarController = CalendarController();
+  @override
+  void onInit() {
+    super.onInit();
+    // 初始同步
+    _syncEvents();
+    // 监听任务变化，实时刷新日历
+    ever(_questService.tasks, (_) => _syncEvents());
+    // 监听日期变化，跳转日历视图
+    ever(_timeService.selectedDate, (date) {
+      calendarController.animateToDate(date);
+    });
+  }
 
   @override
   void onClose() {
@@ -26,132 +43,80 @@ class MatrixController extends GetxController {
     calendarController.dispose();
   }
 
-  void onBlockTap(int index) {
-    final state = _timeService.timeBlocks[index];
+  /// [核心逻辑] 将领域模型的 Sessions 转换为日历 Events
+  void _syncEvents() {
+    final List<CalendarEvent<SessionData>> events = [];
 
-    // [修改点]：分支判断
-    if (state.occupiedSessionIds.isNotEmpty) {
-      // 1. 点击了已占用的格子 -> 查看详情
-      // 获取最上层的 session ID
-      final sessionId = state.occupiedSessionIds.last;
-      _showSessionDetail(sessionId);
+    for (var task in _questService.tasks) {
+      for (var session in task.sessions) {
+        // 处理正在进行中的 Session (End == null)
+        // 为了显示，暂时将其结束时间设为当前时间，或者设为未来一小段时间
+        final endTime = session.endTime ?? DateTime.now();
+        // 防止无效时间段 (Start >= End)
+        if (!endTime.isAfter(session.startTime)) continue;
 
-      // 清除之前的补录选择状态，避免混淆
-      selectionStart.value = null;
-      selectionEnd.value = null;
-    } else {
-      // 2. 点击了空白格子 -> 走原来的补录逻辑
-      _handleEmptyBlockTap(index);
-    }
-  }
+        // 如果有关联项目，尝试获取项目颜色 (这里简化处理，实际可从 Project Repo 获取)
+        // 为了性能，我们暂且只用 Type 区分，或者在 event tile builder 里再查 Project
 
-  // 处理点击
-  void _handleEmptyBlockTap(int index) {
-    // 状态机：
-    // 0. 初始状态 -> 设置 Start
-    // 1. 已有 Start -> 设置 End -> 触发弹窗
-    // 2. 已有 Start/End -> 重置
-
-    if (selectionStart.value == null) {
-      selectionStart.value = index;
-      selectionEnd.value = null; // 清空之前的结束点
-    } else if (selectionEnd.value == null) {
-      // 确定范围
-      int start = selectionStart.value!;
-      int end = index;
-      if (start > end) {
-        // 如果反向选择，自动交换
-        final temp = start;
-        start = end;
-        end = temp;
+        events.add(
+          CalendarEvent(
+            dateTimeRange: DateTimeRange(
+              start: session.startTime,
+              end: endTime,
+            ),
+            data: SessionData(task, session),
+          ),
+        );
       }
-      selectionStart.value = start;
-      selectionEnd.value = end;
-
-      // 触发添加逻辑
-      _showAddLogDialog(start, end);
-    } else {
-      // 重置，重新开始选
-      selectionStart.value = index;
-      selectionEnd.value = null;
     }
+
+    // 替换所有事件
+    // 注意：kalender 的 addEvents 可能会追加，我们需要先清空或使用 assign
+    // 目前 kalender 没有直接 clearAll 的简单方法，通常是重新构建 Controller 或 diff
+    // 假设 eventsController.removeWhere((e) => true) 可用
+    eventsController.removeWhere((_, _) => true);
+    eventsController.addEvents(events);
   }
 
-  // [新增]：显示详情弹窗
-  void _showSessionDetail(String sessionId) {
-    final result = _questService.getSessionById(sessionId);
-    if (result == null) return;
-
-    final quest = result.task;
-    final session = result.session;
+  /// [交互] 点击事件 -> 查看详情
+  void onEventTapped(CalendarEvent<SessionData> event) {
+    final data = event.data;
+    if (data == null) return;
 
     Get.dialog(
-      SessionInspector(quest: quest, session: session),
+      SessionInspector(quest: data.task, session: data.session),
       barrierColor: Colors.black54,
     );
   }
 
-  String _fmt(int n) => n.toString().padLeft(2, '0');
-
-  bool isSelected(int index) {
-    if (selectionStart.value == null) return false;
-    if (selectionEnd.value == null) return index == selectionStart.value;
-    return index >= selectionStart.value! && index <= selectionEnd.value!;
+  /// [回调 2] onEventCreate (同步): 允许 UI 创建占位符
+  CalendarEvent<SessionData>? onEventCreate(CalendarEvent<SessionData> event) {
+    // 返回 event 告诉日历：“允许在这里渲染一个临时的块”
+    // 我们可以在这里给它一个临时的颜色，表示“正在输入”
+    return event.copyWith();
   }
 
-  // [新增] 判断两个格子是否相连 (属于同一个非空 Session)
-  bool isConnected(int indexA, int indexB) {
-    if (indexA < 0 || indexA >= 96 || indexB < 0 || indexB >= 96) return false;
+  /// [回调 3] onEventCreated (异步): 真正的业务逻辑
+  Future<void> onEventCreated(CalendarEvent<SessionData> event) async {
+    final start = event.dateTimeRange.start;
+    final end = event.dateTimeRange.end;
 
-    final stateA = _timeService.timeBlocks[indexA];
-    final stateB = _timeService.timeBlocks[indexB];
-
-    // 如果都为空，不连
-    if (stateA.occupiedSessionIds.isEmpty ||
-        stateB.occupiedSessionIds.isEmpty) {
-      return false;
-    }
-
-    // 如果最上层的 Session ID 相同，则相连
-    return stateA.occupiedSessionIds.last == stateB.occupiedSessionIds.last;
-  }
-
-  void _showAddLogDialog(int start, int end) async {
-    // 1. 计算时间 (逻辑保持不变)
-    final date = _timeService.selectedDate.value;
-    final startH = start ~/ 4;
-    final startM = (start % 4) * 15;
-    final endH = (end + 1) ~/ 4;
-    final endM = ((end + 1) % 4) * 15;
-
-    final startTime = DateTime(date.year, date.month, date.day, startH, startM);
-    DateTime endTime;
-    if (endH == 24) {
-      endTime = DateTime(date.year, date.month, date.day + 1, 0, 0);
-    } else {
-      endTime = DateTime(date.year, date.month, date.day, endH, endM);
-    }
-
+    // 格式化时间
     final timeStr =
-        "${_fmt(startH)}:${_fmt(startM)} - ${_fmt(endH)}:${_fmt(endM)}";
+        "${_fmt(start.hour)}:${_fmt(start.minute)} - ${_fmt(end.hour)}:${_fmt(end.minute)}";
 
-    // 2. [重构点] 调用组件化 Dialog
-    // 使用 await 等待用户操作结果
+    // 1. 弹出对话框
     final result = await Get.dialog(
       TimeAllocationDialog(
         timeRangeText: timeStr,
-        startTime: startTime,
-        endTime: endTime,
+        startTime: start,
+        endTime: end,
         questService: _questService,
       ),
       barrierColor: Colors.black54,
     );
 
-    // 3. 处理结果
-    // Reset selection regardless of result
-    selectionStart.value = null;
-    selectionEnd.value = null;
-
+    // 2. 处理结果
     if (result != null && result is Map) {
       final isNew = result['isNew'] as bool;
       String targetQuestId;
@@ -169,31 +134,49 @@ class MatrixController extends GetxController {
 
       final allocateResult = _questService.manualAllocate(
         targetQuestId,
-        startTime,
-        endTime,
+        start,
+        end,
       );
 
       if (!allocateResult.isSuccess) {
-        // 注掉 snackbar，Get.snackbar 跟 Flutter 3.38 有冲突
-        // UI 反馈逻辑移动到了这里
-        // Get.snackbar(
-        //   "Allocation Failed",
-        //   allocateResult.errorMessage ?? "Unknown error",
-        //   backgroundColor: AppColors.bgPanel,
-        //   colorText: AppColors.accentDanger,
-        //   margin: AppSpacing.paddingMd,
-        // );
+        Get.snackbar(
+          "ACCESS DENIED",
+          "Time slot collision detected.",
+          backgroundColor: AppColors.bgPanel,
+          colorText: AppColors.accentDanger,
+        );
+        // 失败：移除占位符
+        eventsController.removeEvent(event);
       } else {
-        // Get.snackbar("Success", "Time allocated.");
+        // 成功：
+        // 不需要手动把 event 变成永久的，
+        // 因为 manualAllocate 会触发 ever(_questService.tasks) -> _syncEvents
+        // _syncEvents 会清空所有事件（包括这个占位符）并重新加载真实的 Session 数据。
       }
+    } else {
+      // 用户取消：移除占位符
+      eventsController.removeEvent(event);
     }
   }
-}
 
-// 简单的颜色别名，方便 View 使用
-class GetColors {
-  static const white = Color(0xFFFFFFFF);
-  static const white30 = Colors.white30;
-  static const grey = Colors.grey;
-  static const black = Colors.black;
+  /// [回调 4] onEventChanged: 禁止/允许修改
+  // 如果你想禁止拖拽修改已有的 Session，这里什么都不做或者恢复原状
+  // 如果允许修改时间，需要调用 Service 更新 Session
+  Future<void> onEventChanged(
+    CalendarEvent<SessionData> initial,
+    CalendarEvent<SessionData> updated,
+  ) async {
+    // 暂时不支持直接在日历上调整已保存 Session 的大小（逻辑较复杂，涉及 TaskService 更新）
+    // 强制回滚：移除修改后的，加回原来的 (或者重新 sync)
+    // 简单做法：直接触发一次 sync 覆盖掉 UI 的修改
+    _syncEvents();
+
+    // 提示
+    Get.snackbar(
+      "SYSTEM LOCKED",
+      "Modification via timeline is disabled. Use Inspector.",
+    );
+  }
+
+  String _fmt(int n) => n.toString().padLeft(2, '0');
 }
