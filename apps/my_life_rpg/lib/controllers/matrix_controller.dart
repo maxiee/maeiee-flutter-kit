@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kalender/kalender.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';
@@ -14,6 +15,16 @@ class MatrixController extends GetxController {
   // 交互状态
   final selectionStart = RxnInt(); // 第一次点击的格子索引
   final selectionEnd = RxnInt(); // 第二次点击的格子索引
+
+  final eventsController = DefaultEventsController();
+  final calendarController = CalendarController();
+
+  @override
+  void onClose() {
+    super.onClose();
+    eventsController.dispose();
+    calendarController.dispose();
+  }
 
   void onBlockTap(int index) {
     final state = _timeService.timeBlocks[index];
