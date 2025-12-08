@@ -302,12 +302,12 @@ class Task implements Serializable {
     isAllDayDeadline: json['isAllDayDeadline'] ?? true,
     sessions:
         (json['sessions'] as List?)
-            ?.map((e) => FocusSession.fromJson(e))
+            ?.map((e) => FocusSession.fromJson(Map<String, dynamic>.from(e)))
             .toList() ??
         [],
     checklist:
         (json['checklist'] as List?)
-            ?.map((e) => SubTask.fromJson(e))
+            ?.map((e) => SubTask.fromJson(Map<String, dynamic>.from(e)))
             .toList() ??
         [],
   );

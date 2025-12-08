@@ -1,0 +1,1 @@
+flutter run --local-engine='/Volumes/ssd/flutter_engine_source/engine/src/out/android_debug_unopt_arm64' --local-engine-src-path='/Volumes/ssd/flutter_engine_source/engine/src' --local-engine-host='/Volumes/ssd/flutter_engine_source/engine/src/out/host_debug_unopt_arm64'
