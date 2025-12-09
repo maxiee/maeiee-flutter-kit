@@ -4,6 +4,7 @@ import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.da
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_custom_simple_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_webview_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rx_page.dart';
+import 'package:maeiee_flutter_playground/module/listview/itemextend_optimise/itemextend_optimise_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,6 +19,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Maeiee Flutter Playground',
       routes: {
+        '/listview_itemextend_optimise': (context) =>
+            const ItemextendOptimisePage(),
         '/d4rx': (context) => const D4rxPage(),
         '/d4rx_bridge': (context) => const D4rxBridgePage(),
         '/flutter_d4rx': (context) => const FlutterD4rxPage(),
@@ -61,6 +64,12 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: .center,
           children: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).pushNamed('/listview_itemextend_optimise'),
+              child: Text("ListView ItemExtend 优化示例"),
+            ),
             OutlinedButton(
               onPressed: () => Navigator.of(context).pushNamed('/d4rx'),
               child: Text("d4rx：Dart 动态化"),
