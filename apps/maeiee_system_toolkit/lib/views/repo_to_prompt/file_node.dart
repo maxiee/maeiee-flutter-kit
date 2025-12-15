@@ -4,6 +4,7 @@ class FileNode {
   final String path;
   final String name;
   final bool isDirectory;
+  final int size;
   final List<FileNode> children;
 
   // 使用 RxBool 实现响应式勾选
@@ -15,6 +16,7 @@ class FileNode {
     required this.path,
     required this.name,
     required this.isDirectory,
+    this.size = 0,
     this.children = const [],
     bool initialCheck = true,
   }) {

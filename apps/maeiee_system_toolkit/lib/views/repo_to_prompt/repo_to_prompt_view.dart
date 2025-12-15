@@ -22,23 +22,20 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildControlPanel(),
-              const SizedBox(height: 16),
-              // 新增：文件树区域（限制最大高度，避免占据太多空间）
-              Expanded(
-                flex: 4, // 权重 4
-                child: _buildFileTreeArea(),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildControlPanel(),
               ),
-              const SizedBox(height: 16),
-              // 预览区域
+              // 文件树现在占据主要空间
               Expanded(
-                flex: 6, // 权重 6，预览区稍微大一点
-                child: _buildPreviewArea(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildFileTreeArea(),
+                ),
               ),
-              const SizedBox(height: 16),
-              _buildActionButtons(),
+              // 底部操作栏
+              _buildBottomBar(),
             ],
           ),
         ),
@@ -49,7 +46,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   Widget _buildFileTreeArea() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E), // 深色背景
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
@@ -70,13 +67,6 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                   '文件结构筛选',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
-                const Spacer(),
-                Obx(
-                  () => Text(
-                    controller.fileTreeRoots.isEmpty ? '' : '点击复选框剔除',
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
-                  ),
-                ),
               ],
             ),
           ),
@@ -85,7 +75,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
             child: Obx(() {
               if (controller.fileTreeRoots.isEmpty) {
                 return const Center(
-                  child: Text('请先选择目录', style: TextStyle(color: Colors.grey)),
+                  child: Text('请先导入项目', style: TextStyle(color: Colors.grey)),
                 );
               }
               return ListView.builder(
@@ -103,7 +93,6 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
 
   // 递归构建树节点组件
   Widget _buildFileNode(FileNode node) {
-    // 定义左侧图标
     Widget leadingIcon;
     if (node.isDirectory) {
       leadingIcon = const Icon(Icons.folder, size: 16, color: Colors.amber);
@@ -115,11 +104,10 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
       );
     }
 
-    // 如果是目录，使用 ExpansionTile (自定义一点样式以适应紧凑布局)
     if (node.isDirectory) {
       return Obx(
         () => ExpansionTile(
-          key: PageStorageKey(node.path), // 保持展开状态
+          key: PageStorageKey(node.path),
           initiallyExpanded: node.isExpanded.value,
           onExpansionChanged: (val) => node.isExpanded.value = val,
           tilePadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
@@ -147,14 +135,13 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               ),
             ],
           ),
-          childrenPadding: const EdgeInsets.only(left: 20), // 缩进
+          childrenPadding: const EdgeInsets.only(left: 20),
           children: node.children
               .map((child) => _buildFileNode(child))
               .toList(),
         ),
       );
     } else {
-      // 如果是文件，使用 ListTile
       return Obx(
         () => ListTile(
           contentPadding: const EdgeInsets.symmetric(
@@ -182,6 +169,11 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                   style: const TextStyle(fontSize: 13, color: Colors.white70),
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              // 显示单个文件的大小
+              Text(
+                _formatFileSize(node.size),
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ],
           ),
@@ -239,82 +231,98 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
     });
   }
 
-  Widget _buildPreviewArea() {
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      return Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  color: Colors.white.withOpacity(0.05),
-                  child: const Text(
-                    'Prompt 预览',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: TextEditingController(
-                      text: controller.generatedContent.value,
-                    ),
-                    maxLines: null,
-                    readOnly: true,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(16),
-                      hintText: '等待生成...',
-                    ),
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
           ),
-          if (controller.generatedContent.value.isNotEmpty)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '~${_formatTokenCount(controller.estimatedTokens.value)} Tokens',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // 估算显示
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.analytics_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        '预估消耗 (基于文件大小)',
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                      Obx(
+                        () => Text(
+                          '~${_formatTokenCount(controller.estimatedTokens.value)} Tokens',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // 生成按钮
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: Obx(
+                  () => ElevatedButton(
+                    onPressed: controller.fileTreeRoots.isEmpty
+                        ? null
+                        : controller.generateAndPreview,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      '生成并预览',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-        ],
-      );
-    });
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   String _formatTokenCount(int count) {
@@ -322,24 +330,5 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
       return '${(count / 10000).toStringAsFixed(1)}w';
     }
     return count.toString();
-  }
-
-  Widget _buildActionButtons() {
-    return SizedBox(
-      height: 48,
-      child: Obx(
-        () => ElevatedButton.icon(
-          onPressed: controller.generatedContent.value.isEmpty
-              ? null
-              : controller.copyToClipboard,
-          icon: const Icon(Icons.copy),
-          label: const Text('复制全部 Prompt'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ),
-    );
   }
 }

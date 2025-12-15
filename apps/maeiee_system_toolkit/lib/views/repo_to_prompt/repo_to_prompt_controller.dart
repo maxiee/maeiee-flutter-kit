@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/file_node.dart';
+import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_result_view.dart';
 import 'package:path/path.dart' as path_utils;
 
 class RepoToPromptController extends GetxController {
@@ -15,8 +16,9 @@ class RepoToPromptController extends GetxController {
   // 拖拽悬停状态，用于 UI 反馈
   final isDraggingHover = false.obs;
 
-  // 新增：Token 估算值
-  final estimatedTokens = 0.obs;
+  // 两个 Token 计数状态
+  final estimatedTokens = 0.obs; // 首页：基于文件大小粗略估算
+  final accurateTokens = 0.obs; // 结果页：基于正则精确计算
 
   // 新增：文件树根节点列表
   final fileTreeRoots = <FileNode>[].obs;
@@ -74,7 +76,7 @@ class RepoToPromptController extends GetxController {
     isLoading.value = true;
     statusMessage.value = '正在扫描目录结构...';
     fileTreeRoots.clear();
-    generatedContent.value = ''; // 清空旧内容
+    estimatedTokens.value = 0; // 重置估算
 
     try {
       List<FileNode> nodes = [];
@@ -88,8 +90,8 @@ class RepoToPromptController extends GetxController {
       nodes.sort((a, b) => a.name.compareTo(b.name));
       fileTreeRoots.assignAll(nodes);
 
-      // 默认生成一次
-      await generatePromptFromTree();
+      // 初始计算一次大小
+      _recalculateSizeEstimate();
 
       statusMessage.value = '结构扫描完成，请在下方剔除不需要的文件';
     } catch (e) {
@@ -102,17 +104,21 @@ class RepoToPromptController extends GetxController {
   // 递归构建节点
   Future<FileNode?> _recursiveBuildNode(String path) async {
     final name = path_utils.basename(path);
-
-    // 过滤规则
     if (_shouldIgnore(name)) return null;
 
     final type = await FileSystemEntity.type(path);
     final isDirectory = type == FileSystemEntityType.directory;
 
     if (!isDirectory) {
-      // 检查扩展名
       if (_shouldIgnoreExtension(path)) return null;
-      return FileNode(path: path, name: name, isDirectory: false);
+      // 获取文件大小
+      int size = 0;
+      try {
+        size = await File(path).length();
+      } catch (e) {
+        // 忽略无法读取大小的文件
+      }
+      return FileNode(path: path, name: name, isDirectory: false, size: size);
     }
 
     // 处理目录
@@ -120,60 +126,69 @@ class RepoToPromptController extends GetxController {
     try {
       final directory = Directory(path);
       final entities = directory.listSync(followLinks: false);
-
       for (var entity in entities) {
         final childNode = await _recursiveBuildNode(entity.path);
         if (childNode != null) {
           children.add(childNode);
         }
       }
-      // 目录内文件排序
       children.sort((a, b) {
-        // 文件夹排前面
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
         return a.name.compareTo(b.name);
       });
     } catch (e) {
-      print('Access denied or error: $path');
+      print('Access denied: $path');
     }
 
-    // 如果目录是空的（或者子文件都被过滤了），是否还需要显示？
-    // 为了方便，这里我们保留它，但通常也可以返回 null 隐藏空文件夹
     if (children.isEmpty) return null;
 
+    // 目录的大小设为 0，只统计叶子节点文件
     return FileNode(
       path: path,
       name: name,
       isDirectory: true,
       children: children,
+      size: 0,
     );
   }
 
-  // 4. 根据树的状态生成 Prompt
-  Future<void> generatePromptFromTree() async {
+  // 核心改动：点击生成按钮时才执行读取
+  Future<void> generateAndPreview() async {
     if (fileTreeRoots.isEmpty) return;
 
-    // isLoading.value = true; // 体验优化：生成过程如果不卡顿，可以不转圈，或者用局部 loading
-    // statusMessage.value = '正在生成 Prompt...';
+    // 显示全局 Loading (GetX 简单方式)
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
 
-    StringBuffer buffer = StringBuffer();
-    int count = 0;
+    try {
+      StringBuffer buffer = StringBuffer();
+      int count = 0;
 
-    for (var node in fileTreeRoots) {
-      // 计算相对路径的起点：如果是单个根目录，根就是起点
-      // 这里简单处理：保留原始文件名作为根开始
-      count += await _recursiveReadContent(
-        node,
-        buffer,
-        path_utils.dirname(node.path),
-      );
+      for (var node in fileTreeRoots) {
+        count += await _recursiveReadContent(
+          node,
+          buffer,
+          path_utils.dirname(node.path),
+        );
+      }
+
+      final content = buffer.toString();
+      generatedContent.value = content;
+
+      // 精确计算
+      accurateTokens.value = _calculateAccurateTokens(content);
+
+      Get.back(); // 关闭 Loading
+
+      // 跳转到结果页
+      Get.to(() => const RepoToPromptResultView());
+    } catch (e) {
+      Get.back();
+      Get.snackbar('错误', '生成失败: $e');
     }
-
-    final content = buffer.toString();
-    generatedContent.value = content;
-    estimatedTokens.value = _estimateTokens(content);
-    // isLoading.value = false;
   }
 
   Future<int> _recursiveReadContent(
@@ -181,15 +196,13 @@ class RepoToPromptController extends GetxController {
     StringBuffer buffer,
     String rootBase,
   ) async {
-    if (!node.isSelected.value) return 0; // 如果未被勾选，直接跳过
+    if (!node.isSelected.value) return 0;
 
     int count = 0;
-
     if (!node.isDirectory) {
       try {
         final file = File(node.path);
         final content = await file.readAsString();
-        // 相对路径显示
         final relativePath = node.path.replaceFirst(rootBase, '');
         final cleanPath = relativePath.startsWith(Platform.pathSeparator)
             ? relativePath.substring(1)
@@ -202,7 +215,7 @@ class RepoToPromptController extends GetxController {
         buffer.writeln('');
         count++;
       } catch (e) {
-        // 读取失败忽略
+        // 读取失败
       }
     } else {
       for (var child in node.children) {
@@ -212,18 +225,15 @@ class RepoToPromptController extends GetxController {
     return count;
   }
 
-  // 级联切换勾选状态
+  // 勾选切换
   void toggleNode(FileNode node, bool? value) {
     if (value == null) return;
     node.isSelected.value = value;
-
-    // 如果是目录，递归设置所有子节点
     if (node.isDirectory) {
       _setAllChildren(node, value);
     }
-
-    // 触发重新生成 (可以使用防抖优化，但 K.I.S.S 这里直接调用)
-    generatePromptFromTree();
+    // 仅重新计算估算值，不读取文件
+    _recalculateSizeEstimate();
   }
 
   void _setAllChildren(FileNode node, bool value) {
@@ -233,6 +243,36 @@ class RepoToPromptController extends GetxController {
         _setAllChildren(child, value);
       }
     }
+  }
+
+  // 基于文件大小的快速估算
+  void _recalculateSizeEstimate() {
+    int totalBytes = 0;
+    for (var node in fileTreeRoots) {
+      totalBytes += _recursiveCalculateSize(node);
+    }
+    // 经验公式：平均 1 token ≈ 4 bytes (英文) 或 3 bytes (中文 UTF8)
+    // 既然主要是代码，我们按 3.5 bytes/token 估算，或者简单点按 4
+    estimatedTokens.value = (totalBytes / 4).ceil();
+  }
+
+  int _recursiveCalculateSize(FileNode node) {
+    if (!node.isSelected.value) return 0;
+    if (!node.isDirectory) return node.size;
+    int sum = 0;
+    for (var child in node.children) {
+      sum += _recursiveCalculateSize(child);
+    }
+    return sum;
+  }
+
+  // 基于内容的精确计算
+  int _calculateAccurateTokens(String text) {
+    if (text.isEmpty) return 0;
+    final cjkRegex = RegExp(r'[\u4E00-\u9FFF]');
+    int cjkCount = cjkRegex.allMatches(text).length;
+    int otherCount = text.length - cjkCount;
+    return (cjkCount * 1.5 + otherCount / 4.0).ceil();
   }
 
   // 辅助过滤逻辑
@@ -248,15 +288,6 @@ class RepoToPromptController extends GetxController {
       if (path.toLowerCase().endsWith('.$ext')) return true;
     }
     return false;
-  }
-
-  int _estimateTokens(String text) {
-    if (text.isEmpty) return 0;
-    final cjkRegex = RegExp(r'[\u4E00-\u9FFF]');
-    int cjkCount = cjkRegex.allMatches(text).length;
-    int otherCount = text.length - cjkCount;
-    double tokens = (cjkCount * 1.5) + (otherCount / 4.0);
-    return tokens.ceil();
   }
 
   Future<void> copyToClipboard() async {
