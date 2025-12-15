@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:maeiee_system_toolkit/views/repo_to_prompt/file_node.dart';
 import 'package:path/path.dart' as path_utils;
 
 class RepoToPromptController extends GetxController {
@@ -16,6 +17,9 @@ class RepoToPromptController extends GetxController {
 
   // 新增：Token 估算值
   final estimatedTokens = 0.obs;
+
+  // 新增：文件树根节点列表
+  final fileTreeRoots = <FileNode>[].obs;
 
   // 忽略的文件或目录前缀
   final _ignorePrefixes = [
@@ -48,117 +52,211 @@ class RepoToPromptController extends GetxController {
   // 1. 通过文件选择器选择目录
   Future<void> pickDirectory() async {
     String? result = await FilePicker.platform.getDirectoryPath();
-
     if (result != null) {
       selectedPath.value = result;
-      await _generatePrompt(Directory(result));
+      await _scanAndBuildTree([result]);
     }
   }
 
   // 2. 处理拖拽进来的文件/目录列表
   Future<void> handleDropFiles(List<String> paths) async {
     if (paths.isEmpty) return;
-
-    // 更新 UI 显示，如果是多个文件，显示数量
     if (paths.length == 1) {
       selectedPath.value = paths.first;
     } else {
       selectedPath.value = '已导入 ${paths.length} 个项目';
     }
-
-    await _processPaths(paths);
+    await _scanAndBuildTree(paths);
   }
 
-  // 核心处理逻辑：支持列表
-  Future<void> _processPaths(List<String> rootPaths) async {
+  // 3. 扫描并构建树结构（不读取内容，只读元数据）
+  Future<void> _scanAndBuildTree(List<String> rootPaths) async {
     isLoading.value = true;
-    statusMessage.value = '正在扫描...';
-    generatedContent.value = '';
-
-    StringBuffer buffer = StringBuffer();
-    int count = 0;
+    statusMessage.value = '正在扫描目录结构...';
+    fileTreeRoots.clear();
+    generatedContent.value = ''; // 清空旧内容
 
     try {
-      // 遍历所有输入的根路径（可能是文件，可能是文件夹）
-      for (var rootPath in rootPaths) {
-        final entity = FileSystemEntity.isDirectorySync(rootPath)
-            ? Directory(rootPath)
-            : File(rootPath);
-
-        if (entity is File) {
-          if (_shouldProcessFile(entity.path)) {
-            await _appendFileContent(
-              buffer,
-              entity,
-              path_utils.basename(entity.path),
-            );
-            count++;
-          }
-        } else if (entity is Directory) {
-          // 递归处理目录
-          final entities = entity.listSync(recursive: true, followLinks: false);
-          entities.sort((a, b) => a.path.compareTo(b.path));
-
-          for (var subEntity in entities) {
-            if (subEntity is File && _shouldProcessFile(subEntity.path)) {
-              // 计算相对路径：相对于当前正在处理的 rootPath
-              final relativePath = subEntity.path.replaceFirst(rootPath, '');
-              // 这里的 relativePath 可能会带上前导斜杠，美化一下
-              final cleanPath = relativePath.startsWith(Platform.pathSeparator)
-                  ? relativePath.substring(1)
-                  : relativePath;
-
-              // 最好带上根目录名，这样上下文更清晰 (例如: lib/main.dart)
-              final contextPath = path_utils.join(
-                path_utils.basename(rootPath),
-                cleanPath,
-              );
-
-              await _appendFileContent(buffer, subEntity, contextPath);
-              count++;
-            }
-          }
+      List<FileNode> nodes = [];
+      for (var path in rootPaths) {
+        final node = await _recursiveBuildNode(path);
+        if (node != null) {
+          nodes.add(node);
         }
       }
-      final finalString = buffer.toString();
-      generatedContent.value = finalString;
-      estimatedTokens.value = _estimateTokens(finalString);
-      statusMessage.value = '处理完成，共包含 $count 个文件';
+      // 按名称排序
+      nodes.sort((a, b) => a.name.compareTo(b.name));
+      fileTreeRoots.assignAll(nodes);
+
+      // 默认生成一次
+      await generatePromptFromTree();
+
+      statusMessage.value = '结构扫描完成，请在下方剔除不需要的文件';
     } catch (e) {
-      statusMessage.value = '发生错误: $e';
+      statusMessage.value = '扫描错误: $e';
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _appendFileContent(
-    StringBuffer buffer,
-    File file,
-    String displayPath,
-  ) async {
+  // 递归构建节点
+  Future<FileNode?> _recursiveBuildNode(String path) async {
+    final name = path_utils.basename(path);
+
+    // 过滤规则
+    if (_shouldIgnore(name)) return null;
+
+    final type = await FileSystemEntity.type(path);
+    final isDirectory = type == FileSystemEntityType.directory;
+
+    if (!isDirectory) {
+      // 检查扩展名
+      if (_shouldIgnoreExtension(path)) return null;
+      return FileNode(path: path, name: name, isDirectory: false);
+    }
+
+    // 处理目录
+    List<FileNode> children = [];
     try {
-      final content = await file.readAsString();
-      buffer.writeln('## File: $displayPath');
-      buffer.writeln('```');
-      buffer.writeln(content);
-      buffer.writeln('```');
-      buffer.writeln('');
+      final directory = Directory(path);
+      final entities = directory.listSync(followLinks: false);
+
+      for (var entity in entities) {
+        final childNode = await _recursiveBuildNode(entity.path);
+        if (childNode != null) {
+          children.add(childNode);
+        }
+      }
+      // 目录内文件排序
+      children.sort((a, b) {
+        // 文件夹排前面
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.compareTo(b.name);
+      });
     } catch (e) {
-      print('Skipping binary or unreadable file: ${file.path}');
+      print('Access denied or error: $path');
+    }
+
+    // 如果目录是空的（或者子文件都被过滤了），是否还需要显示？
+    // 为了方便，这里我们保留它，但通常也可以返回 null 隐藏空文件夹
+    if (children.isEmpty) return null;
+
+    return FileNode(
+      path: path,
+      name: name,
+      isDirectory: true,
+      children: children,
+    );
+  }
+
+  // 4. 根据树的状态生成 Prompt
+  Future<void> generatePromptFromTree() async {
+    if (fileTreeRoots.isEmpty) return;
+
+    // isLoading.value = true; // 体验优化：生成过程如果不卡顿，可以不转圈，或者用局部 loading
+    // statusMessage.value = '正在生成 Prompt...';
+
+    StringBuffer buffer = StringBuffer();
+    int count = 0;
+
+    for (var node in fileTreeRoots) {
+      // 计算相对路径的起点：如果是单个根目录，根就是起点
+      // 这里简单处理：保留原始文件名作为根开始
+      count += await _recursiveReadContent(
+        node,
+        buffer,
+        path_utils.dirname(node.path),
+      );
+    }
+
+    final content = buffer.toString();
+    generatedContent.value = content;
+    estimatedTokens.value = _estimateTokens(content);
+    // isLoading.value = false;
+  }
+
+  Future<int> _recursiveReadContent(
+    FileNode node,
+    StringBuffer buffer,
+    String rootBase,
+  ) async {
+    if (!node.isSelected.value) return 0; // 如果未被勾选，直接跳过
+
+    int count = 0;
+
+    if (!node.isDirectory) {
+      try {
+        final file = File(node.path);
+        final content = await file.readAsString();
+        // 相对路径显示
+        final relativePath = node.path.replaceFirst(rootBase, '');
+        final cleanPath = relativePath.startsWith(Platform.pathSeparator)
+            ? relativePath.substring(1)
+            : relativePath;
+
+        buffer.writeln('## File: $cleanPath');
+        buffer.writeln('```');
+        buffer.writeln(content);
+        buffer.writeln('```');
+        buffer.writeln('');
+        count++;
+      } catch (e) {
+        // 读取失败忽略
+      }
+    } else {
+      for (var child in node.children) {
+        count += await _recursiveReadContent(child, buffer, rootBase);
+      }
+    }
+    return count;
+  }
+
+  // 级联切换勾选状态
+  void toggleNode(FileNode node, bool? value) {
+    if (value == null) return;
+    node.isSelected.value = value;
+
+    // 如果是目录，递归设置所有子节点
+    if (node.isDirectory) {
+      _setAllChildren(node, value);
+    }
+
+    // 触发重新生成 (可以使用防抖优化，但 K.I.S.S 这里直接调用)
+    generatePromptFromTree();
+  }
+
+  void _setAllChildren(FileNode node, bool value) {
+    for (var child in node.children) {
+      child.isSelected.value = value;
+      if (child.isDirectory) {
+        _setAllChildren(child, value);
+      }
     }
   }
 
-  bool _shouldProcessFile(String path) {
-    final parts = path.split(Platform.pathSeparator);
-    for (var part in parts) {
-      for (var prefix in _ignorePrefixes) {
-        if (part.startsWith(prefix)) return false;
-      }
+  // 辅助过滤逻辑
+  bool _shouldIgnore(String name) {
+    for (var prefix in _ignorePrefixes) {
+      if (name.startsWith(prefix)) return true;
     }
+    return false;
+  }
+
+  bool _shouldIgnoreExtension(String path) {
     for (var ext in _ignoreExtensions) {
-      if (path.toLowerCase().endsWith('.$ext')) return false;
+      if (path.toLowerCase().endsWith('.$ext')) return true;
     }
-    return true;
+    return false;
+  }
+
+  int _estimateTokens(String text) {
+    if (text.isEmpty) return 0;
+    final cjkRegex = RegExp(r'[\u4E00-\u9FFF]');
+    int cjkCount = cjkRegex.allMatches(text).length;
+    int otherCount = text.length - cjkCount;
+    double tokens = (cjkCount * 1.5) + (otherCount / 4.0);
+    return tokens.ceil();
   }
 
   Future<void> copyToClipboard() async {
@@ -168,75 +266,9 @@ class RepoToPromptController extends GetxController {
       '成功',
       '内容已复制到剪贴板',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Get.theme.primaryColor.withOpacity(0.8),
+      backgroundColor: Colors.teal.withOpacity(0.8),
       colorText: Colors.white,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 1),
     );
-  }
-
-  Future<void> _generatePrompt(Directory dir) async {
-    isLoading.value = true;
-    statusMessage.value = '正在扫描文件...';
-    generatedContent.value = '';
-
-    StringBuffer buffer = StringBuffer();
-
-    try {
-      // 递归列出所有文件
-      final entities = dir.listSync(recursive: true, followLinks: false);
-
-      // 排序，保证顺序一致性
-      entities.sort((a, b) => a.path.compareTo(b.path));
-
-      int count = 0;
-      for (var entity in entities) {
-        if (entity is File) {
-          if (_shouldProcessFile(entity.path)) {
-            final relativePath = entity.path.replaceFirst(dir.path, '');
-            try {
-              final content = await entity.readAsString();
-              buffer.writeln('## File: $relativePath');
-              buffer.writeln('```');
-              buffer.writeln(content);
-              buffer.writeln('```');
-              buffer.writeln('');
-              count++;
-            } catch (e) {
-              // 读取失败（可能是二进制文件），跳过
-              print('Skipping binary or unreadable file: ${entity.path}');
-            }
-          }
-        }
-      }
-
-      generatedContent.value = buffer.toString();
-      statusMessage.value = '处理完成，共包含 $count 个文件';
-    } catch (e) {
-      statusMessage.value = '发生错误: $e';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // 纯 Dart 的 Token 估算算法
-  int _estimateTokens(String text) {
-    if (text.isEmpty) return 0;
-
-    // 使用正则匹配中文字符 (CJK Unified Ideographs 范围)
-    // 这不会极其精准，但对于估算上下文窗口足够了
-    final cjkRegex = RegExp(r'[\u4E00-\u9FFF]');
-
-    // 统计中文字符数量
-    int cjkCount = cjkRegex.allMatches(text).length;
-
-    // 剩余字符视作英文/代码符号
-    int otherCount = text.length - cjkCount;
-
-    // 经验公式：
-    // 中文：加权 1.5 (保守估计)
-    // 英文/代码：加权 0.25 (即 1/4)
-    double tokens = (cjkCount * 1.5) + (otherCount / 4.0);
-
-    return tokens.ceil();
   }
 }
