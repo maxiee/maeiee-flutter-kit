@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kalender/kalender.dart';
 import 'package:my_life_rpg/controllers/matrix_controller.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
-import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 
 class HomeDayCalendar extends StatelessWidget {
   final MatrixController c = Get.find();

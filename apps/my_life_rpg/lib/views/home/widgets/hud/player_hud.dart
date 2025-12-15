@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/core/utils/logger.dart';
-import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
-import 'package:my_life_rpg/views/debug/debug_console.dart';
 
 class PlayerHud extends StatelessWidget {
   final TimeService t = Get.find(); // 直接找 TimeService

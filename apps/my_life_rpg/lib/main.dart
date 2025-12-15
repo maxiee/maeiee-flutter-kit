@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart'; // 别忘了这个
 import 'package:my_life_rpg/core/data/data_seeder.dart';
 import 'package:my_life_rpg/core/data/initial_binding.dart';
-import 'package:my_life_rpg/core/theme/app_theme.dart';
+import 'package:rpg_cyber_ui/theme/app_theme.dart';
 import 'package:my_life_rpg/views/home/home_binding.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 

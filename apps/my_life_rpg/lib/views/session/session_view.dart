@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import '../../controllers/session_controller.dart';
 import '../../models/task.dart';
 
@@ -24,7 +23,7 @@ class SessionView extends StatelessWidget {
             // [修改] 优化后的计时器区域
             GestureDetector(
               onTap: c.togglePause,
-              child: Container(
+              child: SizedBox(
                 // 固定高度容器，避免布局跳动
                 height: 180,
                 width: double.infinity,

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/core/widgets/rpg_container.dart';
-import 'package:my_life_rpg/core/widgets/rpg_text.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/models/project.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/home/widgets/project_editor.dart';
@@ -54,7 +52,7 @@ class CampaignBar extends StatelessWidget {
           height: 48, // 填满高度
           style: RpgContainerStyle.outline,
           padding: EdgeInsets.zero,
-          child: const Icon(Icons.add, color: AppColors.accentMain, size: 20),
+          child: Icon(Icons.add, color: AppColors.accentMain, size: 20),
         ),
       ),
     );

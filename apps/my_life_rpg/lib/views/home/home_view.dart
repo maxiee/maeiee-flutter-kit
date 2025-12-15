@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/home_day_calendar.dart';
 import 'widgets/hud/player_hud.dart';
 import 'widgets/panels/mission_panel.dart';
 
 class HomeView extends StatelessWidget {
+  const HomeView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

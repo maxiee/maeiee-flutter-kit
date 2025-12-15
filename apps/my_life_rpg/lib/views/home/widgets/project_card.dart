@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:rpg_cyber_ui/theme/app_colors.dart';
 import '../../../models/task.dart';
 
 class ProjectCard extends StatelessWidget {
   final Task quest;
-  const ProjectCard({Key? key, required this.quest}) : super(key: key);
+  const ProjectCard({super.key, required this.quest});
 
   @override
   Widget build(BuildContext context) {

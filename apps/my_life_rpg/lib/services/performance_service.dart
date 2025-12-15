@@ -39,10 +39,11 @@ class PerformanceService extends GetxService {
     for (var task in _taskService.tasks) {
       // 1. 任务计数
       if (task.type == TaskType.todo) {
-        if (task.isCompleted)
+        if (task.isCompleted) {
           completed++;
-        else
+        } else {
           active++;
+        }
       }
 
       // 2. 时长统计 (核心修复点)

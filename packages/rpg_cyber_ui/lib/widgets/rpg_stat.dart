@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_life_rpg/core/widgets/rpg_text.dart';
+import 'rpg_text.dart';
 import '../theme/theme.dart';
 
 /// RPG 风格数据指标展示

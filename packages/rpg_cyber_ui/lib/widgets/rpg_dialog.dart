@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../theme/theme.dart';
 import 'rpg_button.dart';
 
@@ -73,7 +72,7 @@ class RpgDialog extends StatelessWidget {
                   RpgButton(
                     label: "CANCEL",
                     type: RpgButtonType.ghost,
-                    onTap: onCancel ?? () => Get.back(),
+                    onTap: onCancel ?? () => Navigator.of(context).pop(),
                   ),
                   if (actions != null) AppSpacing.gapH12,
                 ],

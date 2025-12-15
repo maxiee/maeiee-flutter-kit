@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:rpg_cyber_ui/theme/app_colors.dart';
 import 'package:my_life_rpg/models/serializable.dart';
 
 class Project implements Serializable {
+  @override
   final String id;
   String title;
   String description;

@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  rpg_cyber_ui:
+    path: ../../packages/rpg_cyber_ui
   get: ^4.7.3
   uuid: ^4.5.2
   intl: ^0.20.2

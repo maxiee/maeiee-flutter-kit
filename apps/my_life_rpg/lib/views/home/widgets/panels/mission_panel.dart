@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
-import 'package:my_life_rpg/core/widgets/widgets.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/home/widgets/mission_card.dart';
 import 'package:my_life_rpg/views/home/widgets/quest_editor.dart';

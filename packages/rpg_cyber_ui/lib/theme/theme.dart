@@ -1,6 +1,6 @@
 // lib/core/theme/theme.dart
 /// 主题系统统一导出
-/// 使用方式: import 'package:my_life_rpg/core/theme/theme.dart';
+/// 使用方式: import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 library;
 
 export 'app_colors.dart';

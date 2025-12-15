@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kalender/kalender.dart';
-import 'package:my_life_rpg/core/theme/app_colors.dart';
+import 'package:rpg_cyber_ui/theme/app_colors.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/session_inspector.dart';

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:my_life_rpg/core/theme/theme.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
 
 class DebugConsole extends StatelessWidget {
   final LogService logger = Get.find();
 
-  DebugConsole({Key? key}) : super(key: key);
+  DebugConsole({super.key});
 
   @override
   Widget build(BuildContext context) {
