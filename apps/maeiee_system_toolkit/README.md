@@ -1,17 +1,5 @@
 # maeiee_system_toolkit
 
-A new Flutter project.
+maeiee_system_toolkit 是 Maeiee 开发的系统工具箱，包含各种实用工具。
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+使用 packages/rpg_cyber_ui 作为 UI 框架。
