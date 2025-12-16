@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/file_node.dart'; // 引入模型
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_controller.dart';
+import 'package:maeiee_system_toolkit/views/repo_to_prompt/workspace_model.dart';
 
 class RepoToPromptView extends GetView<RepoToPromptController> {
   const RepoToPromptView({super.key});
@@ -11,34 +12,158 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('源码转 Prompt')),
-      body: DropTarget(
-        onDragDone: (detail) {
-          final paths = detail.files.map((e) => e.path).toList();
-          controller.handleDropFiles(paths);
-          controller.isDraggingHover.value = false;
-        },
-        onDragEntered: (detail) => controller.isDraggingHover.value = true,
-        onDragExited: (detail) => controller.isDraggingHover.value = false,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildControlPanel(),
-              ),
-              // 文件树现在占据主要空间
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildFileTreeArea(),
+      body: Row(
+        children: [
+          // 左侧侧边栏
+          _buildSidebar(),
+          // 右侧内容区
+          const VerticalDivider(width: 1, color: Colors.white10),
+          Expanded(child: _buildMainContent()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 260,
+      color: const Color(0xFF181818),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: controller.createWorkspace,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('新建工作区'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
                 ),
               ),
-              // 底部操作栏
-              _buildBottomBar(),
-            ],
+            ),
           ),
+          Expanded(
+            child: Obx(() {
+              return ListView.builder(
+                itemCount: controller.workspaces.length,
+                itemBuilder: (context, index) {
+                  final ws = controller.workspaces[index];
+                  return _buildWorkspaceItem(ws);
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkspaceItem(WorkspaceModel ws) {
+    return Obx(() {
+      final isSelected = controller.currentWorkspaceId.value == ws.id;
+      return Container(
+        color: isSelected ? Colors.white.withOpacity(0.05) : Colors.transparent,
+        child: ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 0,
+          ),
+          title: Text(
+            ws.title,
+            style: TextStyle(
+              color: isSelected ? Colors.tealAccent : Colors.grey,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            // 简单的日期格式化，或者只显示文件数
+            '${ws.rootPaths.length} 个项目',
+            style: const TextStyle(fontSize: 10, color: Colors.white24),
+          ),
+          onTap: () => controller.selectWorkspace(ws.id),
+          trailing: isSelected
+              ? PopupMenuButton(
+                  icon: const Icon(
+                    Icons.more_horiz,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const Text('重命名'),
+                      onTap: () {
+                        // 延时执行弹窗，避免 PopupMenu 关闭冲突
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          _showRenameDialog(ws);
+                        });
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: const Text(
+                        '删除',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                      onTap: () => controller.deleteWorkspace(ws.id),
+                    ),
+                  ],
+                )
+              : null,
         ),
+      );
+    });
+  }
+
+  void _showRenameDialog(WorkspaceModel ws) {
+    final textCtrl = TextEditingController(text: ws.title);
+    Get.dialog(
+      AlertDialog(
+        title: const Text('重命名工作区'),
+        content: TextField(controller: textCtrl, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(
+            onPressed: () {
+              controller.updateWorkspaceTitle(ws.id, textCtrl.text.trim());
+              Get.back();
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 原 body 内容移动到这里
+  Widget _buildMainContent() {
+    return DropTarget(
+      onDragDone: (detail) {
+        final paths = detail.files.map((e) => e.path).toList();
+        controller.handleDropFiles(paths);
+        controller.isDraggingHover.value = false;
+      },
+      onDragEntered: (detail) => controller.isDraggingHover.value = true,
+      onDragExited: (detail) => controller.isDraggingHover.value = false,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildControlPanel(),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildFileTreeArea(),
+            ),
+          ),
+          _buildBottomBar(),
+        ],
       ),
     );
   }

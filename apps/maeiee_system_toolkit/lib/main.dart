@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:maeiee_system_toolkit/core/data/initial_binding.dart';
 import 'package:maeiee_system_toolkit/views/home/home_binding.dart';
 import 'package:maeiee_system_toolkit/views/home/home_view.dart';
@@ -7,7 +8,10 @@ import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_bindin
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_view.dart';
 import 'package:rpg_cyber_ui/theme/app_theme.dart';
 
-void main() {
+void main() async {
+  // Init Hive
+  await Hive.initFlutter();
+  await Hive.openBox('repo_to_prompt_workspaces');
   runApp(const MyApp());
 }
 
