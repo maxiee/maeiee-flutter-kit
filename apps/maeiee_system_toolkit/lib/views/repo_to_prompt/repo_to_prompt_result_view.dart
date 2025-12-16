@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_controller.dart';
 
 class RepoToPromptResultView extends GetView<RepoToPromptController> {
@@ -8,8 +9,10 @@ class RepoToPromptResultView extends GetView<RepoToPromptController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
         title: const Text('Prompt 预览'),
+        backgroundColor: AppColors.bgPanel,
         actions: [
           Center(
             child: Padding(
@@ -29,12 +32,9 @@ class RepoToPromptResultView extends GetView<RepoToPromptController> {
         child: Column(
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
+              child: RpgContainer(
+                style: RpgContainerStyle.panel,
+                padding: EdgeInsets.zero,
                 child: Obx(
                   () => TextField(
                     controller: TextEditingController(
@@ -45,7 +45,7 @@ class RepoToPromptResultView extends GetView<RepoToPromptController> {
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12,
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                     ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
@@ -59,14 +59,11 @@ class RepoToPromptResultView extends GetView<RepoToPromptController> {
             SizedBox(
               height: 50,
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: controller.copyToClipboard,
-                icon: const Icon(Icons.copy),
-                label: const Text('复制全部内容'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                ),
+              child: RpgButton(
+                onTap: controller.copyToClipboard,
+                icon: Icons.copy,
+                label: '复制全部内容',
+                type: RpgButtonType.primary,
               ),
             ),
           ],
@@ -76,34 +73,10 @@ class RepoToPromptResultView extends GetView<RepoToPromptController> {
   }
 
   Widget _buildTokenBadge(int count, {bool isAccurate = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isAccurate
-            ? Colors.teal.withOpacity(0.2)
-            : Colors.grey.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isAccurate ? Colors.teal : Colors.grey),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.token,
-            size: 14,
-            color: isAccurate ? Colors.tealAccent : Colors.white70,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${_formatTokenCount(count)} Tokens',
-            style: TextStyle(
-              color: isAccurate ? Colors.tealAccent : Colors.white70,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+    return RpgTag(
+      label: '${_formatTokenCount(count)} Tokens',
+      color: isAccurate ? AppColors.accentMain : AppColors.textDim,
+      icon: Icons.token,
     );
   }
 

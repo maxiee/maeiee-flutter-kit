@@ -8,6 +8,7 @@ class AppColors {
   static const bgPanel = Color(0xFF1A1A1A); // 面板背景 (Carbon)
   static const bgCard = Color(0xFF252525); // 卡片背景 (Steel)
   static const bgInput = Colors.black38; // 输入框背景
+  static const bgBase = Color(0xFF181818); // 基础背景 (Obsidian)
 
   // --- Semantic Accents ---
   static const accentMain = Colors.orangeAccent; // 主线/创造 (Amber Energy)

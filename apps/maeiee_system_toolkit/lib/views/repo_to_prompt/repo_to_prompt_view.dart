@@ -1,6 +1,7 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/file_node.dart'; // 引入模型
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_controller.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/workspace_model.dart';
@@ -11,13 +12,17 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('源码转 Prompt')),
+      backgroundColor: AppColors.bgBase,
+      appBar: AppBar(
+        title: const Text('源码转 Prompt'),
+        backgroundColor: AppColors.bgPanel,
+      ),
       body: Row(
         children: [
           // 左侧侧边栏
           _buildSidebar(),
           // 右侧内容区
-          const VerticalDivider(width: 1, color: Colors.white10),
+          const VerticalDivider(width: 1, color: AppColors.borderDim),
           Expanded(child: _buildMainContent()),
         ],
       ),
@@ -27,21 +32,18 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   Widget _buildSidebar() {
     return Container(
       width: 260,
-      color: const Color(0xFF181818),
+      color: AppColors.bgPanel,
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: controller.createWorkspace,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('新建工作区'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                ),
+              child: RpgButton(
+                onTap: controller.createWorkspace,
+                icon: Icons.add,
+                label: '新建工作区',
+                type: RpgButtonType.primary,
               ),
             ),
           ),
@@ -65,7 +67,9 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
     return Obx(() {
       final isSelected = controller.currentWorkspaceId.value == ws.id;
       return Container(
-        color: isSelected ? Colors.white.withOpacity(0.05) : Colors.transparent,
+        color: isSelected
+            ? AppColors.accentMain.withOpacity(0.1)
+            : Colors.transparent,
         child: ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(
@@ -75,7 +79,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
           title: Text(
             ws.title,
             style: TextStyle(
-              color: isSelected ? Colors.tealAccent : Colors.grey,
+              color: isSelected ? AppColors.accentMain : AppColors.textDim,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
             maxLines: 1,
@@ -84,7 +88,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
           subtitle: Text(
             // 简单的日期格式化，或者只显示文件数
             '${ws.rootPaths.length} 个项目',
-            style: const TextStyle(fontSize: 10, color: Colors.white24),
+            style: const TextStyle(fontSize: 10, color: AppColors.textDim),
           ),
           onTap: () => controller.selectWorkspace(ws.id),
           trailing: isSelected
@@ -92,7 +96,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                   icon: const Icon(
                     Icons.more_horiz,
                     size: 16,
-                    color: Colors.grey,
+                    color: AppColors.textDim,
                   ),
                   padding: EdgeInsets.zero,
                   itemBuilder: (context) => [
@@ -108,7 +112,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                     PopupMenuItem(
                       child: const Text(
                         '删除',
-                        style: TextStyle(color: Colors.redAccent),
+                        style: TextStyle(color: AppColors.accentDanger),
                       ),
                       onTap: () => controller.deleteWorkspace(ws.id),
                     ),
@@ -123,17 +127,16 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   void _showRenameDialog(WorkspaceModel ws) {
     final textCtrl = TextEditingController(text: ws.title);
     Get.dialog(
-      AlertDialog(
-        title: const Text('重命名工作区'),
-        content: TextField(controller: textCtrl, autofocus: true),
+      RpgDialog(
+        title: '重命名工作区',
+        child: RpgInput(controller: textCtrl, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
+          RpgButton(
+            onTap: () {
               controller.updateWorkspaceTitle(ws.id, textCtrl.text.trim());
               Get.back();
             },
-            child: const Text('确定'),
+            label: '确定',
           ),
         ],
       ),
@@ -169,12 +172,9 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   }
 
   Widget _buildFileTreeArea() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
+    return RpgContainer(
+      style: RpgContainerStyle.panel,
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -185,22 +185,29 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                 const Icon(
                   Icons.account_tree_outlined,
                   size: 16,
-                  color: Colors.grey,
+                  color: AppColors.textDim,
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '文件结构筛选',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textDim,
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Colors.white10),
+          const RpgDivider(),
           Expanded(
             child: Obx(() {
               if (controller.fileTreeRoots.isEmpty) {
-                return const Center(
-                  child: Text('请先导入项目', style: TextStyle(color: Colors.grey)),
+                return Center(
+                  child: Text(
+                    '请先导入项目',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textDim,
+                    ),
+                  ),
                 );
               }
               return ListView.builder(
@@ -220,12 +227,16 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   Widget _buildFileNode(FileNode node) {
     Widget leadingIcon;
     if (node.isDirectory) {
-      leadingIcon = const Icon(Icons.folder, size: 16, color: Colors.amber);
+      leadingIcon = const Icon(
+        Icons.folder,
+        size: 16,
+        color: AppColors.accentMain,
+      );
     } else {
       leadingIcon = const Icon(
         Icons.insert_drive_file,
         size: 16,
-        color: Colors.blueGrey,
+        color: AppColors.textSecondary,
       );
     }
 
@@ -244,7 +255,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               value: node.isSelected.value,
               onChanged: (val) => controller.toggleNode(node, val),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              activeColor: Colors.teal,
+              activeColor: AppColors.accentMain,
             ),
           ),
           title: Row(
@@ -254,7 +265,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               Expanded(
                 child: Text(
                   node.name,
-                  style: const TextStyle(fontSize: 13),
+                  style: AppTextStyles.body,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -281,7 +292,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               value: node.isSelected.value,
               onChanged: (val) => controller.toggleNode(node, val),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              activeColor: Colors.teal,
+              activeColor: AppColors.accentMain,
             ),
           ),
           title: Row(
@@ -291,14 +302,16 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               Expanded(
                 child: Text(
                   node.name,
-                  style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary.withOpacity(0.7),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               // 显示单个文件的大小
               Text(
                 _formatFileSize(node.size),
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                style: AppTextStyles.caption.copyWith(color: AppColors.textDim),
               ),
             ],
           ),
@@ -311,34 +324,20 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
   Widget _buildControlPanel() {
     return Obx(() {
       final isHovering = controller.isDraggingHover.value;
-      final borderColor = isHovering
-          ? Colors.tealAccent
-          : Colors.white.withOpacity(0.1);
-      final bgColor = isHovering
-          ? Colors.teal.withOpacity(0.1)
-          : Colors.white.withOpacity(0.05);
 
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor, width: isHovering ? 2 : 1),
-        ),
+      return RpgContainer(
+        style: RpgContainerStyle.card,
+        focused: isHovering,
         child: Row(
           children: [
-            ElevatedButton.icon(
-              onPressed: controller.isLoading.value
+            RpgButton(
+              onTap: controller.isLoading.value
                   ? null
                   : controller.pickDirectory,
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('导入项目'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
+              icon: Icons.add_circle_outline,
+              label: '导入项目',
+              type: RpgButtonType.secondary,
+              compact: true,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -346,7 +345,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                 controller.selectedPath.value.isEmpty
                     ? '拖拽文件夹到此处或点击导入'
                     : controller.selectedPath.value,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: AppTextStyles.body.copyWith(color: AppColors.textDim),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -360,10 +359,10 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: AppColors.bgPanel,
         boxShadow: [
           BoxShadow(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -376,7 +375,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.bgInput,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -384,24 +383,25 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                   const Icon(
                     Icons.analytics_outlined,
                     size: 16,
-                    color: Colors.grey,
+                    color: AppColors.textDim,
                   ),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         '预估消耗 (基于文件大小)',
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textDim,
+                        ),
                       ),
                       Obx(
                         () => Text(
                           '~${_formatTokenCount(controller.estimatedTokens.value)} Tokens',
-                          style: const TextStyle(
+                          style: AppTextStyles.body.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -416,24 +416,12 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
               child: SizedBox(
                 height: 48,
                 child: Obx(
-                  () => ElevatedButton(
-                    onPressed: controller.fileTreeRoots.isEmpty
+                  () => RpgButton(
+                    onTap: controller.fileTreeRoots.isEmpty
                         ? null
                         : controller.generateAndPreview,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      '生成并预览',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    label: '生成并预览',
+                    type: RpgButtonType.primary,
                   ),
                 ),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -7,7 +8,11 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Maeiee Toolkit')),
+      backgroundColor: AppColors.bgBase,
+      appBar: AppBar(
+        title: const Text('Maeiee Toolkit'),
+        backgroundColor: AppColors.bgPanel,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -30,17 +35,18 @@ class HomeView extends StatelessWidget {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
+    return RpgContainer(
+      style: RpgContainerStyle.card,
       margin: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Icon(icon, size: 40, color: Colors.tealAccent),
+              Icon(icon, size: 40, color: AppColors.accentMain),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -48,20 +54,25 @@ class HomeView extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                      style: AppTextStyles.panelHeader.copyWith(
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textDim,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppColors.textDim,
+              ),
             ],
           ),
         ),
