@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/views/home/widgets/data_backup_dialog.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
@@ -52,10 +53,13 @@ class PlayerHud extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Obx(
-              () => Text(
-                p.totalHoursStr,
-                style: AppTextStyles.heroNumber.copyWith(fontSize: 32),
+            InkWell(
+              onLongPress: () => Get.dialog(const DataBackupDialog()),
+              child: Obx(
+                () => Text(
+                  p.totalHoursStr,
+                  style: AppTextStyles.heroNumber.copyWith(fontSize: 32),
+                ),
               ),
             ),
             const SizedBox(width: 4),

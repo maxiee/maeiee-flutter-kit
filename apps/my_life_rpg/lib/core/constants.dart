@@ -11,7 +11,7 @@ class Constants {
   static const int levelBaseConstant = 50;
 
   // Storage Keys
-  static const String keyQuests = 'db_quests';
+  static const String keyTasks = 'db_tasks';
   static const String keyProjects = 'db_projects';
 
   // Limits
