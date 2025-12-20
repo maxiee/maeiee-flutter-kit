@@ -273,8 +273,13 @@ class TaskService extends GetxService {
 
       // 尝试寻找该项目下的通用容器任务
       // 命名约定：标题就是项目名，或者叫 "General Work"
+      // 只查找 "未完成" 的 General Work
+      // 这样如果你把之前的 General Work 勾掉了，或者重命名了，这里就会找不到，从而触发下面的创建逻辑
       targetTask = tasks.firstWhereOrNull(
-        (t) => t.projectId == project.id && t.title == "General Work",
+        (t) =>
+            t.projectId == project.id &&
+            t.title == "General Work" &&
+            !t.isCompleted,
       );
 
       // 如果没找到，创建一个
