@@ -68,7 +68,7 @@ class TaskLog {
 
 class FocusSession {
   final String id;
-  final DateTime startTime;
+  DateTime startTime;
   DateTime? endTime; // null 表示正在进行中
   int durationSeconds; // 物理时长
   int pausedSeconds; // 暂停时长
