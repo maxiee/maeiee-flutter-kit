@@ -177,6 +177,4 @@ class MatrixController extends GetxController {
       "Modification via timeline is disabled. Use Inspector.",
     );
   }
-
-  String _fmt(int n) => n.toString().padLeft(2, '0');
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:my_life_rpg/models/project.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:rpg_cyber_ui/widgets/rpg_tab_bar.dart';
 import 'package:my_life_rpg/services/task_service.dart';
@@ -23,15 +24,22 @@ class TimeAllocationDialog extends StatefulWidget {
 }
 
 class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
-  // 状态
-  bool isCreatingNew = false;
-  String selectedQuestId = '';
-  final TextEditingController _titleController = TextEditingController();
+  // 0=Task, 1=Project, 2=System
+  int selectedMode = 0;
+  String? selectedId; // 可能是 TaskId, ProjectId 或 CategoryName
 
-  // 数据源
+  // 仅用于 Task 模式下的新建功能
+  final TextEditingController _newTitleCtrl = TextEditingController();
+  bool isCreatingNewTask = false;
+
+  // 数据缓存
   late List<Task> activeQuests;
+  late List<Project> activeProjects;
 
-  // 内部时间状态
+  // 预置的系统类别
+  final List<String> systemCategories = ["休息", "深度工作", "噪声", "自我梳理", "学习"];
+
+  // 时间状态
   late DateTime _start;
   late DateTime _end;
 
@@ -46,48 +54,196 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
     activeQuests = widget.questService.tasks
         .where((q) => !q.isCompleted)
         .toList();
+    activeProjects = widget.questService.projects;
 
-    // 默认选中第一个
+    // 默认选中
     if (activeQuests.isNotEmpty) {
-      selectedQuestId = activeQuests.first.id;
+      selectedId = activeQuests.first.id;
+    } else if (activeProjects.isNotEmpty) {
+      selectedMode = 1; // 没任务就切到项目
+      selectedId = activeProjects.first.id;
     } else {
-      // 如果没有活跃任务，强制切换到创建模式
-      isCreatingNew = true;
+      selectedMode = 2; // 啥都没就切到系统
+      selectedId = systemCategories.first;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return RpgDialog(
-      title: "ALLOCATE TIME SEGMENT",
-      icon: Icons.access_time,
+      title: "LOG TIME SEGMENT",
+      icon: Icons.history_edu,
       onCancel: () => Get.back(),
-      actions: [RpgButton(label: "CONFIRM", onTap: _submit)],
+      actions: [RpgButton(label: "CONFIRM LOG", onTap: _submit)],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 可编辑的时间区域
+          // 1. 时间编辑器
           _buildTimeEditor(),
 
           AppSpacing.gapV20,
 
-          // Tabs
+          // 2. 模式切换 Tabs
           RpgTabBar(
-            tabs: const ["EXISTING QUEST", "CREATE NEW"],
-            selectedIndex: isCreatingNew ? 1 : 0,
-            onTabSelected: (index) =>
-                setState(() => isCreatingNew = index == 1),
+            tabs: const ["TASK", "PROJECT", "SYSTEM"],
+            selectedIndex: selectedMode,
+            onTabSelected: (index) {
+              setState(() {
+                selectedMode = index;
+                isCreatingNewTask = false; // 重置新建状态
+                // 切换后重置默认选中项
+                if (index == 0 && activeQuests.isNotEmpty) {
+                  selectedId = activeQuests.first.id;
+                }
+                if (index == 1 && activeProjects.isNotEmpty) {
+                  selectedId = activeProjects.first.id;
+                }
+                if (index == 2) selectedId = systemCategories.first;
+              });
+            },
           ),
           AppSpacing.gapV16,
 
-          // Content
-          SizedBox(
-            height: 60,
-            child: isCreatingNew ? _buildCreateInput() : _buildSelectDropdown(),
-          ),
+          // 3. 动态内容区
+          SizedBox(height: 60, child: _buildSelectorBody()),
         ],
       ),
     );
+  }
+
+  Widget _buildSelectorBody() {
+    // Mode 0: Task (Existing OR New)
+    if (selectedMode == 0) {
+      if (isCreatingNewTask) {
+        return Row(
+          children: [
+            Expanded(
+              child: RpgInput(
+                controller: _newTitleCtrl,
+                hint: "New task title...",
+                autofocus: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey),
+              onPressed: () => setState(() => isCreatingNewTask = false),
+            ),
+          ],
+        );
+      }
+
+      if (activeQuests.isEmpty) {
+        return Center(
+          child: TextButton.icon(
+            icon: const Icon(Icons.add, color: AppColors.accentMain),
+            label: const Text(
+              "Create New Task",
+              style: TextStyle(color: AppColors.accentMain),
+            ),
+            onPressed: () => setState(() => isCreatingNewTask = true),
+          ),
+        );
+      }
+
+      return Row(
+        children: [
+          Expanded(
+            child: RpgSelect<String>(
+              value: activeQuests.any((q) => q.id == selectedId)
+                  ? selectedId
+                  : null,
+              items: activeQuests
+                  .map(
+                    (q) => DropdownMenuItem(
+                      value: q.id,
+                      child: Text(q.title, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (val) => setState(() => selectedId = val),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: "Create New instead",
+            child: InkWell(
+              onTap: () => setState(() => isCreatingNewTask = true),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white24),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(Icons.add, color: Colors.white54),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Mode 1: Project (Direct Log)
+    if (selectedMode == 1) {
+      if (activeProjects.isEmpty)
+        return const Center(
+          child: Text(
+            "NO PROJECTS DEFINED",
+            style: TextStyle(color: Colors.grey),
+          ),
+        );
+
+      return RpgSelect<String>(
+        value: activeProjects.any((p) => p.id == selectedId)
+            ? selectedId
+            : null,
+        items: activeProjects
+            .map(
+              (p) => DropdownMenuItem(
+                value: p.id,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      color: p.color,
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
+                    Text(p.title),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (val) => setState(() => selectedId = val),
+      );
+    }
+
+    // Mode 2: System (Category)
+    if (selectedMode == 2) {
+      // 使用 Wrap 或者简单的 Select，这里用 Select 保持一致
+      return RpgSelect<String>(
+        value: selectedId,
+        items: systemCategories
+            .map(
+              (c) => DropdownMenuItem(
+                value: c,
+                child: Text(
+                  c,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (val) => setState(() => selectedId = val),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   // 时间编辑器组件
@@ -96,7 +252,7 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
       children: [
         Expanded(
           child: _buildTimeButton(
-            label: "START TIME",
+            label: "START",
             time: _start,
             onTap: () => _pickTime(true),
           ),
@@ -107,7 +263,7 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
         ),
         Expanded(
           child: _buildTimeButton(
-            label: "END TIME",
+            label: "END",
             time: _end,
             onTap: () => _pickTime(false),
           ),
@@ -199,72 +355,38 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
     }
   }
 
-  Widget _buildCreateInput() {
-    return RpgInput(
-      controller: _titleController,
-      label: "NEW QUEST TITLE",
-      autofocus: true, // 自动聚焦
-    );
-  }
-
-  Widget _buildSelectDropdown() {
-    if (activeQuests.isEmpty) {
-      return const Center(
-        child: Text(
-          "NO ACTIVE QUESTS. SWITCH TO CREATE.",
-          style: TextStyle(
-            color: AppColors.accentDanger,
-            fontFamily: 'Courier',
-          ),
-        ),
-      );
-    }
-
-    return RpgSelect<String>(
-      value: activeQuests.any((q) => q.id == selectedQuestId)
-          ? selectedQuestId
-          : null,
-      items: activeQuests
-          .map(
-            (q) => DropdownMenuItem(
-              value: q.id,
-              child: Text(
-                q.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (val) {
-        if (val != null) setState(() => selectedQuestId = val);
-      },
-    );
-  }
-
   void _submit() {
     // 基础校验
     if (_start.isAfter(_end)) {
-      Get.snackbar("ERROR", "End time must be after start time");
+      Get.snackbar(
+        "ERROR",
+        "Time logic failure.",
+        backgroundColor: Colors.black,
+        colorText: Colors.red,
+      );
       return;
     }
 
-    final data = {
-      // [关键] 返回修正后的时间
-      'startTime': _start,
-      'endTime': _end,
-      'isNew': isCreatingNew,
-    };
+    if (selectedId == null && !isCreatingNewTask) return;
 
-    if (isCreatingNew) {
-      final title = _titleController.text.trim();
-      if (title.isEmpty) return;
-      data['title'] = title;
+    // 调用 Service 的新接口
+    final result = widget.questService.quickAllocate(
+      targetId: selectedId ?? "", //
+      mode: isCreatingNewTask ? 0 : selectedMode,
+      customTitle: isCreatingNewTask ? _newTitleCtrl.text.trim() : null,
+      start: _start,
+      end: _end,
+    );
+
+    if (result.isSuccess) {
+      Get.back(result: {'success': true}); // 只需要告诉 Controller 成功了，不需要回传复杂 Map
     } else {
-      if (selectedQuestId.isEmpty) return;
-      data['id'] = selectedQuestId;
+      Get.snackbar(
+        "FAIL",
+        result.errorMessage ?? "Unknown Error",
+        backgroundColor: Colors.black,
+        colorText: Colors.red,
+      );
     }
-
-    Get.back(result: data);
   }
 }

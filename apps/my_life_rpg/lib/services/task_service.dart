@@ -249,4 +249,67 @@ class TaskService extends GetxService {
     q.sessions.removeWhere((s) => s.id == sessionId);
     _taskRepo.listenable.refresh();
   }
+
+  /// 智能分配时间：支持 任务ID / 项目ID / 系统类别
+  /// [targetId]: 可能是 taskId, projectId, 或 categoryTag
+  /// [mode]: 0=Task, 1=Project, 2=System
+  Result<void> quickAllocate({
+    required String targetId,
+    required int mode,
+    required DateTime start,
+    required DateTime end,
+    String? customTitle, // 如果是新建任务模式
+  }) {
+    Task? targetTask;
+
+    // 模式 A: 明确的任务 (Task)
+    if (mode == 0) {
+      targetTask = _taskRepo.getById(targetId);
+    }
+    // 模式 B: 项目 (Project) -> 寻找/创建该项目的 "General Work" 容器
+    else if (mode == 1) {
+      final project = _projectRepo.getById(targetId);
+      if (project == null) return Result.err("Project not found");
+
+      // 尝试寻找该项目下的通用容器任务
+      // 命名约定：标题就是项目名，或者叫 "General Work"
+      targetTask = tasks.firstWhereOrNull(
+        (t) => t.projectId == project.id && t.title == "General Work",
+      );
+
+      // 如果没找到，创建一个
+      targetTask ??= addNewTask(
+        title: "General Work", // 通用工作容器
+        type: TaskType.todo,
+        project: project,
+        isAllDayDeadline: true, // 不设具体Deadline
+      );
+    }
+    // 模式 C: 系统类别 (System) -> 寻找/创建全局容器
+    else if (mode == 2) {
+      // targetId 传进来的是 "REST", "CHAOS", "LEARNING" 等标签
+      final title = targetId;
+
+      targetTask = tasks.firstWhereOrNull(
+        (t) => t.projectId == null && t.title == title,
+      );
+
+      targetTask ??= addNewTask(
+        title: title,
+        type: TaskType.todo, // 也可以定义个新的 Type，暂且用 Todo
+      );
+    }
+
+    if (targetTask == null) {
+      // 兜底：如果是新建模式 (New Task)
+      if (customTitle != null && customTitle.isNotEmpty) {
+        targetTask = addNewTask(title: customTitle, type: TaskType.todo);
+      } else {
+        return Result.err("Target unresolvable.");
+      }
+    }
+
+    // 执行分配
+    return manualAllocate(targetTask.id, start, end);
+  }
 }
