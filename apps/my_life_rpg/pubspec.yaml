@@ -41,6 +41,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   kalender: ^0.14.2
+  fl_chart: ^1.1.1
 
 dev_dependencies:
   flutter_test:

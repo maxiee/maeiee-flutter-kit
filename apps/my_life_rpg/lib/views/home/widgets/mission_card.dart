@@ -6,14 +6,12 @@ import 'package:my_life_rpg/models/project.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import '../../../models/task.dart';
 
-class MissionCard extends StatelessWidget {
+class MissionCard extends StatefulWidget {
   final Task quest;
 
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onToggle;
-
-  final TaskService _qs = Get.find();
 
   MissionCard({
     super.key,
@@ -24,191 +22,274 @@ class MissionCard extends StatelessWidget {
   });
 
   @override
+  State<MissionCard> createState() => _MissionCardState();
+}
+
+class _MissionCardState extends State<MissionCard>
+    with SingleTickerProviderStateMixin {
+  final TaskService _qs = Get.find();
+  bool isExpanded = false; // [新增] 展开状态
+
+  @override
   Widget build(BuildContext context) {
     // 1. 确定颜色逻辑
     // 默认颜色
-    Color accentColor = quest.type == TaskType.routine
+    Color accentColor = widget.quest.type == TaskType.routine
         ? AppColors.accentSystem
         : AppColors.accentMain;
 
     // [新增] 如果有关联项目，优先使用项目颜色
-    if (quest.projectId != null) {
+    if (widget.quest.projectId != null) {
       final Project? proj = _qs.projects.firstWhereOrNull(
-        (p) => p.id == quest.projectId,
+        (p) => p.id == widget.quest.projectId,
       );
       if (proj != null) {
         accentColor = proj.color;
       }
     }
 
-    // 区分类型
-    final isDaemon = quest.type == TaskType.routine;
-    final dueDays = quest.dueDays ?? 0;
-
-    return RpgContainer(
-      padding: EdgeInsets.zero,
-      child: IntrinsicHeight(
-        // 让子元素高度一致
-        child: Row(
-          children: [
-            // 1. 左侧 Checkbox 区域 (仅响应点击)
-            Material(
-              child: InkWell(
-                onTap: onToggle,
-                child: Container(
-                  width: 40,
-                  color: accentColor.withOpacity(0.1),
-                  alignment: Alignment.center,
-                  child: isDaemon
-                      ? Icon(
-                          Icons.refresh,
-                          size: AppSpacing.iconMd - 2,
-                          color: accentColor, // [修改] 图标颜色
-                        ) // 循环图标
-                      : Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: accentColor), // [修改] 边框颜色
-                            borderRadius: AppSpacing.borderRadiusSm,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-
-            // 分割线
-            const RpgVerticalDivider(width: 1),
-
-            // 2. Content Area (Go to Session)
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTap,
-                  // 长按 -> 编辑
-                  onLongPress: onLongPress,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.md,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            // 如果有关联项目，显示 Tag
-                            if (quest.projectName != null) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.xs,
-                                ),
-                                child: RpgTag(
-                                  label: quest.projectName!,
-                                  color: accentColor,
-                                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // --- A. 主卡片区域 ---
+        RpgContainer(
+          padding: EdgeInsets.zero,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // 1. Checkbox (直接触发，无动画)
+                Material(
+                  child: InkWell(
+                    onTap: widget.onToggle,
+                    child: Container(
+                      width: 40,
+                      color: accentColor.withOpacity(0.1),
+                      alignment: Alignment.center,
+                      child: widget.quest.type == TaskType.routine
+                          ? Icon(
+                              Icons.refresh,
+                              size: AppSpacing.iconMd - 2,
+                              color: accentColor,
+                            )
+                          : Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: accentColor),
+                                borderRadius: AppSpacing.borderRadiusSm,
                               ),
-                              const SizedBox(width: 4),
-                            ],
-                            // Daemon Urgency Tag
-                            if (isDaemon && dueDays > 0) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.xs,
-                                ),
-                                child: RpgTag(
-                                  label: "OVERDUE +$dueDays",
-                                  color: AppColors.accentDanger,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            if (quest.deadline != null) ...[
-                              _buildDeadlineTag(),
-                            ],
-                          ],
-                        ),
-                        // 任务标题
-                        RpgText.body(quest.title),
-                        // [新增] 子任务微型进度条
-                        if (quest.checklist.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              // 进度条
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(2),
-                                  child: LinearProgressIndicator(
-                                    value: quest.checklistProgress,
-                                    backgroundColor: Colors.white10,
-                                    color: accentColor,
-                                    minHeight: 2,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // 数字 2/5
-                              RpgText.micro(
-                                "${quest.checklist.where((e) => e.isCompleted).length}/${quest.checklist.length}",
-                                color: Colors.grey,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
+                            ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // 3. Time Info
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.md),
-              child: RpgText.caption(
-                "${(quest.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
-                color: Colors.grey,
+                const RpgVerticalDivider(width: 1),
+
+                // 2. 核心内容区
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onTap,
+                      onLongPress: widget.onLongPress,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.md,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Tags Row
+                            Row(
+                              children: [
+                                if (widget.quest.projectName != null) ...[
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.xs,
+                                    ),
+                                    child: RpgTag(
+                                      label: widget.quest.projectName!,
+                                      color: accentColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                if (widget.quest.deadline != null) ...[
+                                  _buildDeadlineTag(accentColor),
+                                ],
+                              ],
+                            ),
+
+                            // Title
+                            RpgText.body(widget.quest.title),
+
+                            // Progress Bar (仅当未展开且有子任务时显示概览)
+                            if (widget.quest.checklist.isNotEmpty &&
+                                !isExpanded) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(2),
+                                      child: LinearProgressIndicator(
+                                        value: widget.quest.checklistProgress,
+                                        backgroundColor: Colors.white10,
+                                        color: accentColor,
+                                        minHeight: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  RpgText.micro(
+                                    "${widget.quest.checklist.where((e) => e.isCompleted).length}/${widget.quest.checklist.length}",
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 3. 右侧操作区 (时间 + 展开按钮)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    // 如果有子任务，点击这里展开；否则无响应(或只看时间)
+                    onTap: widget.quest.checklist.isNotEmpty
+                        ? () => setState(() => isExpanded = !isExpanded)
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          RpgText.caption(
+                            "${(widget.quest.totalDurationSeconds / 3600).toStringAsFixed(1)}h",
+                            color: Colors.grey,
+                          ),
+                          // 仅当有子任务时显示箭头
+                          if (widget.quest.checklist.isNotEmpty)
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Colors.white30,
+                              size: 16,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // --- B. 展开的子任务面板 ---
+        if (isExpanded)
+          Container(
+            // 缩进设计：体现从属关系
+            margin: const EdgeInsets.only(left: 40, right: 4, bottom: 4),
+            decoration: BoxDecoration(
+              color: Colors.black26, // 深色背景区分层级
+              border: Border(
+                left: BorderSide(color: accentColor.withOpacity(0.3), width: 1),
+                bottom: BorderSide(
+                  color: accentColor.withOpacity(0.3),
+                  width: 1,
+                ),
+                right: BorderSide(
+                  color: accentColor.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(4),
               ),
             ),
-          ],
-        ),
-      ),
+            child: Column(
+              children: List.generate(widget.quest.checklist.length, (i) {
+                final sub = widget.quest.checklist[i];
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _toggleSubTask(i),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          // 小 Checkbox
+                          Icon(
+                            sub.isCompleted
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            size: 16,
+                            color: sub.isCompleted
+                                ? Colors.grey
+                                : Colors.white70,
+                          ),
+                          const SizedBox(width: 8),
+                          // 子任务文本
+                          Expanded(
+                            child: Text(
+                              sub.title,
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 12,
+                                color: sub.isCompleted
+                                    ? Colors.grey
+                                    : Colors.white,
+                                decoration: sub.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildDeadlineTag() {
-    final isOverdue = quest.hoursUntilDeadline < 0;
-    final isUrgent = quest.hoursUntilDeadline < 24;
-    final color = isOverdue
-        ? AppColors.accentDanger
-        : isUrgent
-        ? Colors.amber
-        : Colors.grey;
-    final text = quest.isAllDayDeadline
-        ? DateFormat('MM-dd').format(quest.deadline!)
-        : DateFormat('MM-dd HH:mm').format(quest.deadline!);
+  Widget _buildDeadlineTag(Color color) {
+    final text = widget.quest.isAllDayDeadline
+        ? DateFormat('MM-dd').format(widget.quest.deadline!)
+        : DateFormat('MM-dd HH:mm').format(widget.quest.deadline!);
 
     return Container(
       margin: const EdgeInsets.only(right: 6, bottom: AppSpacing.xs),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: 1,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: color, width: 1),
-        borderRadius: AppSpacing.borderRadiusSm,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.flag, size: AppSpacing.iconXs, color: color),
-          const SizedBox(width: 2),
-          RpgText.micro(text, color: color),
-        ],
-      ),
+      child: RpgText.micro(text, color: Colors.grey),
     );
+  }
+
+  // 切换子任务状态
+  void _toggleSubTask(int index) {
+    final sub = widget.quest.checklist[index];
+
+    // 1. 修改本地状态 (UI即时反馈)
+    setState(() {
+      sub.isCompleted = !sub.isCompleted;
+    });
+
+    // 2. 调用 Service 持久化
+    _qs.updateTask(widget.quest.id, checklist: widget.quest.checklist);
   }
 }
