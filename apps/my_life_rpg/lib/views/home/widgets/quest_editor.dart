@@ -170,60 +170,87 @@ class _QuestEditorState extends State<QuestEditor> {
   Widget _buildConfigForm(BuildContext context, Color color, bool isEdit) {
     final isDaemon = activeType == TaskType.routine;
 
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RpgInput(
-          controller: titleController,
-          label: "任务名称",
-          accentColor: color,
-          autofocus: !isEdit,
-        ),
-
-        // 2. Tactical Breakdown (子任务区域)
-        // 仅对 Todo 显示，Daemon 通常不需要复杂的 check list (或者你需要也可以加)
-        if (!isDaemon) ...[AppSpacing.gapV16, _buildChecklistSection(color)],
-
-        AppSpacing.gapV16,
-        const RpgDivider(),
-        AppSpacing.gapV16,
-
-        _buildDeadlineSelector(color),
-        AppSpacing.gapV16,
-
-        if (!isDaemon) ...[
-          RpgSelect<Project>(
-            label: "所属项目:",
-            value: selectedProject,
-            hint: "无项目 (Standalone)",
-            items: [
-              const DropdownMenuItem<Project>(
-                value: null,
-                child: Text("无项目 (Standalone)", style: TextStyle(fontSize: 12)),
-              ),
-              ...q.projects.map(
-                (p) => DropdownMenuItem(
-                  value: p,
-                  child: Text(p.title, style: const TextStyle(fontSize: 12)),
-                ),
-              ),
-            ],
-            onChanged: (val) => setState(() => selectedProject = val),
-          ),
-        ] else ...[
-          // Daemon Interval 保持原样或后续优化
-          const RpgText.caption("重复周期:"),
-          AppSpacing.gapV8,
-          Row(
+        // --- 左侧列 (Left Column): 核心定义与时间 (Identity & Time) ---
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildIntervalChip(1, "每天"),
-              AppSpacing.gapH8,
-              _buildIntervalChip(7, "每周"),
-              AppSpacing.gapH8,
-              _buildIntervalChip(30, "每月"),
+              // 1. 任务名称
+              RpgInput(
+                controller: titleController,
+                label: isDaemon
+                    ? "DAEMON NAME"
+                    : "MISSION OBJECTIVE", // 稍微赛博一点的文案
+                accentColor: color,
+                autofocus: !isEdit, // 新建时自动聚焦
+              ),
+
+              AppSpacing.gapV24,
+
+              // 2. 截止时间 / 提醒
+              _buildDeadlineSelector(color),
             ],
           ),
-        ],
+        ),
+        AppSpacing.gapH24, // 中间分割间距
+        // --- 右侧列 (Right Column): 上下文与细节 (Context & Details) ---
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 3. 项目归属 或 循环周期
+              if (!isDaemon) ...[
+                RpgSelect<Project>(
+                  label: "PROJECT PROTOCOL:",
+                  value: selectedProject,
+                  hint: "STANDALONE (无项目)",
+                  items: [
+                    const DropdownMenuItem<Project>(
+                      value: null,
+                      child: Text(
+                        "STANDALONE (无项目)",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                    ...q.projects.map(
+                      (p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(
+                          p.title,
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) => setState(() => selectedProject = val),
+                ),
+              ] else ...[
+                // Daemon Interval
+                const RpgText.caption("RECURRENCE CYCLE:"),
+                AppSpacing.gapV8,
+                Row(
+                  children: [
+                    _buildIntervalChip(1, "DAILY"),
+                    AppSpacing.gapH8,
+                    _buildIntervalChip(7, "WEEKLY"),
+                    AppSpacing.gapH8,
+                    _buildIntervalChip(30, "MONTHLY"),
+                  ],
+                ),
+              ],
+
+              // 4. 子任务 (Tactical Breakdown) - 仅 Todo 显示
+              if (!isDaemon) ...[
+                AppSpacing.gapV24,
+                _buildChecklistSection(color),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
