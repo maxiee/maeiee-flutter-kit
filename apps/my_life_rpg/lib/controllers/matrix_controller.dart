@@ -154,8 +154,8 @@ class MatrixController extends GetxController {
         // _syncEvents 会清空所有事件（包括这个占位符）并重新加载真实的 Session 数据。
       }
     } else {
-      // 用户取消：移除占位符
-      eventsController.removeEvent(event);
+      // 直接触发一次全量同步，清洗掉 UI 上的临时块。
+      _syncEvents();
     }
   }
 
