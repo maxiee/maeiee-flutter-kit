@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_life_rpg/views/home/widgets/matrix/date_controller_bar.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/home_day_calendar.dart';
@@ -34,9 +35,19 @@ class HomeView extends StatelessWidget {
                   children: [
                     Expanded(flex: 6, child: MissionPanel()), // 任务板
                     AppSpacing.gapH8,
-                    // 右侧：时空矩阵
-                    // Expanded(flex: 4, child: TemporalMatrix()),
-                    Expanded(flex: 4, child: HomeDayCalendar()),
+                    // 右侧：时空矩阵 (带导航条)
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        children: [
+                          // [新增] 日期导航条
+                          DateControllerBar(),
+
+                          // [修改] 日历主体占满剩余空间
+                          Expanded(child: HomeDayCalendar()),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
