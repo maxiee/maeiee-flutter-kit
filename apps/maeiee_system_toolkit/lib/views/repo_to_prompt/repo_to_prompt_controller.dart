@@ -186,40 +186,66 @@ class RepoToPromptController extends GetxController {
   Future<void> pickDirectory() async {
     String? result = await FilePicker.platform.getDirectoryPath();
     if (result != null) {
-      await _scanAndBuildTree([result]); // 这会覆盖当前
-      _saveCurrentWorkspaceState(); // 保存新状态
+      await _appendPathsToWorkspace([result]);
     }
   }
 
   // 2. 处理拖拽进来的文件/目录列表
   Future<void> handleDropFiles(List<String> paths) async {
     if (paths.isEmpty) return;
-    // 拖拽是追加还是覆盖？通常是追加到当前工作区，或者覆盖。
-    // 这里逻辑改为：覆盖当前树，或者也可以做成追加。
-    // 为了简单，保持原逻辑：覆盖。
-    if (paths.length == 1) {
-      selectedPath.value = paths.first;
-    } else {
-      selectedPath.value = '已导入 ${paths.length} 个项目';
-    }
+    await _appendPathsToWorkspace(paths);
+    isDraggingHover.value = false;
+  }
 
-    // 如果当前是空的“未命名工作区”，直接用。
-    // 如果已经有内容，也许应该询问？这里暂时直接覆盖当前工作区。
-    await _scanAndBuildTree(paths);
+  // 新增：核心逻辑 - 追加路径到当前工作区并刷新树
+  Future<void> _appendPathsToWorkspace(List<String> newPaths) async {
+    // 步骤 A: 保存当前状态，确保在这个瞬间，现有的勾选状态被记录下来
+    _saveCurrentWorkspaceState();
 
-    // 更新标题（如果是默认标题）
-    final currentWs = workspaces.firstWhere(
+    // 步骤 B: 获取当前工作区数据
+    final index = workspaces.indexWhere(
       (e) => e.id == currentWorkspaceId.value,
     );
-    if (currentWs.title.startsWith('未命名工作区')) {
-      updateWorkspaceTitle(currentWs.id, path_utils.basename(paths.first));
+    if (index == -1) return;
+    final currentWs = workspaces[index];
+
+    // 步骤 C: 合并路径并去重
+    // 使用 Set 确保根路径不重复，同时保留原有的 rootPaths
+    final combinedPaths = {...currentWs.rootPaths, ...newPaths}.toList();
+
+    // 如果路径没有变化（例如拖入了完全重复的路径），则不进行重绘
+    if (combinedPaths.length == currentWs.rootPaths.length) return;
+
+    // 步骤 D: 更新 UI 显示的路径文本
+    if (combinedPaths.length == 1) {
+      selectedPath.value = combinedPaths.first;
+    } else {
+      selectedPath.value = '已导入 ${combinedPaths.length} 个项目';
     }
 
+    // 步骤 E: 重新扫描构建树
+    // 关键点：传入 currentWs.unselectedPaths，这样旧文件的"取消勾选"状态会被恢复
+    await _scanAndBuildTree(
+      combinedPaths,
+      restoreUnselected: currentWs.unselectedPaths,
+    );
+
+    // 步骤 F: 如果是"未命名工作区"且之前是空的，尝试更新标题
+    // 只在第一次导入时自动改名，避免后续追加打乱用户自定义的标题
+    if (currentWs.rootPaths.isEmpty && newPaths.isNotEmpty) {
+      if (currentWs.title.startsWith('未命名工作区')) {
+        final newTitle = path_utils.basename(newPaths.first);
+        // 如果追加了多个，标题体现一下
+        final displayTitle = newPaths.length > 1 ? '$newTitle 等...' : newTitle;
+        updateWorkspaceTitle(currentWs.id, displayTitle);
+      }
+    }
+
+    // 步骤 G: 再次保存，将新的文件树结构持久化
     _saveCurrentWorkspaceState();
   }
 
   // 3. 扫描并构建树结构（不读取内容，只读元数据）
-  // 修改：增加 restoreUnselected 参数
   Future<void> _scanAndBuildTree(
     List<String> rootPaths, {
     List<String>? restoreUnselected,
