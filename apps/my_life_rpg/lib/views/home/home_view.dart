@@ -38,14 +38,17 @@ class HomeView extends StatelessWidget {
                     // 右侧：时空矩阵 (带导航条)
                     Expanded(
                       flex: 4,
-                      child: Column(
-                        children: [
-                          // [新增] 日期导航条
-                          DateControllerBar(),
+                      child: RpgContainer(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            // [新增] 日期导航条
+                            DateControllerBar(),
 
-                          // [修改] 日历主体占满剩余空间
-                          Expanded(child: HomeDayCalendar()),
-                        ],
+                            // [修改] 日历主体占满剩余空间
+                            Expanded(child: HomeDayCalendar()),
+                          ],
+                        ),
                       ),
                     ),
                   ],
