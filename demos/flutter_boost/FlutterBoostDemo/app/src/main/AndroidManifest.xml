@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:allowBackup="true"
         android:name=".MyApplication"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -12,6 +12,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FlutterBoostDemo">
+        <activity
+            android:name=".NativePageActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -22,18 +25,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <!-- 添加 FlutterBoostActivity -->
+        </activity> <!-- 添加 FlutterBoostActivity -->
         <activity
             android:name="com.idlefish.flutterboost.containers.FlutterBoostActivity"
-            android:theme="@style/Theme.AppCompat"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize" >
-        </activity>
-
-        <!-- 指定 Flutter 嵌入模式为 2.0 -->
-        <meta-data android:name="flutterEmbedding" android:value="2"/>
+            android:theme="@style/Theme.AppCompat"
+            android:windowSoftInputMode="adjustResize"></activity> <!-- 指定 Flutter 嵌入模式为 2.0 -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
     </application>
 
 </manifest>
