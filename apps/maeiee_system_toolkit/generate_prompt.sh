@@ -9,7 +9,7 @@ OUTPUT_FILE="PROJECT_CONTEXT_PROMPT.md"
 # --- 1. 写入 Prompt 头部 ---
 echo "正在生成 Prompt 头部..."
 cat <<EOF >> "$OUTPUT_FILE"
-# Role: Flutter Senior Architect & Life Coach
+# Role: Flutter Senior Architect & 系统工具软件开发专家
 
 ## 角色与目标
 你是一位拥有极高审美的高级 Flutter 架构师和 UI/UX 设计师。
