@@ -72,15 +72,35 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Flutter Home')),
       body: Center(
-        child: ElevatedButton(
-          child: const Text('跳转到 Native 页面'),
-          onPressed: () {
-            // 跳转到原生页面
-            BoostNavigator.instance.push(
-              "nativePage",
-              arguments: {"msg": "来自Flutter"},
-            );
-          },
+        child: Column(
+          children: [
+            ElevatedButton(
+              child: const Text('跳转到 Native 页面'),
+              onPressed: () {
+                // 跳转到原生页面
+                BoostNavigator.instance.push(
+                  "nativePage",
+                  arguments: {"msg": "来自Flutter"},
+                );
+              },
+            ),
+            // 内部路由 (推荐) siplePage
+            ElevatedButton(
+              child: const Text('跳转到 Flutter 页面'),
+              onPressed: () {
+                // 跳转到 Flutter 页面
+                BoostNavigator.instance.push("simplePage");
+              },
+            ),
+            // 新容器路由 siplePage
+            ElevatedButton(
+              child: const Text('新容器跳转到 Flutter 页面'),
+              onPressed: () {
+                // 新容器跳转到 Flutter 页面
+                BoostNavigator.instance.push("simplePage", withContainer: true);
+              },
+            ),
+          ],
         ),
       ),
     );
