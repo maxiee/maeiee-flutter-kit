@@ -4,3 +4,11 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
 }
+
+subprojects {
+    afterEvaluate {
+        if (name == "flutter_boost") {
+            extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.namespace = "com.idlefish.flutterboost"
+        }
+    }
+}
