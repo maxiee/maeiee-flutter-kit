@@ -57,4 +57,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // 新增 Flutter Boost 依赖
+    implementation(project(":flutter"))
+    implementation(project(":flutter_boost"))
 }
