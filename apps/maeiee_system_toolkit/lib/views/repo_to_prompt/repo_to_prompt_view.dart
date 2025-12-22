@@ -390,12 +390,23 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '预估消耗 (基于文件大小)',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textDim,
-                        ),
-                      ),
+                      Obx(() {
+                        if (controller.statusMessage.isNotEmpty &&
+                            controller.statusMessage.value != '就绪') {
+                          return Text(
+                            controller.statusMessage.value,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.accentDanger,
+                            ),
+                          );
+                        }
+                        return Text(
+                          '预估消耗 (基于文件大小)',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textDim,
+                          ),
+                        );
+                      }),
                       Obx(
                         () => Text(
                           '~${_formatTokenCount(controller.estimatedTokens.value)} Tokens',

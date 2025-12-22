@@ -31,9 +31,8 @@ class RepoToPromptController extends GetxController {
   final workspaces = <WorkspaceModel>[].obs;
   final currentWorkspaceId = ''.obs;
 
-  // 忽略的文件或目录前缀
-  final _ignorePrefixes = [
-    '.',
+  // 忽略的文件或目录名称（精确匹配）
+  final _ignoredNames = {
     'build',
     'ios',
     'android',
@@ -42,7 +41,7 @@ class RepoToPromptController extends GetxController {
     'linux',
     'windows',
     'node_modules',
-  ];
+  };
   // 忽略的文件后缀
   final _ignoreExtensions = [
     'png',
@@ -475,10 +474,8 @@ class RepoToPromptController extends GetxController {
 
   // 辅助过滤逻辑
   bool _shouldIgnore(String name) {
-    for (var prefix in _ignorePrefixes) {
-      if (name.startsWith(prefix)) return true;
-    }
-    return false;
+    if (name.startsWith('.')) return true;
+    return _ignoredNames.contains(name);
   }
 
   bool _shouldIgnoreExtension(String path) {
