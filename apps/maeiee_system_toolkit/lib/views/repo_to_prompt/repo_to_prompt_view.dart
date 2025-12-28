@@ -37,14 +37,24 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: RpgButton(
-                onTap: controller.createWorkspace,
-                icon: Icons.add,
-                label: '新建工作区',
-                type: RpgButtonType.primary,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: RpgButton(
+                    onTap: controller.createWorkspace,
+                    icon: Icons.add,
+                    label: '新建',
+                    type: RpgButtonType.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                RpgButton(
+                  onTap: controller.importWorkspace,
+                  icon: Icons.file_upload_outlined,
+                  label: '导入',
+                  type: RpgButtonType.secondary,
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -108,6 +118,10 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                           _showRenameDialog(ws);
                         });
                       },
+                    ),
+                    PopupMenuItem(
+                      child: const Text('导出 JSON'),
+                      onTap: () => controller.exportWorkspace(ws),
                     ),
                     PopupMenuItem(
                       child: const Text(
