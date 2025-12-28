@@ -9,6 +9,7 @@ import 'package:maeiee_system_toolkit/views/repo_to_prompt/file_node.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/repo_to_prompt_result_view.dart';
 import 'package:maeiee_system_toolkit/views/repo_to_prompt/workspace_model.dart';
 import 'package:path/path.dart' as path_utils;
+import 'package:rpg_cyber_ui/theme/app_colors.dart';
 import 'package:uuid/uuid.dart';
 
 class RepoToPromptController extends GetxController {
@@ -499,57 +500,44 @@ class RepoToPromptController extends GetxController {
     );
   }
 
-  // 导出工作区到文件
+  // 导出工作区配置到剪贴板
   Future<void> exportWorkspace(WorkspaceModel ws) async {
     try {
       final jsonString = jsonEncode(ws.toJson());
-      final fileName =
-          "${ws.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')}.json";
-
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: '导出工作区',
-        fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+      await Clipboard.setData(ClipboardData(text: jsonString));
+      Get.snackbar(
+        '成功',
+        '工作区配置已复制到剪贴板',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.accentMain.withOpacity(0.8),
+        colorText: Colors.white,
       );
-
-      if (outputFile != null) {
-        final file = File(outputFile);
-        await file.writeAsString(jsonString);
-        Get.snackbar('成功', '工作区已导出至: $outputFile');
-      }
     } catch (e) {
       Get.snackbar('错误', '导出失败: $e');
     }
   }
 
-  // 从文件导入工作区
-  Future<void> importWorkspace() async {
+  // 从 JSON 字符串导入工作区
+  Future<void> importWorkspaceFromJson(String jsonString) async {
+    if (jsonString.trim().isEmpty) return;
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
+      final Map<String, dynamic> jsonData = jsonDecode(jsonString);
+      final importedWs = WorkspaceModel.fromJson(jsonData);
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final jsonString = await file.readAsString();
-        final Map<String, dynamic> jsonData = jsonDecode(jsonString);
-
-        // 创建新对象并赋予新 ID，防止与现有 ID 冲突
-        final importedWs = WorkspaceModel.fromJson(jsonData);
-        importedWs.id = const Uuid().v4();
+      // 生成新 ID 并标记为导入
+      importedWs.id = const Uuid().v4();
+      if (!importedWs.title.contains('(导入)')) {
         importedWs.title = "${importedWs.title} (导入)";
-        importedWs.updatedAt = DateTime.now();
-
-        _saveWorkspaceToHive(importedWs);
-        workspaces.insert(0, importedWs);
-        selectWorkspace(importedWs.id);
-
-        Get.snackbar('成功', '已成功导入工作区');
       }
+      importedWs.updatedAt = DateTime.now();
+
+      _saveWorkspaceToHive(importedWs);
+      workspaces.insert(0, importedWs);
+      selectWorkspace(importedWs.id);
+
+      Get.snackbar('成功', '工作区导入成功');
     } catch (e) {
-      Get.snackbar('错误', '导入失败，请检查文件格式: $e');
+      Get.snackbar('错误', '导入失败，配置格式不正确');
     }
   }
 }

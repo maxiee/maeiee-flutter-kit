@@ -49,8 +49,8 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                 ),
                 const SizedBox(width: 8),
                 RpgButton(
-                  onTap: controller.importWorkspace,
-                  icon: Icons.file_upload_outlined,
+                  onTap: _showImportDialog, // 调用下方定义的新方法
+                  icon: Icons.assignment_returned_outlined,
                   label: '导入',
                   type: RpgButtonType.secondary,
                 ),
@@ -120,7 +120,7 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
                       },
                     ),
                     PopupMenuItem(
-                      child: const Text('导出 JSON'),
+                      child: const Text('复制配置 (JSON)'),
                       onTap: () => controller.exportWorkspace(ws),
                     ),
                     PopupMenuItem(
@@ -136,6 +136,40 @@ class RepoToPromptView extends GetView<RepoToPromptController> {
         ),
       );
     });
+  }
+
+  // 在 RepoToPromptView 类中添加
+  void _showImportDialog() {
+    final textCtrl = TextEditingController();
+    Get.dialog(
+      RpgDialog(
+        title: '导入工作区配置',
+        actions: [
+          RpgButton(
+            onTap: () {
+              controller.importWorkspaceFromJson(textCtrl.text.trim());
+              Get.back();
+            },
+            label: '确认导入',
+            type: RpgButtonType.primary,
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('请粘贴导出的 JSON 配置字符串：', style: AppTextStyles.caption),
+            const SizedBox(height: 8),
+            RpgInput(
+              controller: textCtrl,
+              maxLines: 5,
+              hint: '{"id": "...", "title": "...", ...}',
+              autofocus: true,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showRenameDialog(WorkspaceModel ws) {
