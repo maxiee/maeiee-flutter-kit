@@ -2,32 +2,20 @@ import 'dart:ui' as ui;
 
 import 'package:section_1/framework/element.dart';
 import 'package:section_1/framework/render_object.dart';
+import 'package:section_1/framework/render_object_widget.dart';
 import 'package:section_1/framework/root.dart';
+import 'package:section_1/framework/stateless_widget.dart';
 import 'package:section_1/framework/widget.dart';
 
 // ===================== 自定义 Widget 实现 =====================
 
 // Widget：描述一个带颜色的盒子
-class MyColoredBoxWidget extends MyWidget {
+class MyColoredBoxWidget extends MyRenderObjectWidget {
   final ui.Color color;
   const MyColoredBoxWidget(this.color);
 
   @override
-  MyElement createElement() => MyColoredBoxElement(this);
-}
-
-// Element：管理彩色盒子的状态
-class MyColoredBoxElement extends MyElement {
-  MyColoredBoxElement(super.widget);
-
-  @override
-  void mount(MyElement? parent) {
-    super.mount(parent);
-    // Element 负责根据 Widget 的配置创建真实的 RenderObject
-    renderObject = MyColoredBoxRenderObject(
-      (widget as MyColoredBoxWidget).color,
-    );
-  }
+  MyRenderObject createRenderObject() => MyColoredBoxRenderObject(color);
 }
 
 // RenderObject：执行真正的 Canvas 绘制
@@ -51,12 +39,18 @@ class MyColoredBoxRenderObject extends MyRenderObject {
   }
 }
 
+class MyComplexBox extends MyStatelessWidget {
+  @override
+  MyWidget build(MyElement context) {
+    // 这里体现了“组合”：ComplexBox 包装了 ColoredBox
+    return MyColoredBoxWidget(ui.Color(0xFF00FF00)); // 改成绿色的方块
+  }
+}
+
 void main() {
   // 构建一棵 Widget 树
   // 根组件中包裹我们的方块组件
-  final widgetTree = MyRootWidget(
-    MyColoredBoxWidget(ui.Color(0xFFFF0000)), // 红色正方形
-  );
+  final widgetTree = MyRootWidget(MyComplexBox());
 
   // 根据 Widget 树构建一棵 Element 树（并自动生成 RenderObject 树）
   // 这个过程模拟了源码中的 attachRootWidget()

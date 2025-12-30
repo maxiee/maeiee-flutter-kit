@@ -22,7 +22,6 @@ class MyRootElement extends MyElement {
 
   @override
   void mount(MyElement? parent) {
-    super.mount(parent);
     // 1. 创建根渲染对象
     final renderView = MyRenderView();
     renderObject = renderView;
