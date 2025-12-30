@@ -1,122 +1,97 @@
-import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+
+import 'package:section_1/framework/element.dart';
+import 'package:section_1/framework/render_object.dart';
+import 'package:section_1/framework/root.dart';
+import 'package:section_1/framework/widget.dart';
+
+// ===================== 自定义 Widget 实现 =====================
+
+// Widget：描述一个带颜色的盒子
+class MyColoredBoxWidget extends MyWidget {
+  final ui.Color color;
+  const MyColoredBoxWidget(this.color);
+
+  @override
+  MyElement createElement() => MyColoredBoxElement(this);
+}
+
+// Element：管理彩色盒子的状态
+class MyColoredBoxElement extends MyElement {
+  MyColoredBoxElement(super.widget);
+
+  @override
+  void mount(MyElement? parent) {
+    super.mount(parent);
+    // Element 负责根据 Widget 的配置创建真实的 RenderObject
+    renderObject = MyColoredBoxRenderObject(
+      (widget as MyColoredBoxWidget).color,
+    );
+  }
+}
+
+// RenderObject：执行真正的 Canvas 绘制
+class MyColoredBoxRenderObject extends MyRenderObject {
+  final ui.Color color;
+  MyColoredBoxRenderObject(this.color);
+
+  @override
+  void paint(ui.Canvas canvas) {
+    final paint = ui.Paint()..color = color;
+    // 画一个边框，防止颜色和背景太接近
+    final borderPaint = ui.Paint()
+      ..color = ui.Color(0xFF000000)
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final rect = ui.Rect.fromLTWH(100, 100, 200, 200);
+    canvas.drawRect(rect, paint);
+    canvas.drawRect(rect, borderPaint);
+    print("Red Square is painting at $rect");
+  }
+}
 
 void main() {
-  runApp(const MyApp());
-}
+  // 构建一棵 Widget 树
+  // 根组件中包裹我们的方块组件
+  final widgetTree = MyRootWidget(
+    MyColoredBoxWidget(ui.Color(0xFFFF0000)), // 红色正方形
+  );
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // 根据 Widget 树构建一棵 Element 树（并自动生成 RenderObject 树）
+  // 这个过程模拟了源码中的 attachRootWidget()
+  final rootElement = widgetTree.createElement();
+  rootElement.mount(null);
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+  // 注册引擎的“每一帧绘制”回调
+  // 这部分模拟了 RendererBinding 中的 drawFrame() 逻辑
+  ui.PlatformDispatcher.instance.onDrawFrame = () {
+    // FlutterView 是 dart:ui 库中的一个核心类，它代表了 Flutter 应用可以绘制内容的“视图”或“窗口”。
+    // 它扮演了连接你的渲染逻辑和底层屏幕的关键角色。
+    final ui.FlutterView view = ui.PlatformDispatcher.instance.implicitView!;
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+
+    // 画白底
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, view.physicalSize.width, view.physicalSize.height),
+      ui.Paint()..color = ui.Color(0xFFFFFFFF),
     );
-  }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+    // 绘制三棵树
+    // 因为已经 scale 过了，rootElement 里的 100, 100 坐标现在是逻辑坐标了
+    rootElement.renderObject!.paint(canvas);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+    // 提交渲染 (上屏)
+    final ui.Picture picture = recorder.endRecording();
+    final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+    sceneBuilder.addPicture(ui.Offset.zero, picture);
+    // 将构建好的场景（Scene）提交给视图进行渲染
+    view.render(sceneBuilder.build());
+  };
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  // 告诉引擎：我们需要画画，请在下一帧信号到来时叫我
+  ui.PlatformDispatcher.instance.scheduleFrame();
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+  print("极简 Flutter 三棵树已成功运行于屏幕！");
 }
