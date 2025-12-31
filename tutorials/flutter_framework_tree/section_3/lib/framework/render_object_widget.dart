@@ -11,6 +11,9 @@ abstract class MyRenderObjectWidget extends MyWidget {
 
   // 留给子类实现：创建真正的干活的人
   MyRenderObject createRenderObject();
+
+  // 新增：用于更新 RenderObject 属性
+  void updateRenderObject(MyRenderObject renderObject);
 }
 
 // Element：负责管理渲染对象的管家
@@ -19,10 +22,14 @@ class MyRenderObjectElement extends MyElement {
 
   @override
   void mount(MyElement? parent) {
-    this.parent = parent;
+    super.mount(parent);
     // 1. 创建属于自己的 RenderObject
     renderObject = (widget as MyRenderObjectWidget).createRenderObject();
+  }
 
-    // 渲染类组件通常是叶子节点或容器节点，这里我们先保持极简，不处理它的 child
+  @override
+  void performRebuild() {
+    // 当 Element 重建时，调用 widget 的 update 方法更新 renderObject
+    (widget as MyRenderObjectWidget).updateRenderObject(renderObject!);
   }
 }

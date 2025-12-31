@@ -16,20 +16,31 @@ abstract class MyStatelessWidget extends MyWidget {
 class MyStatelessElement extends MyElement {
   MyStatelessElement(MyStatelessWidget super.widget);
 
-  late MyElement childElement;
+  MyElement? childElement;
 
   @override
   void mount(MyElement? parent) {
-    this.parent = parent;
+    // 1. 【重要】必须调用 super，接收 owner
+    super.mount(parent);
 
-    // 1. 调用 Widget 的 build 方法，拿到“下一层” Widget
+    // 2. 复用逻辑：挂载本质上就是“第一次重建”
+    performRebuild();
+  }
+
+  @override
+  void performRebuild() {
+    // 1. 执行 build，获取各种下层 Widget 配置
+    // 注意：此时 this.widget 已经是更新后的 widget 了（由 updateChild 赋值）
     final MyWidget builtWidget = (widget as MyStatelessWidget).build(this);
 
-    // 2. 递归：把下一层 Widget 转换成 Element
-    childElement = updateChild(null, builtWidget)!;
+    // 2. 【核心】调用 updateChild
+    // - 首次 mount 时：childElement 为 null，创建新 Element
+    // - 更新时：childElement 不为 null，对比 builtWidget 类型，决定是更新还是重建
+    childElement = updateChild(childElement, builtWidget);
 
-    // 3. 【关键点】：StatelessElement 自己没有 RenderObject，
-    // 它直接借用子节点的 RenderObject 向上交付
-    renderObject = childElement.renderObject;
+    // 3. 向上交付 RenderObject
+    // StatelessWidget 自己不产生 RenderObject，它仅仅是中间商
+    // 它的 renderObject 指向的是它子树的 renderObject
+    renderObject = childElement?.renderObject;
   }
 }
