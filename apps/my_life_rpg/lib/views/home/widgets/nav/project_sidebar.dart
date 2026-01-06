@@ -15,17 +15,37 @@ class ProjectSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // 只有在层级模式且选中了方向时才显示此栏
-      if (mc.viewMode.value != ViewMode.hierarchy ||
-          mc.selectedDirectionId.value == null) {
-        return const SizedBox.shrink(); // 收起
+      // 显示条件：层级模式选中方向 OR 全局模式选中 INBOX
+      final isHierarchy =
+          mc.viewMode.value == ViewMode.hierarchy &&
+          mc.selectedDirectionId.value != null;
+      final isInbox =
+          mc.viewMode.value == ViewMode.global &&
+          mc.globalFilterType.value == 'inbox';
+
+      if (!isHierarchy && !isInbox) {
+        return const SizedBox.shrink();
       }
 
       final projects = mc.visibleProjects;
       final currentDir = mc.activeDirection;
 
+      // 动态 Header 样式
+      String headerTitle = "SECTOR";
+      String headerSubtitle = "UNKNOWN";
+      Color headerColor = Colors.grey;
+
+      if (isHierarchy) {
+        headerSubtitle = currentDir?.title ?? "UNKNOWN";
+        headerColor = currentDir?.color ?? Colors.grey;
+      } else {
+        headerTitle = "ZONE";
+        headerSubtitle = "UNCATEGORIZED";
+        headerColor = Colors.white;
+      }
+
       return Container(
-        width: 160, // 固定宽度二级菜单
+        width: 160,
         decoration: BoxDecoration(
           color: const Color(0xFF111111),
           border: const Border(right: BorderSide(color: AppColors.borderDim)),
@@ -40,22 +60,22 @@ class ProjectSidebar extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header: Direction Title
+            // Header
             Container(
               padding: const EdgeInsets.all(12),
-              color: currentDir?.color.withOpacity(0.1),
+              color: headerColor.withOpacity(0.1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "SECTOR",
+                    headerTitle,
                     style: AppTextStyles.micro.copyWith(color: Colors.grey),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    currentDir?.title ?? "UNKNOWN",
+                    headerSubtitle,
                     style: AppTextStyles.caption.copyWith(
-                      color: currentDir?.color,
+                      color: headerColor,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -71,10 +91,12 @@ class ProjectSidebar extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(8),
-                itemCount: projects.length + 1, // +1 for Add Button
+                itemCount: projects.length + 1,
                 itemBuilder: (ctx, i) {
                   if (i == projects.length) {
-                    return _buildAddButton(currentDir?.id);
+                    // 如果是 Inbox 模式，这里是新建“无归属项目”
+                    // 如果是 Hierarchy 模式，这里是新建“该方向项目”
+                    return _buildAddButton(isHierarchy ? currentDir?.id : null);
                   }
                   return _buildProjectItem(projects[i]);
                 },
@@ -142,7 +164,7 @@ class ProjectSidebar extends StatelessWidget {
     return InkWell(
       // 打开编辑器时，应该自动预填当前 Direction。但 ProjectEditor 暂时还没改支持 directionId
       // 下一步优化时处理，目前先留入口
-      onTap: () => Get.dialog(const ProjectEditor()),
+      onTap: () => Get.dialog(ProjectEditor(initialDirectionId: dirId)),
       child: Container(
         padding: const EdgeInsets.all(8),
         alignment: Alignment.center,
