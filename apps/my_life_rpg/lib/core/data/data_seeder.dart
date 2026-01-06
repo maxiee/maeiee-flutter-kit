@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/models/task.dart';
 import 'package:my_life_rpg/services/task_service.dart';
@@ -12,57 +13,103 @@ class DataSeeder {
 
     final TaskService qs = Get.find();
 
-    // [修改点]：如果已经有数据（比如从硬盘加载了），就不要再播种了
-    // 这样保证用户的数据不会被 Mock 数据覆盖或重复添加
-    if (qs.projects.isNotEmpty || qs.tasks.isNotEmpty) {
+    // 1. 幂等性检查：如果已有任何数据，跳过播种
+    if (qs.directions.isNotEmpty ||
+        qs.projects.isNotEmpty ||
+        qs.tasks.isNotEmpty) {
       print("💾 Data loaded from storage. Seeder skipped.");
       return;
     }
 
-    print("🌱 Storage empty. Seeding Mock Data...");
+    print("🌱 Storage empty. Initializing Cyberpunk Protocol...");
 
-    // 1. 添加项目
-    qs.addProject("Flutter架构演进", "技术专家之路", 100, 0); // Orange
-    qs.addProject("独立开发: NEXUS", "副业破局点", 50, 1); // Cyan
-    qs.addProject("身体重构计划", "健康是革命的本钱", 30, 3); // Green
+    // ==========================================
+    // 1. Create Directions (战略层)
+    // ==========================================
 
-    // 获取刚才创建的项目引用
+    // 主业 (Cyan)
+    qs.addDirection("SYSTEM CORE", "Mainframe Operations", 0, Icons.memory);
+
+    // 副业 (Magenta)
+    qs.addDirection("EXPANSION", "New DLC Development", 1, Icons.extension);
+
+    // 身体 (Green)
+    qs.addDirection(
+      "HARDWARE",
+      "Bio-Mechanical Maintenance",
+      3,
+      Icons.monitor_heart,
+    );
+
+    // 生活 (Orange)
+    qs.addDirection("RUNTIME", "Background Processes", 2, Icons.layers);
+
+    // [Trick] 获取刚才创建的 Direction 对象引用 (通过标题查找)
+    // 因为 addDirection 返回 void，我们需要重新从列表中捞出来
+    final dirCore = qs.directions.firstWhere((d) => d.title == "SYSTEM CORE");
+    final dirExp = qs.directions.firstWhere((d) => d.title == "EXPANSION");
+    final dirHard = qs.directions.firstWhere((d) => d.title == "HARDWARE");
+
+    // ==========================================
+    // 2. Create Projects (战术层) - 关联到 Direction
+    // ==========================================
+
+    qs.addProject(
+      "Flutter架构演进",
+      "技术专家之路",
+      100,
+      0, // Cyan
+      directionId: dirCore.id, // [New] 挂载到 System Core
+    );
+
+    qs.addProject(
+      "独立开发: NEXUS",
+      "副业破局点",
+      50,
+      1, // Magenta
+      directionId: dirExp.id, // [New] 挂载到 Expansion
+    );
+
+    qs.addProject(
+      "身体重构计划",
+      "健康是革命的本钱",
+      30,
+      3, // Green
+      directionId: dirHard.id, // [New] 挂载到 Hardware
+    );
+
+    // 获取 Project 引用
     final pFlutter = qs.projects.firstWhere((p) => p.title.contains("Flutter"));
     final pIndie = qs.projects.firstWhere((p) => p.title.contains("NEXUS"));
 
-    // 2. 添加 Mission (关联项目)
+    // ==========================================
+    // 3. Create Missions (执行层) - 保持不变
+    // ==========================================
+
     qs.addNewTask(
       title: "阅读 RenderObject 源码",
       type: TaskType.todo,
       project: pFlutter,
-      deadline: DateTime.now().add(const Duration(hours: 4)), // 今天稍晚
+      deadline: DateTime.now().add(const Duration(hours: 4)),
     );
 
     qs.addNewTask(
       title: "编写 MVP 架构文档",
       type: TaskType.todo,
       project: pIndie,
-      deadline: DateTime.now().add(const Duration(days: 2)), // 后天
+      deadline: DateTime.now().add(const Duration(days: 2)),
     );
 
-    // 3. 添加 Standalone Mission (无项目)
+    // Standalone Mission (无项目，自然也无方向，属于 Inbox)
     qs.addNewTask(
       title: "购买猫粮",
       type: TaskType.todo,
-      deadline: DateTime.now().subtract(const Duration(hours: 1)), // 已逾期 (测试用)
+      deadline: DateTime.now().subtract(const Duration(hours: 1)), // Overdue
     );
 
-    // 4. 添加 Daemon (循环任务)
-    qs.addNewTask(
-      title: "清理厨房水槽",
-      type: TaskType.routine,
-      interval: 1, // 每日
-    );
+    // Daemons (循环任务)
+    qs.addNewTask(title: "清理厨房水槽", type: TaskType.routine, interval: 1);
 
-    qs.addNewTask(
-      title: "每周周报复盘",
-      type: TaskType.routine,
-      interval: 7, // 每周
-    );
+    qs.addNewTask(title: "每周周报复盘", type: TaskType.routine, interval: 7);
   }
 }
