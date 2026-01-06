@@ -132,10 +132,24 @@ class BaseActiveSpec extends Specification<Task> {
 /// 规则：特定项目
 class ProjectSpec extends Specification<Task> {
   final String? projectId;
+  // 如果 projectId 为 null，表示筛选 "Standalone" (无项目) 的任务
   ProjectSpec(this.projectId);
 
   @override
   bool isSatisfiedBy(Task q) => q.projectId == projectId;
+}
+
+// 规则：属于项目列表中的任意一个
+/// 用于：选中 Direction 时，显示该 Direction 下所有 Project 的任务
+class ProjectsInListSpec extends Specification<Task> {
+  final Set<String> projectIds;
+  ProjectsInListSpec(this.projectIds);
+
+  @override
+  bool isSatisfiedBy(Task q) {
+    if (q.projectId == null) return false;
+    return projectIds.contains(q.projectId);
+  }
 }
 
 /// 规则：仅 Routine 类型

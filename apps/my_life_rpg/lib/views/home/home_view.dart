@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/date_controller_bar.dart';
+import 'package:my_life_rpg/views/home/widgets/nav/direction_rail.dart';
+import 'package:my_life_rpg/views/home/widgets/nav/project_sidebar.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
-import 'package:my_life_rpg/views/home/widgets/campaign_bar.dart';
 import 'package:my_life_rpg/views/home/widgets/matrix/home_day_calendar.dart';
 import 'widgets/hud/player_hud.dart';
 import 'widgets/panels/mission_panel.dart';
@@ -14,48 +15,60 @@ class HomeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.bgDarker,
       body: SafeArea(
-        child: Padding(
-          padding: AppSpacing.paddingSm,
-          child: Column(
-            children: [
-              // 1. 顶部玩家状态 (HUD)
-              Expanded(flex: 2, child: PlayerHud()),
+        child: Column(
+          children: [
+            // 1. 顶部玩家状态 (HUD) - 保持不变，但高度可以稍微压缩一点
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: PlayerHud(),
+              ),
+            ),
 
-              AppSpacing.gapV8,
+            // 2. 主工作区 (Main Workspace) - 采用 Row 布局
+            Expanded(
+              flex: 10,
+              child: Row(
+                children: [
+                  // A. Level 1: Direction Rail
+                  DirectionRail(),
 
-              // 2. Project Bar (固定高度)
-              CampaignBar(),
+                  // B. Level 2: Project Sidebar (Conditional)
+                  ProjectSidebar(),
 
-              AppSpacing.gapV8,
+                  // C. Level 3: Missions & Matrix
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          // 任务列表
+                          Expanded(flex: 6, child: MissionPanel()),
 
-              // 3. Split Panel (Flex 8)
-              Expanded(
-                flex: 8,
-                child: Row(
-                  children: [
-                    Expanded(flex: 6, child: MissionPanel()), // 任务板
-                    AppSpacing.gapH8,
-                    // 右侧：时空矩阵 (带导航条)
-                    Expanded(
-                      flex: 4,
-                      child: RpgContainer(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          children: [
-                            // [新增] 日期导航条
-                            DateControllerBar(),
+                          AppSpacing.gapH8,
 
-                            // [修改] 日历主体占满剩余空间
-                            Expanded(child: HomeDayCalendar()),
-                          ],
-                        ),
+                          // 时空矩阵
+                          Expanded(
+                            flex: 4,
+                            child: RpgContainer(
+                              padding: EdgeInsets.zero,
+                              child: Column(
+                                children: [
+                                  DateControllerBar(),
+                                  Expanded(child: HomeDayCalendar()),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

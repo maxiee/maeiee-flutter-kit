@@ -21,13 +21,15 @@ class MissionPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Enhanced Header
+          // 1. Enhanced Header (Breadcrumb Style)
           _buildHeader(),
+
           const RpgDivider(),
+
           // 2. Filtered List
           Expanded(
             child: Obx(() {
-              final tasks = mc.filteredQuests; // 使用 Controller 的过滤结果
+              final tasks = mc.filteredQuests; // 逻辑已在 Phase 3 更新
 
               if (tasks.isEmpty) {
                 return _buildEmptyState();
@@ -39,7 +41,6 @@ class MissionPanel extends StatelessWidget {
                 separatorBuilder: (_, __) => AppSpacing.gapV8,
                 itemBuilder: (ctx, i) {
                   final quest = tasks[i];
-                  // [修改点]: 在这里注入业务逻辑
                   return MissionCard(
                     quest: quest,
                     onToggle: () => q.toggleTaskCompletion(quest.id),
@@ -62,7 +63,6 @@ class MissionPanel extends StatelessWidget {
       binding: SessionBinding(),
     );
 
-    // 反馈逻辑
     if (result != null && result is int && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -74,46 +74,17 @@ class MissionPanel extends StatelessWidget {
     }
   }
 
+  // [重构] 头部不再显示 Filter Chips，而是显示当前上下文标题
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      height: 48,
       child: Row(
         children: [
-          // 左侧：过滤器 Tab
-          _buildChip("全部", MissionFilter.all),
-          AppSpacing.gapH8,
-          _buildChip(
-            "紧急",
-            MissionFilter.priority,
-            icon: Icons.warning_amber,
-            color: AppColors.accentDanger,
-          ),
-          AppSpacing.gapH8,
-          _buildChip(
-            "习惯",
-            MissionFilter.daemon,
-            icon: Icons.loop,
-            color: AppColors.accentSystem,
-          ),
+          // 左侧：上下文标题 (Context Title)
+          Expanded(child: Obx(() => _buildContextTitle())),
 
-          // 如果当前选了项目，显示项目标签
-          Obx(() {
-            if (mc.activeFilter.value == MissionFilter.project) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: RpgTag(
-                  label: "当前项目",
-                  color: AppColors.accentMain,
-                  icon: Icons.filter_alt,
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-
-          const Spacer(),
-
-          // 右侧：添加按钮 (保持原样)
+          // 右侧：添加按钮 (保持不变)
           RpgIconButton(
             icon: Icons.loop,
             color: AppColors.accentSystem,
@@ -131,21 +102,87 @@ class MissionPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildChip(
-    String label,
-    MissionFilter filter, {
-    IconData? icon,
-    Color? color,
-  }) {
-    return Obx(
-      () => RpgFilterChip(
-        label: label,
-        selected: mc.activeFilter.value == filter,
-        onTap: () => mc.setFilter(filter),
-        icon: icon,
-        color: color,
-      ),
-    );
+  // 根据 Controller 状态显示不同的标题
+  Widget _buildContextTitle() {
+    // 1. 全局模式 (Global Mode)
+    if (mc.viewMode.value == ViewMode.global) {
+      String title = "UNKNOWN";
+      IconData icon = Icons.circle;
+      Color color = Colors.grey;
+
+      switch (mc.globalFilterType.value) {
+        case 'inbox':
+          title = "INBOX / STANDALONE";
+          icon = Icons.inbox;
+          color = Colors.white;
+          break;
+        case 'urgent':
+          title = "URGENT PROTOCOLS";
+          icon = Icons.warning_amber;
+          color = AppColors.accentDanger;
+          break;
+        case 'daemon':
+          title = "BACKGROUND DAEMONS";
+          icon = Icons.loop;
+          color = AppColors.accentSystem;
+          break;
+      }
+      return Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(title, style: AppTextStyles.caption.copyWith(color: color)),
+        ],
+      );
+    }
+    // 2. 层级模式 (Hierarchy Mode)
+    else {
+      final dir = mc.activeDirection;
+      final pId = mc.selectedProjectId.value;
+
+      // Case A: 选中了项目
+      if (pId != null) {
+        // 查找项目名称 (这里直接从 Service 找有点低效，但为了简单先这样做，或者在 Controller 里加 getter)
+        final project = q.projects.firstWhereOrNull((p) => p.id == pId);
+        return Row(
+          children: [
+            if (dir != null) ...[
+              Text(
+                dir.title,
+                style: AppTextStyles.micro.copyWith(color: Colors.grey),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
+            ],
+            Icon(Icons.folder, color: project?.color ?? Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                project?.title ?? "UNKNOWN PROJECT",
+                style: AppTextStyles.caption.copyWith(color: Colors.white),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        );
+      }
+      // Case B: 只选中方向
+      else if (dir != null) {
+        return Row(
+          children: [
+            Icon(dir.icon, color: dir.color, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              "${dir.title} (ALL)",
+              style: AppTextStyles.caption.copyWith(color: dir.color),
+            ),
+          ],
+        );
+      }
+      // Case C: 初始状态
+      else {
+        return const Text("DASHBOARD", style: AppTextStyles.caption);
+      }
+    }
   }
 
   Widget _buildEmptyState() {
@@ -155,9 +192,9 @@ class MissionPanel extends StatelessWidget {
         children: [
           Icon(Icons.filter_list_off, size: 48, color: Colors.white10),
           AppSpacing.gapV16,
-          Text("列表为空", style: AppTextStyles.caption),
+          Text("SECTOR EMPTY", style: AppTextStyles.caption),
           Text(
-            "尝试调整筛选或新建任务",
+            "No active missions in this sector.",
             style: AppTextStyles.micro.copyWith(color: Colors.grey),
           ),
         ],
