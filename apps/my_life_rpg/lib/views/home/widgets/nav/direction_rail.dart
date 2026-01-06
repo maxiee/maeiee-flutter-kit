@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/services/task_service.dart';
+import 'package:my_life_rpg/views/home/widgets/command_palette.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 
 class DirectionRail extends StatelessWidget {
@@ -20,7 +21,12 @@ class DirectionRail extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AppSpacing.gapV16,
+          AppSpacing.gapV4,
+
+          // [新增] CORTEX LINK 入口
+          _buildSearchIcon(),
+
+          AppSpacing.gapV4,
           // --- 全局过滤器 ---
           _buildGlobalIcon(
             Icons.inbox,
@@ -29,14 +35,14 @@ class DirectionRail extends StatelessWidget {
             countProvider: () =>
                 qs.projects.where((p) => p.directionId == null).length,
           ),
-          AppSpacing.gapV16,
+          AppSpacing.gapV4,
           _buildGlobalIcon(
             Icons.warning_amber,
             "urgent",
             "URGENT",
             color: AppColors.accentDanger,
           ),
-          AppSpacing.gapV16,
+          AppSpacing.gapV4,
           _buildGlobalIcon(
             Icons.loop,
             "daemon",
@@ -44,9 +50,9 @@ class DirectionRail extends StatelessWidget {
             color: AppColors.accentSystem,
           ),
 
-          AppSpacing.gapV16,
+          AppSpacing.gapV4,
           const RpgDivider(height: 1),
-          AppSpacing.gapV16,
+          AppSpacing.gapV4,
 
           // --- 战略方向 (Directions) ---
           Expanded(
@@ -218,6 +224,44 @@ class DirectionRail extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchIcon() {
+    return Tooltip(
+      message: "CORTEX LINK (Global Search)",
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          // 使用 Get.dialog 显示模态层
+          onTap: () => Get.dialog(
+            const CommandPalette(),
+            barrierColor: Colors.transparent, // 我们的组件自带了 BackdropFilter
+            barrierDismissible: true,
+            transitionDuration: const Duration(milliseconds: 150),
+          ),
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            height: 56,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                // color: AppColors.accentMain.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  // color: AppColors.accentMain.withOpacity(0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.search,
+                color: AppColors.accentMain,
+                size: 24,
+              ),
             ),
           ),
         ),
