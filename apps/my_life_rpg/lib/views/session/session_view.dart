@@ -180,18 +180,29 @@ class SessionView extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.terminal,
-                color: AppColors.textDim,
-                size: AppSpacing.iconMd,
-              ),
-              AppSpacing.gapH8,
-              Text(c.quest.title, style: AppTextStyles.panelHeader),
-            ],
+          // 使用 Obx 监听标题变化（虽然标题不常变，但保持一致性）
+          Expanded(
+            // 防止标题过长溢出
+            child: Row(
+              children: [
+                Icon(
+                  Icons.terminal,
+                  color: AppColors.textDim,
+                  size: AppSpacing.iconMd,
+                ),
+                AppSpacing.gapH8,
+                Expanded(
+                  child: Obx(
+                    () => Text(
+                      c.quest.title,
+                      style: AppTextStyles.panelHeader,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          // 退出按钮
           RpgButton(
             label: "TERMINATE",
             type: RpgButtonType.danger,
@@ -234,19 +245,16 @@ class SessionView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Time
           Text(
-            c.formatTime(log.createdAt).split(' ')[1], // 只显示时间
+            c.formatTime(log.createdAt).split(' ')[1],
             style: AppTextStyles.body.copyWith(
               color: AppColors.textDim,
               fontSize: 12,
             ),
           ),
           AppSpacing.gapH12,
-          // Icon
           Icon(typeIcon, color: typeColor, size: AppSpacing.iconSm),
           AppSpacing.gapH8,
-          // Content
           Expanded(
             child: Text(
               log.content,
@@ -266,7 +274,6 @@ class SessionView extends StatelessWidget {
     return RpgContainer(
       child: Column(
         children: [
-          // 1. Macros Bar (宏指令栏)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: AppSpacing.paddingSm,
@@ -305,8 +312,6 @@ class SessionView extends StatelessWidget {
               ],
             ),
           ),
-
-          // 2. Input Field
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
