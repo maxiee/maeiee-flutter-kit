@@ -11,7 +11,10 @@ class SessionController extends GetxController
     with GetTickerProviderStateMixin {
   final TaskService _questService = Get.find();
 
-  late Task quest;
+  // 转为 Rx 变量，以便 UI 能够监听任务本身的变化 (如子任务状态)
+  late Rx<Task> questRx;
+  Task get quest => questRx.value;
+
   // 新增：当前会话对象
   late FocusSession currentSession;
 
@@ -37,16 +40,28 @@ class SessionController extends GetxController
   void onInit() {
     super.onInit();
 
-    // 1. 获取传递过来的 Quest 对象
     if (Get.arguments is Task) {
-      quest = Get.arguments as Task;
+      // [修改] 将传入的任务包装为 Rx，并监听 Service 的更新
+      // 这样当我们在 Service 里更新了数据库，这里的 UI 也会刷新
+      final originTask = Get.arguments as Task;
+      questRx = originTask.obs;
+
+      // 监听全局任务列表，如果当前任务在外部被修改，同步更新这里
+      // (虽然 Session 期间极少发生外部修改，但保持一致性是好的)
+      ever(_questService.tasks, (List<Task> tasks) {
+        final fresh = tasks.firstWhereOrNull((t) => t.id == originTask.id);
+        if (fresh != null) {
+          questRx.value = fresh;
+        }
+      });
     } else {
-      // 防止空参数崩溃 (调试用)
-      quest = Task(id: 'mock', title: '调试任务', type: TaskType.todo);
+      questRx = Task(id: 'mock', title: '调试任务', type: TaskType.todo).obs;
     }
 
     // 1. 创建当前会话对象
     currentSession = FocusSession(startTime: DateTime.now());
+    // 注意：这里的 quest 是 Rx 的 value，修改它的 list 需要小心引用问题
+    // 简单起见，我们直接操作 quest 对象
     quest.sessions.add(currentSession);
 
     // [修复点]：将 notifyUpdate 推迟到帧结束
@@ -195,6 +210,28 @@ class SessionController extends GetxController
         );
       }
     });
+  }
+
+  // 切换子任务状态
+  void toggleSubTask(int index) {
+    final subList = List<SubTask>.from(quest.checklist);
+    final sub = subList[index];
+
+    // 1. 切换状态
+    sub.isCompleted = !sub.isCompleted;
+
+    // 2. 自动记录日志 (仅当完成时)
+    if (sub.isCompleted) {
+      addLog(
+        content: "[CHECKPOINT] 完成节点: ${sub.title}",
+        type: LogType.milestone,
+      );
+    }
+
+    // 3. 更新 Service (持久化)
+    // 注意：updateTask 会触发 Service 的 refresh，进而触发上面的 ever 回调
+    // 从而更新 questRx.value，触发 UI 重绘
+    _questService.updateTask(quest.id, checklist: subList);
   }
 
   // 结束任务 (结算逻辑)

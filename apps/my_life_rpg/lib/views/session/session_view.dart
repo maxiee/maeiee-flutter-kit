@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/views/session/widgets/session_checklist.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import '../../controllers/session_controller.dart';
 import '../../models/task.dart';
@@ -12,37 +13,35 @@ class SessionView extends StatelessWidget {
     final SessionController c = Get.find();
 
     return Scaffold(
-      backgroundColor: AppColors.bgDarkest, // 比首页更深一点，更沉浸
+      backgroundColor: AppColors.bgDarkest,
+      resizeToAvoidBottomInset: true, // 确保键盘弹出时布局上顶
       body: SafeArea(
         child: Column(
           children: [
-            // 1. 顶部状态栏 (Header)
+            // 1. Header
             _buildHeader(c),
 
-            // 2. 呼吸计时器 (Pulse Timer) -> 改为支持点击暂停
-            // [修改] 优化后的计时器区域
+            // 2. Pulse Timer (Height Reduced 180 -> 140)
             GestureDetector(
               onTap: c.togglePause,
               child: SizedBox(
-                // 固定高度容器，避免布局跳动
-                height: 180,
+                height: 140, // [修改] 稍微压扁一点，腾出空间
                 width: double.infinity,
-                // 这里作为 Stack 的容器
                 child: Stack(
                   children: [
-                    // Layer 1: 动画背景 (60 FPS)
                     Positioned.fill(child: _buildAnimatedBackground(c)),
-
-                    // Layer 2: 数据内容 (1 FPS / Event driven)
                     Positioned.fill(child: _buildTimerContent(c)),
                   ],
                 ),
               ),
             ),
 
+            // 3. Tactical Checklist Area
+            const SessionChecklist(),
+
             const RpgDivider(),
 
-            // 3. 战术日志流 (The Stream)
+            // 4. Log Stream
             Expanded(
               child: Obx(
                 () => ListView.builder(
@@ -57,7 +56,7 @@ class SessionView extends StatelessWidget {
               ),
             ),
 
-            // 4. 控制台 (Command Deck)
+            // 5. Command Deck
             _buildCommandDeck(c),
           ],
         ),
