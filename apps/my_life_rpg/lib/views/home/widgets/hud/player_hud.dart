@@ -49,7 +49,6 @@ class PlayerHud extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RpgText.caption("累计产出", color: Colors.grey),
-        AppSpacing.gapV4,
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
@@ -59,7 +58,7 @@ class PlayerHud extends StatelessWidget {
               child: Obx(
                 () => Text(
                   p.totalHoursStr,
-                  style: AppTextStyles.heroNumber.copyWith(fontSize: 32),
+                  style: AppTextStyles.heroNumber.copyWith(fontSize: 28),
                 ),
               ),
             ),
@@ -67,7 +66,6 @@ class PlayerHud extends StatelessWidget {
             RpgText.caption("HOURS", color: AppColors.accentMain),
           ],
         ),
-        AppSpacing.gapV4,
         Obx(
           () => RpgText.micro(
             "COMPLETION RATE: ${p.completionRateStr}",

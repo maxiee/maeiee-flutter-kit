@@ -18,8 +18,8 @@ class HomeView extends StatelessWidget {
         child: Column(
           children: [
             // 1. 顶部玩家状态 (HUD) - 保持不变，但高度可以稍微压缩一点
-            Expanded(
-              flex: 2,
+            SizedBox(
+              height: 100,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 child: PlayerHud(),

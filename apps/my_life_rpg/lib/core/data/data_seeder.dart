@@ -13,42 +13,22 @@ class DataSeeder {
 
     final TaskService qs = Get.find();
 
-    // 1. 幂等性检查：如果已有任何数据，跳过播种
-    if (qs.directions.isNotEmpty ||
-        qs.projects.isNotEmpty ||
-        qs.tasks.isNotEmpty) {
-      print("💾 Data loaded from storage. Seeder skipped.");
-      return;
+    // 仅当 "Directions" 为空时，强制注入默认方向
+    // 即使 Task 不为空，只要 Direction 为空，我们就补全它，方便老用户迁移
+    if (qs.directions.isEmpty) {
+      print("⚠️ No Directions detected. Injecting Cyberpunk Protocols...");
+      _injectDirections(qs);
+    } else {
+      print("✅ Directions verified. Seeding skipped.");
     }
 
     print("🌱 Storage empty. Initializing Cyberpunk Protocol...");
 
-    // ==========================================
-    // 1. Create Directions (战略层)
-    // ==========================================
-
-    // 主业 (Cyan)
-    qs.addDirection("SYSTEM CORE", "Mainframe Operations", 0, Icons.memory);
-
-    // 副业 (Magenta)
-    qs.addDirection("EXPANSION", "New DLC Development", 1, Icons.extension);
-
-    // 身体 (Green)
-    qs.addDirection(
-      "HARDWARE",
-      "Bio-Mechanical Maintenance",
-      3,
-      Icons.monitor_heart,
-    );
-
-    // 生活 (Orange)
-    qs.addDirection("RUNTIME", "Background Processes", 2, Icons.layers);
-
     // [Trick] 获取刚才创建的 Direction 对象引用 (通过标题查找)
     // 因为 addDirection 返回 void，我们需要重新从列表中捞出来
-    final dirCore = qs.directions.firstWhere((d) => d.title == "SYSTEM CORE");
-    final dirExp = qs.directions.firstWhere((d) => d.title == "EXPANSION");
-    final dirHard = qs.directions.firstWhere((d) => d.title == "HARDWARE");
+    final dirWork = qs.directions.firstWhere((d) => d.title == "工作");
+    final dirSide = qs.directions.firstWhere((d) => d.title == "副业");
+    final dirHealth = qs.directions.firstWhere((d) => d.title == "健康");
 
     // ==========================================
     // 2. Create Projects (战术层) - 关联到 Direction
@@ -59,7 +39,7 @@ class DataSeeder {
       "技术专家之路",
       100,
       0, // Cyan
-      directionId: dirCore.id, // [New] 挂载到 System Core
+      directionId: dirWork.id, // [New] 挂载到 工作
     );
 
     qs.addProject(
@@ -67,7 +47,7 @@ class DataSeeder {
       "副业破局点",
       50,
       1, // Magenta
-      directionId: dirExp.id, // [New] 挂载到 Expansion
+      directionId: dirSide.id, // [New] 挂载到 副业
     );
 
     qs.addProject(
@@ -75,7 +55,7 @@ class DataSeeder {
       "健康是革命的本钱",
       30,
       3, // Green
-      directionId: dirHard.id, // [New] 挂载到 Hardware
+      directionId: dirHealth.id, // [New] 挂载到 健康
     );
 
     // 获取 Project 引用
@@ -111,5 +91,16 @@ class DataSeeder {
     qs.addNewTask(title: "清理厨房水槽", type: TaskType.routine, interval: 1);
 
     qs.addNewTask(title: "每周周报复盘", type: TaskType.routine, interval: 7);
+  }
+
+  static void _injectDirections(TaskService qs) {
+    // 1. Create Directions
+    qs.addDirection("工作", "Mainframe Operations", 0, Icons.work);
+    qs.addDirection("副业", "New DLC Development", 1, Icons.business_center);
+    qs.addDirection("健康", "Bio-Mechanical Maintenance", 3, Icons.favorite);
+    qs.addDirection("生活", "Background Processes", 2, Icons.home);
+    qs.addDirection("学习", "Knowledge Acquisition", 4, Icons.school);
+
+    print("✨ Directions Injected. Please Restart App or Hot Reload.");
   }
 }
