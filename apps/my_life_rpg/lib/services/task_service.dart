@@ -1,9 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/data/direction_repository.dart';
 import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/task_repository.dart';
 import 'package:my_life_rpg/core/domain/time_domain.dart';
 import 'package:my_life_rpg/core/logic/project_logic.dart';
 import 'package:my_life_rpg/core/utils/result.dart';
+import 'package:my_life_rpg/models/direction.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../models/project.dart';
@@ -12,10 +15,12 @@ class TaskService extends GetxService {
   // 依赖注入 Repositories
   final TaskRepository _taskRepo = Get.find();
   final ProjectRepository _projectRepo = Get.find();
+  final DirectionRepository _dirRepo = Get.find();
 
   // 对外暴露的 Getters (只读)
   RxList<Task> get tasks => _taskRepo.listenable;
   List<Project> get projects => _projectRepo.listenable;
+  List<Direction> get directions => _dirRepo.listenable;
 
   // --- 业务逻辑 (Use Cases) ---
 
@@ -157,8 +162,58 @@ class TaskService extends GetxService {
     return false;
   }
 
+  // --- Direction CRUD [新增] ---
+
+  void addDirection(String title, String desc, int colorIdx, IconData icon) {
+    _dirRepo.add(
+      Direction(
+        id: const Uuid().v4(),
+        title: title,
+        description: desc,
+        colorIndex: colorIdx,
+        iconPoint: icon.codePoint,
+      ),
+    );
+  }
+
+  void updateDirection(
+    String id, {
+    String? title,
+    String? desc,
+    int? colorIdx,
+    IconData? icon,
+  }) {
+    final d = _dirRepo.getById(id);
+    if (d == null) return;
+
+    d.title = title ?? d.title;
+    d.description = desc ?? d.description;
+    d.colorIndex = colorIdx ?? d.colorIndex;
+    if (icon != null) d.iconPoint = icon.codePoint;
+
+    _dirRepo.update(d);
+  }
+
+  void deleteDirection(String id) {
+    // 级联处理：找到该 Direction 下的所有 Project
+    final relatedProjects = projects.where((p) => p.directionId == id).toList();
+
+    // 策略：将这些 Project 的 directionId 设为 null (变为 Standalone)，而不是删除项目
+    for (var p in relatedProjects) {
+      updateProject(p.id, directionId: null, setDirectionNull: true);
+    }
+
+    _dirRepo.delete(id);
+  }
+
   // UseCase: Project CRUD
-  void addProject(String title, String desc, double targetHours, int colorIdx) {
+  void addProject(
+    String title,
+    String desc,
+    double targetHours,
+    int colorIdx, {
+    String? directionId,
+  }) {
     _projectRepo.add(
       Project(
         id: const Uuid().v4(),
@@ -166,6 +221,7 @@ class TaskService extends GetxService {
         description: desc,
         targetHours: targetHours,
         colorIndex: colorIdx,
+        directionId: directionId,
       ),
     );
   }
@@ -176,28 +232,34 @@ class TaskService extends GetxService {
     String? desc,
     double? targetHours,
     int? colorIdx,
+    String? directionId,
+    bool setDirectionNull = false,
   }) {
     final p = _projectRepo.getById(id);
     if (p == null) return;
 
-    // 1. 检查标题是否改变
     final bool nameChanged = title != null && title != p.title;
 
-    // 2. 更新项目本身
     p.title = title ?? p.title;
     p.description = desc ?? p.description;
     p.targetHours = targetHours ?? p.targetHours;
     p.colorIndex = colorIdx ?? p.colorIndex;
-    _projectRepo.update(p); // 触发项目列表刷新
 
-    // 3. [新增] 级联更新关联任务的 ProjectName
+    // [新增] 关联更新
+    if (setDirectionNull) {
+      p.directionId = null;
+    } else if (directionId != null) {
+      p.directionId = directionId;
+    }
+
+    _projectRepo.update(p);
+
     if (nameChanged) {
       final relatedQuests = tasks.where((q) => q.projectId == id).toList();
       for (var q in relatedQuests) {
         final updatedQ = q.copyWith(projectName: p.title);
         _taskRepo.update(updatedQ);
       }
-      // 触发任务列表刷新 (因为任务的显示属性变了)
       _taskRepo.listenable.refresh();
     }
   }

@@ -2,46 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:rpg_cyber_ui/theme/app_colors.dart';
 import 'package:my_life_rpg/models/serializable.dart';
 
-class Project implements Serializable {
+class Direction implements Serializable {
   @override
   final String id;
-  String title;
+  String title; // e.g. "CAREER", "BIO-HACKING"
   String description;
-  double targetHours;
-  int colorIndex;
+  int colorIndex; // 沿用系统的颜色索引
+  int iconPoint; // 存储 IconData 的 codePoint
 
-  // 允许为空 (Standalone Project)，或者默认归类到 "Inbox"
-  String? directionId;
-
-  Project({
+  Direction({
     required this.id,
     required this.title,
     this.description = '',
-    this.targetHours = 0.0,
     this.colorIndex = 0,
-    this.directionId,
+    this.iconPoint = 0xe145, // 默认图标 (Icons.category)
   });
 
   Color get color => AppColors.getProjectColor(colorIndex);
+  IconData get icon => IconData(iconPoint, fontFamily: 'MaterialIcons');
 
-  // [新增] 序列化
   @override
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
     'description': description,
-    'targetHours': targetHours,
     'colorIndex': colorIndex,
-    'directionId': directionId,
+    'iconPoint': iconPoint,
   };
 
-  // [新增] 反序列化
-  factory Project.fromJson(Map<String, dynamic> json) => Project(
+  factory Direction.fromJson(Map<String, dynamic> json) => Direction(
     id: json['id'],
     title: json['title'],
     description: json['description'] ?? '',
-    targetHours: (json['targetHours'] as num?)?.toDouble() ?? 0.0,
     colorIndex: json['colorIndex'] ?? 0,
-    directionId: json['directionId'],
+    iconPoint: json['iconPoint'] ?? 0xe145,
   );
 }

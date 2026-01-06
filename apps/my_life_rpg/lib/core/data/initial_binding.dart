@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:my_life_rpg/core/data/direction_repository.dart';
 import 'package:my_life_rpg/core/data/project_repository.dart';
 import 'package:my_life_rpg/core/data/task_repository.dart';
 import 'package:my_life_rpg/core/utils/logger.dart';
@@ -16,6 +17,7 @@ class InitialBinding extends Bindings {
 
     // 1. 底层仓储 (Data Layer)
     // 使用 permanent: true 确保它们不会被内存回收
+    Get.put(DirectionRepository(), permanent: true);
     Get.put(ProjectRepository(), permanent: true);
     Get.put(TaskRepository(), permanent: true);
 
