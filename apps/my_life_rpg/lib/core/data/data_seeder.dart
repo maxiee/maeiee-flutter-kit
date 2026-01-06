@@ -22,6 +22,13 @@ class DataSeeder {
       print("✅ Directions verified. Seeding skipped.");
     }
 
+    // [修改点]：如果已经有数据（比如从硬盘加载了），就不要再播种了
+    // 这样保证用户的数据不会被 Mock 数据覆盖或重复添加
+    if (qs.projects.isNotEmpty || qs.tasks.isNotEmpty) {
+      print("💾 Data loaded from storage. Seeder skipped.");
+      return;
+    }
+
     print("🌱 Storage empty. Initializing Cyberpunk Protocol...");
 
     // [Trick] 获取刚才创建的 Direction 对象引用 (通过标题查找)
