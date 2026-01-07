@@ -37,6 +37,9 @@ dependencies:
   d4rt: ^0.1.8
   flutter_d4rt: ^0.0.5
   webview_flutter: ^4.13.0
+  calendar_view:
+    git:
+      url: git@github.com:SimformSolutionsPvtLtd/flutter_calendar_view.git
 
 dev_dependencies:
   flutter_test:
