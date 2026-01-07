@@ -1,4 +1,6 @@
+import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
+import 'package:maeiee_flutter_playground/module/calendar_view/calendar_init_data_page.dart';
 import 'package:maeiee_flutter_playground/module/calendar_view/month/month_view_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_bridge_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.dart';
@@ -18,22 +20,27 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Maeiee Flutter Playground',
-      routes: {
-        '/scrollable_demo': (context) => const PureScrollableDemo(),
-        '/listview_itemextend_optimise': (context) =>
-            const ItemextendOptimisePage(),
-        '/d4rx': (context) => const D4rxPage(),
-        '/d4rx_bridge': (context) => const D4rxBridgePage(),
-        '/flutter_d4rx': (context) => const FlutterD4rxPage(),
-        '/flutter_d4rx_custom_simple': (context) =>
-            const FlutterD4rtCustomSimplePage(),
-        '/flutter_d4rt_webview': (context) => const FlutterD4rtWebviewPage(),
-        '/month_view_demo': (context) => const MonthViewPageDemo(),
-      },
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    // flutter_calendar_view 需要在最外层包裹 CalendarControllerProvider
+    return CalendarControllerProvider(
+      controller: EventController(),
+      child: MaterialApp(
+        title: 'Maeiee Flutter Playground',
+        routes: {
+          '/scrollable_demo': (context) => const PureScrollableDemo(),
+          '/listview_itemextend_optimise': (context) =>
+              const ItemextendOptimisePage(),
+          '/d4rx': (context) => const D4rxPage(),
+          '/d4rx_bridge': (context) => const D4rxBridgePage(),
+          '/flutter_d4rx': (context) => const FlutterD4rxPage(),
+          '/flutter_d4rx_custom_simple': (context) =>
+              const FlutterD4rtCustomSimplePage(),
+          '/flutter_d4rt_webview': (context) => const FlutterD4rtWebviewPage(),
+          '/calendar_init_data': (context) => const CalendarInitDataPage(),
+          '/month_view_demo': (context) => const MonthViewPageDemo(),
+        },
+        theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
+        home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      ),
     );
   }
 }
@@ -78,6 +85,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 context,
               ).pushNamed('/listview_itemextend_optimise'),
               child: Text("ListView ItemExtend 优化示例"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/calendar_init_data'),
+              child: Text("Calendar View 初始化数据示例"),
             ),
             OutlinedButton(
               onPressed: () =>

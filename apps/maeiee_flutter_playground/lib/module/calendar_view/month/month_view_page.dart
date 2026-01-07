@@ -21,10 +21,7 @@ class _MonthViewPageDemoState extends State<MonthViewPageDemo> {
         // TODO
         // onPressed: () => context.pushRoute(CreateEventPage()),
       ),
-      body: CalendarControllerProvider(
-        controller: EventController(),
-        child: MonthViewWidget(),
-      ),
+      body: MonthViewWidget(),
     );
   }
 }
