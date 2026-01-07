@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maeiee_flutter_playground/module/calendar_view/month/month_view_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_bridge_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_custom_simple_page.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         '/flutter_d4rx_custom_simple': (context) =>
             const FlutterD4rtCustomSimplePage(),
         '/flutter_d4rt_webview': (context) => const FlutterD4rtWebviewPage(),
+        '/month_view_demo': (context) => const MonthViewPageDemo(),
       },
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -76,6 +78,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 context,
               ).pushNamed('/listview_itemextend_optimise'),
               child: Text("ListView ItemExtend 优化示例"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/month_view_demo'),
+              child: Text("Calendar View 月视图示例"),
             ),
             OutlinedButton(
               onPressed: () => Navigator.of(context).pushNamed('/d4rx'),
