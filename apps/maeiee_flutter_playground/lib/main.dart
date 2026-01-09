@@ -1,8 +1,9 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:maeiee_flutter_playground/module/calendar_view/calendar_init_data_page.dart';
-import 'package:maeiee_flutter_playground/module/calendar_view/month/day_view_page.dart';
+import 'package:maeiee_flutter_playground/module/calendar_view/day/day_view_page.dart';
 import 'package:maeiee_flutter_playground/module/calendar_view/month/month_view_page.dart';
+import 'package:maeiee_flutter_playground/module/calendar_view/week/week_view_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_bridge_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/d4rx/pages/d4rx_page.dart';
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rt_custom_simple_page.dart';
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
                 const FlutterD4rtWebviewPage(),
             '/calendar_init_data': (context) => const CalendarInitDataPage(),
             '/day_view_demo': (context) => const DayViewPageDemo(),
+            '/week_view_demo': (context) => const WeekViewDemo(),
             '/month_view_demo': (context) => const MonthViewPageDemo(),
           },
           theme: ThemeData(
@@ -118,6 +120,11 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () =>
                   Navigator.of(context).pushNamed('/day_view_demo'),
               child: Text("Calendar View 日视图示例"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/week_view_demo'),
+              child: Text("Calendar View 周视图示例"),
             ),
             OutlinedButton(
               onPressed: () =>

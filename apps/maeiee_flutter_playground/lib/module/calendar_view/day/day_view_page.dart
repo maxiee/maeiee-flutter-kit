@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maeiee_flutter_playground/module/calendar_view/month/day_view_widget.dart';
+import 'package:maeiee_flutter_playground/module/calendar_view/day/day_view_widget.dart';
 
 class DayViewPageDemo extends StatefulWidget {
   const DayViewPageDemo({super.key});
