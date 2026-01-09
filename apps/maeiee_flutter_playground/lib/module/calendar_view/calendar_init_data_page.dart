@@ -33,6 +33,13 @@ class _CalendarInitDataPageState extends State<CalendarInitDataPage> {
           endTime: DateTime(_now.year, _now.month, _now.day, 22),
         ),
         CalendarEventData(
+          date: _now,
+          title: "Project meeting2",
+          description: "Today is project meeting.",
+          startTime: DateTime(_now.year, _now.month, _now.day, 18, 30),
+          endTime: DateTime(_now.year, _now.month, _now.day, 23),
+        ),
+        CalendarEventData(
           date: _now.subtract(Duration(days: 3)),
           recurrenceSettings: RecurrenceSettings.withCalculatedEndDate(
             startDate: _now.subtract(Duration(days: 3)),
