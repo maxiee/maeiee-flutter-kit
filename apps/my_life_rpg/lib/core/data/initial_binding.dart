@@ -16,8 +16,6 @@ class InitialBinding extends Bindings {
   void dependencies() {
     Get.put(LogService(), permanent: true);
 
-    Get.put(FileStorageService(), permanent: true);
-
     // 1. 底层仓储 (Data Layer)
     // 使用 permanent: true 确保它们不会被内存回收
     Get.put(DirectionRepository(), permanent: true);

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/data_seeder.dart';
+import 'package:my_life_rpg/core/data/file_storage_service.dart';
 import 'package:my_life_rpg/core/data/initial_binding.dart';
 import 'package:rpg_cyber_ui/theme/app_theme.dart';
 import 'package:my_life_rpg/views/home/home_binding.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // 显式等待初始化完成
+  await Get.put(FileStorageService()).init();
   runApp(const MyApp());
 }
 

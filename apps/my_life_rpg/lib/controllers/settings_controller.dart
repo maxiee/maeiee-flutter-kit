@@ -15,20 +15,38 @@ class SettingsController extends GetxController {
 
   Future<void> refreshFileInfo() async {
     final f = _storage.file;
-    if (f != null && f.existsSync()) {
-      filePath.value = f.path;
 
-      final len = await f.length();
-      if (len < 1024) {
-        fileSize.value = "$len B";
-      } else if (len < 1024 * 1024) {
-        fileSize.value = "${(len / 1024).toStringAsFixed(2)} KB";
-      } else {
-        fileSize.value = "${(len / (1024 * 1024)).toStringAsFixed(2)} MB";
+    // 1. 检查 Service 是否就绪 (File 对象是否为 null)
+    if (f == null) {
+      filePath.value = "SERVICE NOT READY (File is null)";
+      fileSize.value = "N/A";
+      return;
+    }
+
+    // 2. 显示路径 (无论是否存在)
+    // macOS 路径通常很长，这里显示绝对路径
+    filePath.value = f.path;
+
+    // 3. 检查文件物理状态
+    final exists = f.existsSync();
+
+    if (exists) {
+      try {
+        final len = await f.length();
+        if (len < 1024) {
+          fileSize.value = "$len B";
+        } else if (len < 1024 * 1024) {
+          fileSize.value = "${(len / 1024).toStringAsFixed(2)} KB";
+        } else {
+          fileSize.value = "${(len / (1024 * 1024)).toStringAsFixed(2)} MB";
+        }
+      } catch (e) {
+        fileSize.value = "READ ERROR";
       }
     } else {
-      filePath.value = "NOT MOUNTED";
-      fileSize.value = "N/A";
+      // 文件对象不为空，但磁盘上找不到 -> 加上后缀提示
+      filePath.value = "${f.path} (NOT FOUND ON DISK)";
+      fileSize.value = "0 B (New File)";
     }
   }
 }
