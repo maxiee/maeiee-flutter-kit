@@ -13,6 +13,9 @@ class FileStorageService extends GetxService {
   File? _file;
   bool _isReady = false;
 
+  // 暴露文件对象供设置页面查看信息
+  File? get file => _file;
+
   /// 初始化服务：定位文件并加载数据到内存
   Future<FileStorageService> init() async {
     await _initFile();

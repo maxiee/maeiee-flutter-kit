@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/views/home/widgets/data_backup_dialog.dart';
 import 'package:my_life_rpg/views/home/widgets/tactical_analysis_dialog.dart';
+import 'package:my_life_rpg/views/settings/settings_view.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
@@ -53,13 +54,10 @@ class PlayerHud extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            InkWell(
-              onLongPress: () => Get.dialog(const DataBackupDialog()),
-              child: Obx(
-                () => Text(
-                  p.totalHoursStr,
-                  style: AppTextStyles.heroNumber.copyWith(fontSize: 28),
-                ),
+            Obx(
+              () => Text(
+                p.totalHoursStr,
+                style: AppTextStyles.heroNumber.copyWith(fontSize: 28),
               ),
             ),
             const SizedBox(width: 4),
@@ -144,17 +142,30 @@ class PlayerHud extends StatelessWidget {
       children: [
         Expanded(
           child: _statColumn(
-            obsValue: p.dailyHoursStr.obs, // 需要转一下类型或者直接改 _statColumn 签名
+            obsValue: p.dailyHoursStr.obs,
             label: "TODAY (H)",
             color: AppColors.accentSystem,
           ),
         ),
         Container(width: 1, height: 24, color: AppColors.borderDim),
+
+        // 倒计时区域
         Expanded(
           child: _statColumn(
             obsValue: t.timeRemainingStr,
             label: "T-MINUS",
             color: AppColors.accentDanger,
+          ),
+        ),
+
+        // [新增] 设置按钮
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0),
+          child: RpgIconButton(
+            icon: Icons.settings,
+            color: AppColors.textDim,
+            onTap: () => Get.to(() => const SettingsView()),
+            tooltip: "CONFIG",
           ),
         ),
       ],
