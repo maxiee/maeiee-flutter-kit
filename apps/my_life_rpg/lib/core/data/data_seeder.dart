@@ -16,20 +16,20 @@ class DataSeeder {
     // 仅当 "Directions" 为空时，强制注入默认方向
     // 即使 Task 不为空，只要 Direction 为空，我们就补全它，方便老用户迁移
     if (qs.directions.isEmpty) {
-      print("⚠️ No Directions detected. Injecting Cyberpunk Protocols...");
+      debugPrint("⚠️ No Directions detected. Injecting Cyberpunk Protocols...");
       _injectDirections(qs);
     } else {
-      print("✅ Directions verified. Seeding skipped.");
+      debugPrint("✅ Directions verified. Seeding skipped.");
     }
 
     // [修改点]：如果已经有数据（比如从硬盘加载了），就不要再播种了
     // 这样保证用户的数据不会被 Mock 数据覆盖或重复添加
     if (qs.projects.isNotEmpty || qs.tasks.isNotEmpty) {
-      print("💾 Data loaded from storage. Seeder skipped.");
+      debugPrint("💾 Data loaded from storage. Seeder skipped.");
       return;
     }
 
-    print("🌱 Storage empty. Initializing Cyberpunk Protocol...");
+    debugPrint("🌱 Storage empty. Initializing Cyberpunk Protocol...");
 
     // [Trick] 获取刚才创建的 Direction 对象引用 (通过标题查找)
     // 因为 addDirection 返回 void，我们需要重新从列表中捞出来
@@ -108,6 +108,6 @@ class DataSeeder {
     qs.addDirection("生活", "Background Processes", 2, Icons.home);
     qs.addDirection("学习", "Knowledge Acquisition", 4, Icons.school);
 
-    print("✨ Directions Injected. Please Restart App or Hot Reload.");
+    debugPrint("✨ Directions Injected. Please Restart App or Hot Reload.");
   }
 }

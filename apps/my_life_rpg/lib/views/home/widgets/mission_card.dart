@@ -13,7 +13,7 @@ class MissionCard extends StatefulWidget {
   final VoidCallback? onLongPress;
   final VoidCallback? onToggle;
 
-  MissionCard({
+  const MissionCard({
     super.key,
     required this.quest,
     this.onTap,

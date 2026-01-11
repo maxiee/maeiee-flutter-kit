@@ -195,8 +195,9 @@ class _TacticalAnalysisDialogState extends State<TacticalAnalysisDialog> {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
-                if (index < 0 || index >= dates.length)
+                if (index < 0 || index >= dates.length) {
                   return const SizedBox.shrink();
+                }
                 final date = dates[index];
                 final isToday = index == 6; // 最后一个是今天
                 return Padding(

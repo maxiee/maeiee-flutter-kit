@@ -473,7 +473,7 @@ class _QuestEditorState extends State<QuestEditor> {
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: sessions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (ctx, i) {
               final s = sessions[i];
               final dateStr = DateFormat('yyyy-MM-dd').format(s.startTime);

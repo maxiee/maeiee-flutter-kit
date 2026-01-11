@@ -53,7 +53,7 @@ class DirectionRail extends StatelessWidget {
             child: Obx(
               () => ListView.separated(
                 itemCount: qs.directions.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) {
                   final dir = qs.directions[i];
                   return _buildDirectionIcon(dir);
@@ -253,7 +253,7 @@ class DirectionRail extends StatelessWidget {
           child: InkWell(
             onTap: () => Get.to(() => const SettingsView()),
             borderRadius: BorderRadius.circular(4),
-            child: Container(
+            child: SizedBox(
               width: 48,
               height: 48,
               child: const Icon(Icons.settings, color: Colors.grey, size: 20),

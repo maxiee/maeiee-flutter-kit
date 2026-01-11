@@ -219,7 +219,7 @@ class _DataBackupDialogState extends State<DataBackupDialog> {
       // 但为了不改动太多接口，我们假设用户会重启 App，或者你在 BaseRepository 里添加了 reload 方法
       qs.notifyUpdate();
     } catch (e) {
-      print("Service reload failed: $e");
+      debugPrint("Service reload failed: $e");
     }
   }
 }

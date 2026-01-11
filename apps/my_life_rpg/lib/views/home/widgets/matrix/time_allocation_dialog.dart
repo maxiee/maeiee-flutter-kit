@@ -186,13 +186,14 @@ class _TimeAllocationDialogState extends State<TimeAllocationDialog> {
 
     // Mode 1: Project (Direct Log)
     if (selectedMode == 1) {
-      if (activeProjects.isEmpty)
+      if (activeProjects.isEmpty) {
         return const Center(
           child: Text(
             "NO PROJECTS DEFINED",
             style: TextStyle(color: Colors.grey),
           ),
         );
+      }
 
       return RpgSelect<String>(
         value: activeProjects.any((p) => p.id == selectedId)

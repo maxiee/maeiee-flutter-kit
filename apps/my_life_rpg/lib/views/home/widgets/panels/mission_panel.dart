@@ -38,7 +38,7 @@ class MissionPanel extends StatelessWidget {
               return ListView.separated(
                 padding: AppSpacing.paddingSm,
                 itemCount: tasks.length,
-                separatorBuilder: (_, __) => AppSpacing.gapV8,
+                separatorBuilder: (_, _) => AppSpacing.gapV8,
                 itemBuilder: (ctx, i) {
                   final quest = tasks[i];
                   return MissionCard(

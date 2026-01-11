@@ -67,7 +67,7 @@ class SessionChecklist extends StatelessWidget {
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: checklist.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 4),
+                separatorBuilder: (_, _) => const SizedBox(height: 4),
                 itemBuilder: (ctx, i) {
                   final item = checklist[i];
                   return InkWell(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
@@ -216,7 +217,7 @@ class GithubSyncService extends GetxService {
     try {
       Get.find<TaskService>().notifyUpdate();
     } catch (e) {
-      print("Service reload warning: $e");
+      debugPrint("Service reload warning: $e");
     }
   }
 }

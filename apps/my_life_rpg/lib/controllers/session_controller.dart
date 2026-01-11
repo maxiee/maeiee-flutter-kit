@@ -269,7 +269,7 @@ class SessionController extends GetxController
     // 4. 弹出结算模态窗 (等待用户决策)
     // 弹出新的 Report Dialog
     final result = await Get.generalDialog(
-      pageBuilder: (ctx, _, __) {
+      pageBuilder: (ctx, _, _) {
         return SessionSummaryView(
           durationSeconds: effective,
           logsCount: logsCount,

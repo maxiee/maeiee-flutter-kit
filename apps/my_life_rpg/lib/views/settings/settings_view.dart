@@ -251,11 +251,12 @@ class SettingsView extends StatelessWidget {
                     const SizedBox(height: 4),
                     Obx(() {
                       final time = c.syncService.lastSyncTime.value;
-                      if (time == null)
+                      if (time == null) {
                         return const Text(
                           "Last Sync: NEVER",
                           style: AppTextStyles.micro,
                         );
+                      }
                       return Text(
                         "Last Sync: ${time.toString().substring(0, 19)}",
                         style: AppTextStyles.micro,

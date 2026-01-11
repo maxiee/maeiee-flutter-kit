@@ -114,7 +114,7 @@ class SessionView extends StatelessWidget {
           // 时间文字：单独套一个 AnimatedBuilder 来做呼吸效果，避免重排版整个 Column
           AnimatedBuilder(
             animation: c.pulseAnimation,
-            builder: (_, __) {
+            builder: (_, _) {
               final opacity = isPaused ? 1.0 : c.pulseAnimation.value;
               return Text(
                 c.formatDuration(c.effectiveSeconds.value),
