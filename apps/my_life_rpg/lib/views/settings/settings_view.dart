@@ -212,13 +212,40 @@ class SettingsView extends StatelessWidget {
                           ),
                         );
                       }
-                      return Text(
-                        "LINKED: ${cfg.owner}/${cfg.repo}",
-                        style: const TextStyle(
-                          color: AppColors.accentSystem,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Courier',
-                        ),
+                      return Row(
+                        children: [
+                          Text(
+                            "LINKED: ${cfg.owner}/${cfg.repo}",
+                            style: const TextStyle(
+                              color: AppColors.accentSystem,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Courier',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Auto 标记
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentSafe.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(
+                                color: AppColors.accentSafe,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: const Text(
+                              "AUTO",
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: AppColors.accentSafe,
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     }),
                     const SizedBox(height: 4),

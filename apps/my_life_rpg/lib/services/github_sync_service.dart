@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -17,10 +18,39 @@ class GithubSyncService extends GetxService {
   final isSyncing = false.obs;
   final lastSyncTime = Rxn<DateTime>();
 
+  // 自动同步定时器
+  Timer? _autoPullTimer;
+
   @override
   void onInit() {
     super.onInit();
     _loadConfig();
+
+    // 1. 启动时尝试自动 Pull (Cold Start Sync)
+    // 延迟一点点，确保其他 Service 就绪
+    Future.delayed(const Duration(seconds: 1), () {
+      if (config.value.isValid) {
+        LogService.i("Auto-Sync: Initial Pull started...");
+        pullFromCloud(silent: true);
+      }
+    });
+
+    // 2. 监听本地保存事件 -> 自动 Push (Auto Save)
+    ever(_fileStorage.lastLocalWriteTime, (_) {
+      if (config.value.isValid) {
+        LogService.i("Auto-Sync: Local change detected. Pushing...");
+        pushToCloud(silent: true);
+      }
+    });
+
+    // 3. 启动定时拉取 (Periodic Pull)
+    _startPeriodicPull();
+  }
+
+  @override
+  void onClose() {
+    _autoPullTimer?.cancel();
+    super.onClose();
   }
 
   void _loadConfig() {
@@ -33,6 +63,23 @@ class GithubSyncService extends GetxService {
   Future<void> saveConfig(SyncConfig newConfig) async {
     config.value = newConfig;
     await _box.write(_configKey, newConfig.toJson());
+
+    // 配置更新后，重启定时任务
+    _startPeriodicPull();
+  }
+
+  void _startPeriodicPull() {
+    _autoPullTimer?.cancel();
+    if (config.value.isValid) {
+      // 每 5 分钟拉取一次
+      _autoPullTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+        // 如果正在同步（可能在Push），则跳过本次
+        if (!isSyncing.value) {
+          LogService.d("Auto-Sync: Periodic Pull triggered.");
+          pullFromCloud(silent: true);
+        }
+      });
+    }
   }
 
   // --- API Helpers ---
@@ -73,7 +120,8 @@ class GithubSyncService extends GetxService {
   }
 
   /// PULL: 从 GitHub 下载 -> 覆盖本地
-  Future<Result<void>> pullFromCloud() async {
+  /// PULL: silent=true 表示不弹 Snackbar (用于自动同步)
+  Future<Result<void>> pullFromCloud({bool silent = false}) async {
     if (!config.value.isValid) return Result.err("Config Invalid");
     isSyncing.value = true;
 
@@ -83,19 +131,19 @@ class GithubSyncService extends GetxService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final contentEncoded = data['content'] as String;
-        // GitHub API 返回的是 Base64 编码的内容
-        // 注意处理换行符
         final contentDecoded = utf8.decode(
           base64.decode(contentEncoded.replaceAll('\n', '')),
         );
 
-        // 写入本地
+        // 比较本地和远程是否一致？
+        // 简单做法：直接 restore。FileStorageService 会更新内存并写入磁盘，
+        // 但 restoreFromString 不会触发 lastLocalWriteTime，所以不会导致死循环 Push。
         await _fileStorage.restoreFromString(contentDecoded);
 
-        // 刷新业务层
         _reloadApp();
-
         _updateLastSync();
+
+        if (!silent) LogService.i("Pull Complete.");
         return Result.ok();
       } else {
         return Result.err("Pull Failed: ${response.statusCode}");
@@ -109,16 +157,15 @@ class GithubSyncService extends GetxService {
   }
 
   /// PUSH: 获取本地 -> 获取远程 SHA (如果存在) -> 上传
-  Future<Result<void>> pushToCloud() async {
+  Future<Result<void>> pushToCloud({bool silent = false}) async {
     if (!config.value.isValid) return Result.err("Config Invalid");
     isSyncing.value = true;
 
     try {
-      // 1. 获取本地数据
       final localJson = _fileStorage.backupToString();
       final contentBase64 = base64Encode(utf8.encode(localJson));
 
-      // 2. 获取远程文件的 SHA (Update 需要提供 SHA，Create 不需要)
+      // Get SHA first (Optimistic Locking)
       String? sha;
       final getResponse = await http.get(_fileUrl, headers: _headers);
       if (getResponse.statusCode == 200) {
@@ -126,9 +173,8 @@ class GithubSyncService extends GetxService {
         sha = data['sha'];
       }
 
-      // 3. 构建 PUT 请求
       final body = {
-        "message": "Sync from MyLifeRPG (Android/PC) at ${DateTime.now()}",
+        "message": "Auto-Sync: ${DateTime.now()}",
         "content": contentBase64,
         if (sha != null) "sha": sha,
       };
@@ -141,11 +187,10 @@ class GithubSyncService extends GetxService {
 
       if (putResponse.statusCode == 200 || putResponse.statusCode == 201) {
         _updateLastSync();
+        if (!silent) LogService.i("Push Complete.");
         return Result.ok();
       } else {
-        return Result.err(
-          "Push Failed: ${putResponse.statusCode} - ${putResponse.body}",
-        );
+        return Result.err("Push Failed: ${putResponse.statusCode}");
       }
     } catch (e) {
       LogService.e("Push Error: $e");

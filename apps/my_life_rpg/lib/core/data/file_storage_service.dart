@@ -16,6 +16,10 @@ class FileStorageService extends GetxService {
   // 暴露文件对象供设置页面查看信息
   File? get file => _file;
 
+  // 只有当"本地"修改导致文件写入成功时，该时间戳才会更新
+  // GithubSyncService 将监听这个变量来触发自动 Push
+  final lastLocalWriteTime = Rxn<DateTime>();
+
   /// 初始化服务：定位文件并加载数据到内存
   Future<FileStorageService> init() async {
     await _initFile();
@@ -24,7 +28,6 @@ class FileStorageService extends GetxService {
   }
 
   Future<void> _initFile() async {
-    // 获取应用文档目录
     final dir = await getApplicationDocumentsDirectory();
     final targetDir = Directory('${dir.path}/MyLifeRPG');
     if (!targetDir.existsSync()) {
@@ -33,7 +36,6 @@ class FileStorageService extends GetxService {
 
     _file = File('${targetDir.path}/$fileName');
 
-    // 如果文件不存在，创建一个空的 JSON 对象
     if (!_file!.existsSync()) {
       await _file!.writeAsString('{}');
     }
@@ -53,7 +55,6 @@ class FileStorageService extends GetxService {
       _memoryCache.value = jsonDecode(content) as Map<String, dynamic>;
     } catch (e) {
       LogService.e("Critical: Failed to load core file: $e");
-      // 出错时不覆盖内存，防止数据丢失
     }
   }
 
@@ -78,13 +79,8 @@ class FileStorageService extends GetxService {
   /// [导出] 将当前内存中的所有数据序列化为 Pretty JSON 字符串
   /// 包含了排序逻辑，确保 Git Diff 友好
   String backupToString() {
-    // 1. 对 Key 进行排序
     final sortedKeys = _memoryCache.keys.toList()..sort();
-
-    // 2. 构建排序后的 Map
     final sortedMap = {for (var k in sortedKeys) k: _memoryCache[k]};
-
-    // 3. 序列化 (2空格缩进)
     return const JsonEncoder.withIndent('  ').convert(sortedMap);
   }
 
@@ -93,16 +89,12 @@ class FileStorageService extends GetxService {
   Future<void> restoreFromString(String jsonContent) async {
     if (!_isReady || _file == null) throw "Storage not initialized";
 
-    // 1. 校验 JSON 格式
     final dynamic decoded = jsonDecode(jsonContent);
     if (decoded is! Map<String, dynamic>) {
       throw "Invalid format: Root must be a JSON object";
     }
 
-    // 2. 更新内存
     _memoryCache.value = decoded;
-
-    // 3. 立即写入磁盘 (不防抖，确保原子性)
     await _file!.writeAsString(jsonContent, flush: true);
     LogService.i("System restored from external protocol.");
   }
@@ -110,10 +102,11 @@ class FileStorageService extends GetxService {
   /// [重置] 清空所有数据
   Future<void> clearAll() async {
     if (!_isReady || _file == null) return;
-
     _memoryCache.clear();
     await _file!.writeAsString('{}', flush: true);
     LogService.w("System performed FACTORY RESET.");
+    // 清空也被视为本地操作，应该同步上去（变成空文件）
+    lastLocalWriteTime.value = DateTime.now();
   }
 
   // --- 内部写入机制 ---
@@ -124,14 +117,14 @@ class FileStorageService extends GetxService {
   void _debounceWrite() async {
     if (_writePending || _file == null) return;
     _writePending = true;
-
-    // 延迟 2秒，合并多次写入请求
     await Future.delayed(const Duration(seconds: 2));
 
     try {
-      final jsonStr = backupToString(); // 复用导出逻辑生成字符串
+      final jsonStr = backupToString();
       await _file!.writeAsString(jsonStr, flush: true);
-      // LogService.d("Core dump auto-saved."); // 调试用，生产环境可注释
+
+      // 标记本地写入完成，通知监听者
+      lastLocalWriteTime.value = DateTime.now();
     } catch (e) {
       LogService.e("Auto-save failed: $e");
     } finally {
