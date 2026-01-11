@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:my_life_rpg/core/data/data_seeder.dart';
 import 'package:my_life_rpg/core/data/file_storage_service.dart';
 import 'package:my_life_rpg/core/data/initial_binding.dart';
@@ -9,6 +10,7 @@ import 'package:my_life_rpg/views/home/home_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   // 显式等待初始化完成
   await Get.put(FileStorageService()).init();
   runApp(const MyApp());

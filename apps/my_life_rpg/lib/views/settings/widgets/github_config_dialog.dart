@@ -24,7 +24,9 @@ class _GithubConfigDialogState extends State<GithubConfigDialog> {
   @override
   void initState() {
     super.initState();
+    // 确保这里读到的是最新值
     final cfg = _sync.config.value;
+
     _tokenCtrl = TextEditingController(text: cfg.token);
     _ownerCtrl = TextEditingController(text: cfg.owner);
     _repoCtrl = TextEditingController(text: cfg.repo);

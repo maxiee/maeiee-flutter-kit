@@ -24,6 +24,7 @@ class GithubSyncService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    LogService.d("GithubSyncService init. Loading config...");
     _loadConfig();
 
     // 1. 启动时尝试自动 Pull (Cold Start Sync)
@@ -56,15 +57,20 @@ class GithubSyncService extends GetxService {
   void _loadConfig() {
     final json = _box.read(_configKey);
     if (json != null) {
+      LogService.d("Config loaded from disk: $json"); // 确认读到了
       config.value = SyncConfig.fromJson(json);
+    } else {
+      LogService.w("No sync config found on disk.");
     }
   }
 
   Future<void> saveConfig(SyncConfig newConfig) async {
     config.value = newConfig;
-    await _box.write(_configKey, newConfig.toJson());
 
-    // 配置更新后，重启定时任务
+    // [修复] 使用 await 确保存入，并打印
+    await _box.write(_configKey, newConfig.toJson());
+    LogService.i("Config saved to disk.");
+
     _startPeriodicPull();
   }
 
