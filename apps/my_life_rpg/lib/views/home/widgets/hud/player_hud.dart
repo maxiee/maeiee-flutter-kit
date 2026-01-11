@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_life_rpg/views/home/widgets/data_backup_dialog.dart';
 import 'package:my_life_rpg/views/home/widgets/tactical_analysis_dialog.dart';
-import 'package:my_life_rpg/views/settings/settings_view.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 import 'package:my_life_rpg/services/performance_service.dart';
 import 'package:my_life_rpg/services/time_service.dart';
@@ -155,17 +154,6 @@ class PlayerHud extends StatelessWidget {
             obsValue: t.timeRemainingStr,
             label: "T-MINUS",
             color: AppColors.accentDanger,
-          ),
-        ),
-
-        // [新增] 设置按钮
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: RpgIconButton(
-            icon: Icons.settings,
-            color: AppColors.textDim,
-            onTap: () => Get.to(() => const SettingsView()),
-            tooltip: "CONFIG",
           ),
         ),
       ],

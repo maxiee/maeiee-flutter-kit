@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_life_rpg/controllers/mission_controller.dart';
 import 'package:my_life_rpg/services/task_service.dart';
 import 'package:my_life_rpg/views/home/widgets/command_palette.dart';
+import 'package:my_life_rpg/views/settings/settings_view.dart';
 import 'package:rpg_cyber_ui/rpg_cyber_ui.dart';
 
 class DirectionRail extends StatelessWidget {
@@ -21,12 +22,9 @@ class DirectionRail extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AppSpacing.gapV4,
-
-          // [新增] CORTEX LINK 入口
+          // CORTEX LINK 入口
           _buildSearchIcon(),
 
-          AppSpacing.gapV4,
           // --- 全局过滤器 ---
           _buildGlobalIcon(
             Icons.inbox,
@@ -35,14 +33,12 @@ class DirectionRail extends StatelessWidget {
             countProvider: () =>
                 qs.projects.where((p) => p.directionId == null).length,
           ),
-          AppSpacing.gapV4,
           _buildGlobalIcon(
             Icons.warning_amber,
             "urgent",
             "URGENT",
             color: AppColors.accentDanger,
           ),
-          AppSpacing.gapV4,
           _buildGlobalIcon(
             Icons.loop,
             "daemon",
@@ -50,16 +46,14 @@ class DirectionRail extends StatelessWidget {
             color: AppColors.accentSystem,
           ),
 
-          AppSpacing.gapV4,
           const RpgDivider(height: 1),
-          AppSpacing.gapV4,
 
           // --- 战略方向 (Directions) ---
           Expanded(
             child: Obx(
               () => ListView.separated(
                 itemCount: qs.directions.length,
-                separatorBuilder: (_, __) => AppSpacing.gapV16,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) {
                   final dir = qs.directions[i];
                   return _buildDirectionIcon(dir);
@@ -70,8 +64,7 @@ class DirectionRail extends StatelessWidget {
 
           // --- 底部设置/新增 ---
           const RpgDivider(height: 1),
-          // 这里可以放设置按钮，暂留空
-          AppSpacing.gapV16,
+          _buildSettingsButton(),
         ],
       ),
     );
@@ -145,7 +138,7 @@ class DirectionRail extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(4),
           child: Container(
-            height: 56, // [修改] 增加高度，更容易点击
+            height: 44, // [修改] 增加高度，更容易点击
             width: double.infinity, // 填满宽度
             padding: const EdgeInsets.symmetric(horizontal: 4), // 内容内缩一点
             child: Stack(
@@ -154,8 +147,8 @@ class DirectionRail extends StatelessWidget {
                 // 1. 背景高亮块
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 48, // 视觉宽度
-                  height: 48, // 视觉高度
+                  width: 44, // 视觉宽度
+                  height: 44, // 视觉高度
                   decoration: BoxDecoration(
                     color: isSelected
                         ? color.withOpacity(0.15)
@@ -171,26 +164,6 @@ class DirectionRail extends StatelessWidget {
                     size: 24, // 图标稍微大一点点
                   ),
                 ),
-
-                // 2. 选中指示条 (左侧)
-                if (isSelected)
-                  Positioned(
-                    left: 2,
-                    child: Container(
-                      width: 3,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.6),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
                 // 3. 数量角标 (Cyberpunk Style)
                 if (badgeCount > 0)
@@ -246,7 +219,7 @@ class DirectionRail extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(4),
           child: Container(
-            height: 56,
+            height: 44,
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Container(
@@ -262,6 +235,28 @@ class DirectionRail extends StatelessWidget {
                 color: AppColors.accentMain,
                 size: 24,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 底部设置按钮组件
+  Widget _buildSettingsButton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Tooltip(
+        message: "SYSTEM CONFIG",
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Get.to(() => const SettingsView()),
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              width: 48,
+              height: 48,
+              child: const Icon(Icons.settings, color: Colors.grey, size: 20),
             ),
           ),
         ),
