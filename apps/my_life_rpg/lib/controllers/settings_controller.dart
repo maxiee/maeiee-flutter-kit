@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:my_life_rpg/core/data/file_storage_service.dart';
+import 'package:my_life_rpg/services/github_sync_service.dart';
 
 class SettingsController extends GetxController {
   final FileStorageService _storage = Get.find();
+  final GithubSyncService syncService = Get.find();
 
   final filePath = 'UNKNOWN'.obs;
   final fileSize = '0 KB'.obs;
