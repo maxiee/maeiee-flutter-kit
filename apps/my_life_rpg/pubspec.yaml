@@ -45,6 +45,9 @@ dependencies:
   fl_chart: ^1.1.1
   http: ^1.6.0
   get_storage: ^2.1.1
+  calendar_view:
+    git:
+      url: https://github.com/SimformSolutionsPvtLtd/flutter_calendar_view.git
 
 dev_dependencies:
   flutter_test:
