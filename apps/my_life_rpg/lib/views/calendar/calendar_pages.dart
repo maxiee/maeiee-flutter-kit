@@ -194,64 +194,160 @@ class MonthViewPage extends StatelessWidget {
       appBar: _buildAppBar("STRATEGIC MONTH OVERVIEW"),
       body: MonthView<SessionData>(
         controller: c.eventController,
+
+        // [关键修复 1] 样式配置：定义全局边框颜色
+        monthViewStyle: MonthViewStyle(
+          borderColor: Colors.white.withOpacity(0.1), // 全局网格线颜色
+          borderSize: 0.5,
+          startDay: WeekDays.monday, // 既然是生产力工具，周一作为开始
+        ),
+
+        // [关键修复 2] 主题配置：覆盖默认的浅色背景
+        monthViewThemeSettings: const MonthViewThemeSettings(
+          weekDayBackgroundColor: AppColors.bgPanel, // 星期栏背景变黑
+          weekDayTextStyle: TextStyle(
+            color: AppColors.textDim,
+            fontFamily: 'Courier',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
         monthViewBuilders: MonthViewBuilders(
+          // A. 隐藏原生日历头部 (已由 DateControllerBar 提供)
           headerBuilder: MonthHeader.hidden,
+
+          // B. 自定义星期栏 (M T W T F S S)
+          weekDayBuilder: (index) {
+            // calendar_view 的 index 0 对应 startDay (Monday)
+            final days = ["M", "T", "W", "T", "F", "S", "S"];
+            return Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.bgPanel, // 深色背景
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.accentMain.withOpacity(0.5),
+                    width: 1,
+                  ),
+                  right: BorderSide(color: Colors.white.withOpacity(0.05)),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                days[index],
+                style: const TextStyle(
+                  color: AppColors.accentMain, // 霓虹色字体
+                  fontFamily: 'Courier',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            );
+          },
+
+          // C. 交互绑定
           onEventTap: (event, date) {
             c.onEventTapped(event as CalendarEventData<SessionData>);
           },
+
+          // D. 单元格渲染
           cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) {
-            if (!isInMonth) return const SizedBox.shrink();
+            // 不在当月的日期显示为更暗的占位符
+            if (!isInMonth) {
+              return Container(color: Colors.white.withOpacity(0.02));
+            }
 
             return Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-                color: isToday ? AppColors.accentMain.withOpacity(0.05) : null,
+                // 今天的格子高亮背景
+                color: isToday
+                    ? AppColors.accentMain.withOpacity(0.05)
+                    : Colors.transparent,
+                // 右边和下边的边框，构成网格
+                border: Border(
+                  right: BorderSide(
+                    color: Colors.white.withOpacity(0.05),
+                    width: 0.5,
+                  ),
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.05),
+                    width: 0.5,
+                  ),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(4.0),
+                  // 日期数字
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6.0),
+                    decoration: BoxDecoration(
+                      // 今天的数字加深背景
+                      color: isToday
+                          ? AppColors.accentMain.withOpacity(0.2)
+                          : Colors.transparent,
+                    ),
                     child: Text(
                       date.day.toString().padLeft(2, '0'),
                       style: TextStyle(
-                        color: isToday ? AppColors.accentMain : Colors.grey,
+                        color: isToday ? Colors.white : Colors.grey,
                         fontWeight: isToday
                             ? FontWeight.bold
                             : FontWeight.normal,
                         fontFamily: 'Courier',
+                        fontSize: 12,
                       ),
                     ),
                   ),
+
+                  // 任务指示器 (Data Bars)
                   if (events.isNotEmpty)
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.end, // 沉底显示
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // 最多显示 3 条，其他的用 ... 表示
                             ...events
                                 .take(3)
                                 .map(
                                   (e) => Container(
-                                    height: 3,
-                                    margin: const EdgeInsets.only(bottom: 2),
+                                    height: 4,
+                                    margin: const EdgeInsets.only(bottom: 3),
                                     decoration: BoxDecoration(
                                       color: e.color,
-                                      borderRadius: BorderRadius.circular(1),
+                                      borderRadius: BorderRadius.circular(
+                                        1,
+                                      ), // 硬朗的圆角
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: e.color.withOpacity(0.4),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
+
+                            // 溢出指示器
                             if (events.length > 3)
-                              Container(
-                                height: 3,
-                                width: 3,
-                                decoration: const BoxDecoration(
-                                  color: Colors.grey,
-                                  shape: BoxShape.circle,
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white54,
+                                    shape: BoxShape.rectangle, // 方形点
+                                  ),
                                 ),
                               ),
-                            const SizedBox(height: 4),
                           ],
                         ),
                       ),
