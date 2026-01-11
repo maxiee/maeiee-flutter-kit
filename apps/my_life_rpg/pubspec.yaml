@@ -43,6 +43,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   kalender: ^0.14.2
   fl_chart: ^1.1.1
+  http: ^1.6.0
+  get_storage: ^2.1.1
 
 dev_dependencies:
   flutter_test:
