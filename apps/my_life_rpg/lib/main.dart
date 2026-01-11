@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // 别忘了这个
 import 'package:my_life_rpg/core/data/data_seeder.dart';
 import 'package:my_life_rpg/core/data/initial_binding.dart';
 import 'package:rpg_cyber_ui/theme/app_theme.dart';
@@ -8,7 +7,6 @@ import 'package:my_life_rpg/views/home/home_binding.dart';
 import 'package:my_life_rpg/views/home/home_view.dart';
 
 void main() async {
-  await GetStorage.init(); // 确保存储初始化
   runApp(const MyApp());
 }
 
