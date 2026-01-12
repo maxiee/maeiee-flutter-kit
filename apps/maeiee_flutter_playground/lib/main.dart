@@ -12,6 +12,7 @@ import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flut
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rx_page.dart';
 import 'package:maeiee_flutter_playground/module/listview/itemextend_optimise/itemextend_optimise_page.dart';
 import 'package:maeiee_flutter_playground/module/listview/principle/scrollable_demo.dart';
+import 'package:maeiee_flutter_playground/module/listview/principle/sliver/sliver_protocol_demo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
           title: 'Maeiee Flutter Playground',
           routes: {
             '/scrollable_demo': (context) => const PureScrollableDemo(),
+            '/sliver_protocol_demo': (context) => const SliverProtocolDemo(),
             '/listview_itemextend_optimise': (context) =>
                 const ItemextendOptimisePage(),
             '/d4rx': (context) => const D4rxPage(),
@@ -106,6 +108,11 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () =>
                   Navigator.of(context).pushNamed('/scrollable_demo'),
               child: Text("纯 Scrollable 简易 ListView"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/sliver_protocol_demo'),
+              child: Text("Sliver 协议示例"),
             ),
             OutlinedButton(
               onPressed: () => Navigator.of(
