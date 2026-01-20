@@ -12,6 +12,7 @@ import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flut
 import 'package:maeiee_flutter_playground/module/dynamic/flutter_d4rx/pages/flutter_d4rx_page.dart';
 import 'package:maeiee_flutter_playground/module/listview/itemextend_optimise/itemextend_optimise_page.dart';
 import 'package:maeiee_flutter_playground/module/listview/principle/lazy_sliver/lazy_sliver_demo.dart';
+import 'package:maeiee_flutter_playground/module/listview/principle/lazy_sliver_v2/lazy_sliver_demo_v2.dart';
 import 'package:maeiee_flutter_playground/module/listview/principle/scrollable_demo.dart';
 import 'package:maeiee_flutter_playground/module/listview/principle/sliver/sliver_protocol_demo.dart';
 
@@ -53,6 +54,8 @@ class MyApp extends StatelessWidget {
             '/listview_itemextend_optimise': (context) =>
                 const ItemextendOptimisePage(),
             '/lazy_sliver_demo': (context) => const LazySliverDemo(),
+            '/advanced_sliver_demo': (context) =>
+                const AdvancedLazySliverDemo(),
             '/d4rx': (context) => const D4rxPage(),
             '/d4rx_bridge': (context) => const D4rxBridgePage(),
             '/flutter_d4rx': (context) => const FlutterD4rxPage(),
@@ -120,6 +123,11 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () =>
                   Navigator.of(context).pushNamed('/lazy_sliver_demo'),
               child: Text("Lazy Loading Sliver 示例"),
+            ),
+            OutlinedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/advanced_sliver_demo'),
+              child: Text("Advanced Lazy Sliver 示例"),
             ),
             OutlinedButton(
               onPressed: () => Navigator.of(
