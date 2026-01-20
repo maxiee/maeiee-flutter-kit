@@ -71,6 +71,11 @@ class RenderLazySliverListV2 extends RenderSliver
     for (var child in childrenToRemove) {
       final parentData = child.parentData as SliverKeepAliveParentData;
       if (parentData.keepAlive) {
+        // 【关键修复 A】：入袋时也要保护 ParentData
+        // 1. 备份数据
+        final int index = parentData.index!;
+        final bool wasKeepAlive = parentData.keepAlive;
+
         // 【关键修复点 A】：所有结构变更操作必须都在 callback 内部
         invokeLayoutCallback((c) {
           // 1. 从链表移除 (child 变为 detached)
@@ -80,6 +85,11 @@ class RenderLazySliverListV2 extends RenderSliver
           // 3. 手动认领 (child 变为 attached，但不在链表中)
           // 这一步如果不放在 callback 里，就会报 "mutated in performLayout"
           adoptChild(child);
+
+          // 5. 恢复数据！(否则下次复活时 keepAlive 就是 false 了)
+          final newData = child.parentData as SliverKeepAliveParentData;
+          newData.keepAlive = wasKeepAlive;
+          newData.index = index;
         });
       } else {
         invokeLayoutCallback((c) {
