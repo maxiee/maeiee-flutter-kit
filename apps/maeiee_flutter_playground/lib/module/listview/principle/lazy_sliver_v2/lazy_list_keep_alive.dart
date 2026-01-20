@@ -25,9 +25,10 @@ class KeepAliveWrapper extends ParentDataWidget<SliverKeepAliveParentData> {
   Type get debugTypicalAncestorWidgetClass => LazySliverListV2;
 }
 
-// [新增] 必须定义这个 ParentData，用于承载 keepAlive 标记
 class SliverKeepAliveParentData extends SliverMultiBoxAdaptorParentData {
-  bool keepAlive = false;
+  // 删除这一行：bool keepAlive = false;
+  // 直接继承父类的 keepAlive 字段即可
+
   @override
   String toString() => '${super.toString()}, keepAlive=$keepAlive';
 }
